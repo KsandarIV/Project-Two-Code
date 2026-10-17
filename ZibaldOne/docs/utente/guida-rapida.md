@@ -86,6 +86,21 @@ Per collegare una voce a un'altra scrivi il suo titolo tra doppie quadre in un t
 
 Nell'app: la casella di ricerca in **Voci** usa le stesse regole, e la pagina di una voce mostra chi la cita. Come funziona dentro: [ricerca e collegamenti](../tecnica/ricerca-e-collegamenti.md).
 
+## Il grafo · Rizoma
+Tutte le voci e i loro collegamenti, come una mappa. Nell'app: **Voci → Grafo**, oppure **Nel grafo** dalla pagina di una voce; tocca un punto per aprire la voce.
+
+| Comando | Cosa fa |
+|---|---|
+| `zbone graph` | riepilogo: quante voci e collegamenti, le più collegate, le voci sole |
+| `zbone graph --html grafo.html` | una pagina da aprire nel browser, con zoom e nomi |
+| `zbone graph --around b29f --depth 2` | solo le voci a due passi da una voce |
+| `zbone graph -t persona -t incontro` | solo alcuni modelli (anche `--since`, `--until`, `--tag`) |
+| `zbone graph --unresolved` | anche i `[[Titoli]]` che aspettano ancora una voce |
+| `zbone graph --tag-nodes --shared-tags` | le etichette come punti, e le voci con etichette in comune collegate |
+| `zbone graph --json grafo.json` | nodi, linee e posizioni, per altri programmi |
+
+Come funziona: [il grafo](../tecnica/grafo.md).
+
 ## Modelli pronti
 ZibaldOne ha quattro **pacchetti** di modelli già pronti, ognuno con il nome di una scuola filosofica. Installarli non tocca le tue voci e puoi modificarli come i tuoi.
 

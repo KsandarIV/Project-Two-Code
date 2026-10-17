@@ -4,6 +4,14 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.1.3] — 2026-10-17
+### Aggiunto
+- **Grafo** (Rizoma) delle voci e dei collegamenti, come in Obsidian: punti colorati per modello e grandi quanto i loro collegamenti, disposizione sempre uguale per gli stessi dati.
+- App: schermata **Grafo** (da Voci, o **Nel grafo** dalla pagina di una voce per vederne i dintorni a 1–3 passi); filtri per modello, voci senza collegamenti e `[[Titoli]]` senza voce; si tocca un punto per aprire la voce; le voci più collegate in elenco.
+- `zbone graph`: riepilogo, pagina HTML da aprire nel browser (`--html`, con zoom e nomi), dati in JSON (`--json`); filtri per modello, date, etichetta e dintorni di una voce; etichette e modelli come nodi su richiesta.
+### Documentazione
+- [Il grafo](docs/tecnica/grafo.md); guida rapida e interfaccia aggiornate; in [rilascio Android](docs/sviluppo/rilascio-android.md) cosa finisce dentro l'APK (Python 3.14, pacchetti dall'indice di Flet).
+
 ## [0.1.2] — 2026-10-17
 ### Aggiunto
 - **Ricerca** (Zetesis) in tutti i blocchi delle voci: più parole insieme, "frase esatta", `parol*`, `-parola`; maiuscole e accenti non contano. Filtri per modello, etichetta e date. `zbone search`.

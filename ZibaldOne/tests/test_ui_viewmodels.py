@@ -311,3 +311,27 @@ def test_streak_and_reminder_config(folder: Path, store: Store) -> None:
     assert services.streak_days(store, TODAY) == 2
     config, problem = services.reminder_config(folder)
     assert problem == "" and isinstance(config, ReminderConfig)
+
+
+def test_graph_drawing_and_taps(store: Store) -> None:
+    giulia = add(store, "persona", {"nome": "Giulia"})
+    incontro = store.get_template("incontro")
+    link_key = next(spec.key for spec in incontro.blocks if spec.type == "link")
+    dinner = add(store, "incontro", {incontro.title_key: "Cena a Trastevere", link_key: [giulia.id]})
+    add(store, "riflessione", {"titolo": "Pensieri", "testo": "Con [[Giulia]] e [[Bruno]]."})
+    graph = vm.load_graph(store, vm.GraphQuery())
+    assert vm.graph_summary(graph) == "3 voci, 2 collegamenti"
+    drawing = vm.draw_graph(graph, 400, 300)
+    assert all(26 <= node.x <= 374 and 26 <= node.y <= 274 for node in drawing.nodes)
+    assert len(drawing.edges) == 2 and all(node.label for node in drawing.nodes)  # few nodes: every name is shown
+    hub = next(node for node in drawing.nodes if node.id == giulia.id)
+    assert hub.radius > next(node for node in drawing.nodes if node.id == dinner.id).radius
+    assert vm.nearest_node(drawing, hub.x + 3, hub.y - 2).id == giulia.id
+    assert vm.nearest_node(drawing, -500, -500) is None
+    waiting = vm.load_graph(store, vm.GraphQuery(unresolved=True))
+    assert any(node.kind == "missing" and node.label == "Bruno" for node in waiting.nodes)
+    around = vm.load_graph(store, vm.GraphQuery(isolated=False, template="incontro"), around=giulia.id)
+    assert {node.id for node in around.nodes} == {giulia.id, dinner.id}
+    centered = vm.draw_graph(around, 400, 300, around=giulia.id)
+    assert next(node for node in centered.nodes if node.center).id == giulia.id
+    assert vm.graph_summary(vm.load_graph(store, vm.GraphQuery(template="libro"))) == "nessuna voce"

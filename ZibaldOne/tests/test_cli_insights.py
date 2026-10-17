@@ -1,11 +1,13 @@
-"""CLI of search and links (0.1.2), registered like in cli/app.py."""
+"""CLI of search, links (0.1.2) and graph (0.1.3), registered like in cli/app.py."""
 
+import json
 from datetime import date, timedelta
 
 import pytest
 import typer
 from typer.testing import CliRunner
 
+from zibaldone.cli.graph_cmd import graph_command
 from zibaldone.cli.search_cmd import SEARCH_CONTEXT, links_command, search_command
 from zibaldone.core.packs import apply_install, find_builtin_pack, plan_install
 from zibaldone.core.privacy import NOTICE_VERSION
@@ -16,6 +18,7 @@ from zibaldone.storage.settings import record_consent
 app = typer.Typer()
 app.command("search", context_settings=SEARCH_CONTEXT)(search_command)
 app.command("links")(links_command)
+app.command("graph")(graph_command)
 runner = CliRunner()
 TODAY = date.today()
 
@@ -86,3 +89,20 @@ def test_links(data) -> None:
     quiet = invoke("links", data["marco"].id, "--no-mentions")
     assert "senza collegamento" not in quiet.output
     assert invoke("links", "zzzz").exit_code == 1
+
+
+def test_graph_exports(data, tmp_path) -> None:
+    page, raw = tmp_path / "grafo.html", tmp_path / "grafo.json"
+    result = invoke("graph", "--html", str(page), "--json", str(raw), "--unresolved")
+    assert result.exit_code == 0, result.output
+    assert "Rizoma · 6 voci, 3 collegamenti" in result.output
+    assert "Le più collegate: " in result.output and "Marco Rossi (2)" in result.output
+    assert page.read_text(encoding="utf-8").startswith("<!doctype html>")
+    data_out = json.loads(raw.read_text(encoding="utf-8"))
+    assert any(node["kind"] == "missing" and node["label"] == "Giulia" for node in data_out["nodes"])
+    around = invoke("graph", "--around", data["marco"].id[:6], "--depth", "1")
+    assert "Rizoma · 3 voci" in around.output
+    assert invoke("graph", "--around", "zzzz").exit_code == 1
+    nowhere = invoke("graph", "--html", str(tmp_path / "manca" / "g.html"))
+    assert nowhere.exit_code == 1 and "non esiste" in nowhere.output
+    assert "Nessuna voce" in invoke("graph", "--template", "anno").output

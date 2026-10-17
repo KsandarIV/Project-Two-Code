@@ -56,6 +56,13 @@ Il workflow controlla che il tag corrisponda alla versione nel codice. Lanciato 
 
 Le versioni senza APK (prima della 0.1.1) non hanno bisogno di release.
 
+## Cosa c'è dentro l'APK
+Verificato con `flet build` 1.0.4 (la build completa non è stata provata fuori da GitHub, perché scarica l'Android SDK da Google):
+- tutte le chiavi di `[tool.flet]` sono lette; `[tool.flet.android].dependencies` si **aggiunge** a `[project].dependencies`, quindi nel telefono ci sono typer, cryptography e flet 1.0.4;
+- sul telefono gira **Python 3.14** (Flet sceglie la versione più recente compatibile con `requires-python`); cryptography, cffi e msgpack per Android arrivano dall'indice di Flet (`pypi.flet.dev`), tutto il resto da PyPI;
+- i pacchetti di modelli e `google_client.json` si leggono con `importlib.resources`, quindi funzionano anche dentro l'APK;
+- il permesso INTERNET c'è già di base; le notifiche di sistema su Android non sono incluse (i promemoria compaiono dentro l'app).
+
 ## Se qualcosa va storto
 - **Test rossi**: la build si ferma prima di costruire. Si sistemano, nuova versione, nuovo tag.
 - **Tag sbagliato** o build fallita a metà: si rilancia a mano con lo stesso tag; se la release esiste già, l'APK viene sostituito.

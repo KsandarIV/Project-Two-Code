@@ -139,6 +139,7 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
         "/oggi", "/voci", f"/voci/{known['incontro']}", f"/voci/{known['libro']}/modifica", "/voci/nonesiste",
         "/collezioni", "/modelli", "/modelli/nuovo", "/modelli/libro", "/modelli/nonesiste", "/scuole", "/organon",
         "/benvenuto/consenso", "/benvenuto/accesso", "/benvenuto/copie", "/benvenuto/diario", "/scrivi/nonesiste",
+        "/grafo", f"/grafo/{known['persona']}", "/grafo/nonesiste",
     ]
     paths += [f"/scrivi/{slug}" for slug in ("sera", "aree", "mattina", "libro", "serie", "incontro", "persona", "desiderio")]
     paths += [f"/organon/{part}" for part in ("parresia", "daimon", "mnemosyne", "nuvole", "info")]
@@ -151,7 +152,7 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
 
 def test_screens_cover_every_route_kind() -> None:
     assert ONBOARDING_SCREENS <= set(SCREENS)
-    assert {"oggi", "voci", "voce", "scrivi", "modifica", "collezioni", "modelli", "modello", "scuole", "organon", "parte"} <= set(SCREENS)
+    assert {"oggi", "voci", "voce", "scrivi", "modifica", "collezioni", "modelli", "modello", "scuole", "grafo", "organon", "parte"} <= set(SCREENS)
 
 
 def test_missing_entry_and_template_say_so_gently(ready: Path) -> None:
@@ -375,3 +376,25 @@ def test_an_entry_page_lists_who_cites_it(ready: Path) -> None:
     shell.start(f"/voci/{giulia.id}")
     shown = texts(shell.body.content)
     assert "Citata da (1)" in shown and "Cena" in shown
+
+
+def test_the_graph_opens_an_entry_on_tap(ready: Path) -> None:
+    known = ids(ready)
+    shell = Shell(FakePage(), ready)
+    shell.start("/voci")
+    click(button(shell.body.content, "Grafo"))
+    assert shell.current.path == "/grafo"
+    screen = next(item for item in walk(shell.body.content) if isinstance(item, ft.GestureDetector))
+    canvas = screen.content
+    assert any(isinstance(shape, ft.canvas.Circle) for shape in canvas.shapes)
+    assert "Le più collegate" in texts(shell.body.content)
+    graph_screen = screen.on_tap_down.__self__
+    target = next(node for node in graph_screen.drawing.nodes if node.id == known["persona"])
+    screen.on_tap_down(SimpleNamespace(local_position=SimpleNamespace(x=target.x, y=target.y)))
+    assert shell.current.path == f"/voci/{known['persona']}"
+    click(button(shell.body.content, "Nel grafo"))
+    assert shell.current.path == f"/grafo/{known['persona']}"
+    assert any(text.startswith("intorno a «Giulia»") for text in texts(shell.body.content))
+    graph_screen = next(item for item in walk(shell.body.content) if isinstance(item, ft.GestureDetector)).on_tap_down.__self__
+    graph_screen.resized(SimpleNamespace(width=500, height=300))
+    assert graph_screen.drawing.width == 500
