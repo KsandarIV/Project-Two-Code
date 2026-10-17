@@ -13,7 +13,7 @@ from typing import Iterator, List, Optional
 import typer
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 
-from zibaldone.cli.common import ask_yes_no, ensure_consent, fail, run_auto_backup  # noqa: F401 (re-exported)
+from zibaldone.cli.common import ask_yes_no, ensure_consent, fail, run_auto_backup, sync_quietly  # noqa: F401 (re-exported)
 from zibaldone.core.crypto import RECOVERY_LOOKALIKES, CryptoError, RecoveryCodeError, recovery_code_last_group
 from zibaldone.storage import backups, keys
 from zibaldone.storage.backups import BackupError, BackupSettings, SnapshotInfo
@@ -120,6 +120,7 @@ def create_backup(note: str = typer.Option("", "--note", "-n", help="una nota br
     typer.echo(f"  {describe(snapshot)}")
     if not snapshot.encrypted:
         typer.echo("  Non è cifrata: attiva la cifratura con `zbone backup setup`.")
+    sync_quietly()
 
 
 @backup_app.command("list")
@@ -258,7 +259,8 @@ def setup_encryption() -> None:
         fail("la cifratura è già attiva. Per cambiare passphrase: zbone backup passphrase")
     typer.echo(SETUP_INTRO)
     with backup_errors():
-        new_keys = keys.create_keys(ask_new_passphrase("Scegli la passphrase dei backup"))
+        passphrase = ask_new_passphrase("Scegli la passphrase dei backup")
+        new_keys = keys.create_keys(passphrase)
     typer.echo("\nCODICE DI RECUPERO (te lo mostro solo adesso):\n")
     typer.echo(f"    {new_keys.recovery_code}\n")
     typer.echo("Scrivilo su carta e conservalo lontano da questo dispositivo. Non salvarlo qui e non fotografarlo.")
@@ -280,6 +282,9 @@ def setup_encryption() -> None:
         typer.secho(f"  restata in chiaro {snapshot_id}: {problem}", fg=typer.colors.YELLOW, err=True)
     if result.failed:
         typer.echo("Le istantanee rimaste in chiaro sono rovinate: controllale con `zbone backup verify --all`.")
+    from zibaldone.cli.account_cmd import after_encryption_setup  # account_cmd imports common, like this module
+
+    after_encryption_setup(folder, passphrase)
 
 
 @backup_app.command("passphrase")
@@ -293,6 +298,7 @@ def change_passphrase() -> None:
         keys.unlock_with_passphrase(folder, current)
         keys.change_passphrase(folder, current, ask_new_passphrase())
     typer.echo("Passphrase cambiata. Il codice di recupero resta lo stesso.")
+    sync_quietly()  # the copy of keys.json on the destination must know the new passphrase
 
 
 @backup_app.command("recover")
@@ -313,3 +319,4 @@ def recover_passphrase() -> None:
             fail("codice di recupero non valido: non ho cambiato nulla")
         keys.reset_passphrase(folder, code, ask_new_passphrase())
     typer.echo("Nuova passphrase salvata. Il codice di recupero resta lo stesso: tienilo al sicuro.")
+    sync_quietly()

@@ -6,6 +6,7 @@ import typer
 
 from zibaldone import __version__
 from zibaldone.core.brand import APP_MOTTO, APP_NAME, APP_TAGLINE, MASCOTS, NOMENCLATURE, quote_of_the_day
+from zibaldone.cli.account_cmd import account_app, cloud_app
 from zibaldone.cli.backup_cmd import backup_app
 from zibaldone.cli.entry_cmd import entry_app
 from zibaldone.cli.export_cmd import export_app
@@ -27,6 +28,8 @@ app.add_typer(entry_app, name="entry")
 app.add_typer(pack_app, name="pack")
 app.add_typer(backup_app, name="backup")
 app.add_typer(export_app, name="export")
+app.add_typer(account_app, name="account")
+app.add_typer(cloud_app, name="cloud")
 
 
 def _first_line(callback: Optional[Callable]) -> str:

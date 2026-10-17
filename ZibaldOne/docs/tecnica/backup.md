@@ -38,7 +38,7 @@ Con `zbone backup setup` ogni istantanea viene cifrata sul dispositivo prima di 
 - la **chiave privata**, che serve solo per verificare o ripristinare, è salvata solo protetta (AES-256-GCM) da più "serrature":
   - `passphrase`: scrypt della passphrase (n=2^15, r=8, p=1, con i parametri salvati accanto);
   - `recovery`: il **codice di recupero** mostrato una volta sola al setup;
-  - `secret:<nome>`: un segreto di 32 byte, usato dalla 0.0.8 per il recupero con l'account Google.
+  - `secret:<nome>`: un segreto di 32 byte; `secret:google` è il recupero con l'account Google (dalla 0.0.8, vedi sotto).
 
 Cambiare passphrase cambia solo la sua serratura: le istantanee non vanno ricifrate. Passphrase, codice di recupero e chiave privata non vengono mai scritti su disco né nei log, e si chiedono sempre con un campo nascosto, mai da opzioni o variabili d'ambiente.
 
@@ -54,6 +54,25 @@ zbone backup list --details   # chiede la passphrase e mostra note e contenuto
 ```
 
 **Limiti noti.** Chi ha la chiave pubblica (non è segreta) potrebbe costruire un file che sembra un'istantanea valida: il ripristino controlla integrità e schema, non chi ha fatto il file. Python non può cancellare i segreti dalla memoria. Dopo aver cifrato le vecchie istantanee, i byte in chiaro possono restare sul disco finché non vengono sovrascritti. Non c'è ancora la rotazione della chiave né un nuovo codice di recupero.
+
+## Copie fuori dal dispositivo · Le Nuvole (dalla 0.0.8)
+Il codice è in `src/zibaldone/cloud/` ([ADR-0007](../decisioni/ADR-0007-account-google-e-destinazioni-cloud.md)).
+
+**Destinazioni.** Per l'app una destinazione sa solo `list_files`, `upload`, `download` e `delete` di file con nomi semplici (`cloud/destinations.py`). Ce ne sono due:
+- `LocalFolderDestination`: la sottocartella `ZibaldOne/` di una cartella scelta (chiavetta, OneDrive, Dropbox, Nextcloud…), con scritture atomiche;
+- `GoogleDriveDestination`: lo spazio nascosto `appDataFolder` di Drive (API REST v3, caricamenti "resumable"). Con l'ambito `drive.appdata` l'app non vede nient'altro del Drive.
+
+Aggiungere OneDrive o WebDAV vuol dire scrivere una classe in più, senza toccare il resto.
+
+**Cosa esce.** Solo le istantanee cifrate (`*.zbsnap`), `keys.json` (chiave pubblica e chiave privata chiusa dalle serrature: senza passphrase, codice o segreto Google non serve) e, se attivo, `google-recovery.json`. Le istantanee in chiaro non escono mai: senza `zbone backup setup` la sincronizzazione si rifiuta.
+
+**Sincronizzazione** (`cloud/sync.py`). `sync_now` carica le istantanee che mancano fuori (per nome e dimensione) e `keys.json`, poi applica fuori la stessa durata del dispositivo: tiene sempre ciò che il dispositivo ha ancora, cancella il resto solo se la durata non lo tiene. Non cancella mai una copia perché manca sul dispositivo: un telefono perso non deve portarsi via i suoi backup. Se fuori c'è il `keys.json` di un'altra chiave (un altro dispositivo con un altro setup), si ferma e lo dice. Dopo ogni backup automatico parte da sola (`maybe_sync`, che non fallisce mai: l'errore resta in `settings.json` e lo mostra `zbone cloud`).
+
+**Recupero con l'account Google.** È facoltativo. `enable_google_recovery` crea un segreto casuale di 32 byte, lo mette in `google-recovery.json` sul Drive e aggiunge a `keys.json` la serratura `secret:google`. Su un dispositivo nuovo basta entrare con lo stesso account: l'app scarica chiavi e segreto e apre la chiave privata senza passphrase. Il compromesso è esplicito: chi entra nel tuo account Google può aprire i backup. `zbone cloud recovery off` toglie serratura e segreto.
+
+**Un dispositivo nuovo.** `recover_from_cloud` scarica `keys.json` (se il dispositivo non ha chiavi), apre la chiave con passphrase, codice di recupero o segreto Google, scarica l'istantanea più recente (o quella scelta) e la ripristina come `zbone backup restore`.
+
+**Token.** L'accesso usa OAuth 2.0 per app installate con PKCE e ritorno su `http://127.0.0.1:<porta>/` (`cloud/google_auth.py`). I token stanno in `account-token.json`: su Windows protetti con DPAPI (li legge solo lo stesso utente sullo stesso PC), altrove leggibili solo dall'utente. In `settings.json` ci sono solo email, nome e scelte.
 
 ## Export
 `zbone export markdown` crea uno zip con un file Markdown per voce, da aprire in Obsidian; `zbone export csv` uno zip con un CSV per modello. Il codice è in `src/zibaldone/storage/export.py`. Gli export **non sono cifrati**: il comando lo ricorda.

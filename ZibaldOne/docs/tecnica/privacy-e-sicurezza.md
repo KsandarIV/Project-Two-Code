@@ -16,11 +16,15 @@
 - Altre persone con accesso al PC possono leggere i file, se non sono cifrati.
 - Se la cartella è dentro Google Drive, i dati sono anche sui server di Google, alle condizioni dell'account Google dell'utente.
 - Le istantanee conservano anche le voci cancellate finché non scadono (di base fino a circa 12 mesi). Dalla 0.0.6 l'avviso lo dice, e per questo `NOTICE_VERSION` è passato a 2: chi aveva già accettato lo rivede una volta.
+- Con le copie su Drive le istantanee cifrate stanno anche sui server di Google; con il recupero con l'account Google, chi entra nell'account può aprirle (avviso versione 3, dalla 0.0.8).
 
-## Google Drive (opzionale)
-- **Windows, prima fase**: l'utente sceglie una cartella dati dentro la cartella sincronizzata di *Google Drive per desktop*. L'app non gestisce credenziali né API: sincronizza Google.
-- **Android**: non esiste una cartella sincronizzata equivalente. Prima fase: export/backup manuale che l'utente salva dove vuole (anche su Drive dal menu Condividi). Integrazione diretta con l'API di Drive solo più avanti.
-- **Fase successiva (eventuale)**: integrazione diretta con l'API di Drive, solo se serve davvero, con permessi minimi (accesso ai soli file creati dall'app).
+## Account Google e Drive (dalla 0.0.8)
+- **Accesso**: al primo avvio si entra con Google ([ADR-0007](../decisioni/ADR-0007-account-google-e-destinazioni-cloud.md)). L'app riceve solo email e nome e li tiene sul dispositivo; i token stanno in `account-token.json` (DPAPI su Windows). Nessun server nostro: tra l'app e Google non c'è nessuno.
+- **Drive**: solo se l'utente lo sceglie, e solo nello spazio nascosto dell'app (`drive.appdata`): l'app non vede gli altri file. Lì vanno solo istantanee **già cifrate** e il file delle chiavi chiuso dalle serrature.
+- **Recupero con l'account Google** (facoltativo): mette su Drive un segreto che apre i backup. È comodo, ma rende l'account Google la chiave dei backup; l'app lo spiega prima di attivarlo.
+- **Cartella**: in alternativa le copie cifrate vanno in una cartella scelta (chiavetta, OneDrive, Dropbox).
+- **Revoca**: `zbone account logout` revoca l'accesso presso Google e cancella i token; le copie su Drive si cancellano con `zbone cloud forget`, o da Drive → Impostazioni → Gestisci app.
+- L'avviso del primo avvio è passato alla **versione 3**: spiega l'account e le copie su Drive, quindi chi aveva accettato lo rivede una volta.
 
 ## Sicurezza tecnica
 - **Backup cifrati con storia** ([ADR-0006](../decisioni/ADR-0006-storia-e-backup-cifrati.md)): istantanee che durano un tempo scelto, cifrate sul dispositivo e copiabili fuori; nessuno tranne l'utente può aprirle. Una voce cancellata resta nei backup fino alla loro scadenza, e l'avviso lo deve dire.
