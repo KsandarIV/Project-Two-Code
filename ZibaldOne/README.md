@@ -2,7 +2,7 @@
 
 Un **tutto in uno personale**, componibile e local-first: diario, collezioni, appunti, documenti, finanze e altro, costruiti a blocchi (testo, slider, voti, tag, segnalibri…) come vuoi tu. Per Windows e Android, in futuro Linux. Vedi la [visione](docs/tecnica/visione.md).
 
-> Stato: **v0.0.2**, cartella dati e avviso privacy. Vedi la [roadmap](docs/tecnica/roadmap.md) e il [CHANGELOG](CHANGELOG.md).
+> Stato: **v0.0.3**, modelli a blocchi e voci salvate in SQLite. Vedi la [roadmap](docs/tecnica/roadmap.md) e il [CHANGELOG](CHANGELOG.md).
 
 ## Avvio rapido (Windows, PowerShell)
 
