@@ -4,7 +4,7 @@ Every screen has a route, so the app can start on any of them (handy for
 tests and screenshots): `/oggi`, `/voci`, `/voci/<id>`, `/voci/<id>/modifica`,
 `/scrivi/<modello>`, `/scrivi/<modello>/<area>`, `/collezioni`, `/modelli`,
 `/modelli/nuovo`, `/modelli/<modello>`, `/scuole`, `/aree`, `/aree/<area>`,
-`/organon`, `/organon/<parte>`.
+`/persone/<id>`, `/albero`, `/rete`, `/rete/<area>`, `/organon`, `/organon/<parte>`.
 """
 
 from dataclasses import dataclass
@@ -125,6 +125,8 @@ def route_path(screen: str, arg: str = "", extra: str = "") -> str:
         "aree": "/aree",
         "area": f"/aree/{arg}",
         "persona": f"/persone/{arg}",
+        "albero": "/albero",
+        "rete": f"/rete/{arg}" if arg else "/rete",
         "modello": f"/modelli/{arg or 'nuovo'}",
         "scuole": "/scuole",
         "grafo": f"/grafo/{arg}" if arg else "/grafo",
@@ -164,6 +166,10 @@ def parse_route(path: Optional[str]) -> Route:
         return Route("area", "oggi", rest[0].lower())
     if head == "persone" and len(rest) == 1:
         return Route("persona", "voci", rest[0])
+    if head == "albero" and not rest:
+        return Route("albero", "voci")
+    if head == "rete" and (not rest or (len(rest) == 1 and rest[0].lower() in AREAS)):
+        return Route("rete", "voci", rest[0].lower() if rest else "")
     if head == "modelli" and len(rest) == 1:
         return Route("modello", "modelli", "" if rest[0] == "nuovo" else rest[0])
     if head == "scuole" and not rest:

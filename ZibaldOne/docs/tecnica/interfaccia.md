@@ -54,4 +54,5 @@ Le parti senza Flet (`navigation`, `forms`, `viewmodels`, `cloud_model`, `theme`
 - 0.1.5 ✅: **Velo d'ignoranza**, l'anonimizzatore da provare in Impostazioni (`/organon/velo`) ([anonimizzatore](anonimizzatore.md)).
 - 0.2.0 ✅: **Eudaimonia**, le otto aree (`/aree`, da Oggi) e la pagina di ogni area (`/aree/<area>`); il modulo si apre con l'area già scelta (`/scrivi/<modello>/<area>`) ([le 8 aree](aree.md)). Le funzioni future si mostrano con `W.upcoming_card` («In arrivo · versione …»).
 - 0.2.1 ✅: **Agorà**, la pagina di una persona (`/persone/<id>`), dalla voce Persona e dal riquadro Persone delle aree ([le persone](persone.md)).
-- 0.2.2–0.2.9: il resto dello sprint delle 8 aree ([requisiti](requisiti-v0.2.md)).
+- 0.2.2 ✅: l'**albero di famiglia** (`/albero`) e la **rete** delle persone (`/rete`, `/rete/<area>`), dalla pagina di una persona e dal riquadro Persone delle aree; la rete riusa il disegno del grafo (`canvas_shapes` in `ui/views/graph.py`).
+- 0.2.3–0.2.9: il resto dello sprint delle 8 aree ([requisiti](requisiti-v0.2.md)).

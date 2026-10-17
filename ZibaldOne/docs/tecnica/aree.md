@@ -41,7 +41,7 @@ Il pacchetto `aree` (si installa con Stoa · Diario al primo avvio, o con `zbone
 Collezioni, Io e Persone passano alla 1.1.0: i loro modelli hanno ora un'area (Svago per libri, film, serie, anime, giochi e musica; Salute per lo sport; Personale per il guardaroba e per Io; Sociale per persone e incontri). Reinstallarli aggiorna i modelli senza toccare le voci.
 
 ## «In arrivo»
-Le pagine delle aree mostrano anche quello che non c'è ancora, con la versione prevista: per esempio l'albero genealogico in Famiglia (0.2.2), il bilancio cifrato in Finanze (0.2.6), le abitudini in Salute (0.2.7), e per tutte le aree la home su misura (0.2.8) e *Maieutica*, l'IA che fa domande sulle aree, dopo la 1.0. L'elenco è `UPCOMING` in `core/areas.py`: quando una versione esce, le sue righe si tolgono (un test controlla che ogni versione promessa sia ancora da fare).
+Le pagine delle aree mostrano anche quello che non c'è ancora, con la versione prevista: per esempio il diario segreto in Personale (0.2.3), il bilancio cifrato in Finanze (0.2.6), le abitudini in Salute (0.2.7), e per tutte le aree la home su misura (0.2.8) e *Maieutica*, l'IA che fa domande sulle aree, dopo la 1.0. L'elenco è `UPCOMING` in `core/areas.py`: quando una versione esce, le sue righe si tolgono (un test controlla che ogni versione promessa sia ancora da fare).
 
 ## Dove si usa
 - **App**: **Oggi → Aree** (o un riquadro delle aree in Oggi) apre le otto aree (`/aree`); un'area si apre con `/aree/<area>`. Da lì: **Check-in**, **Obiettivo** e **Nota** aprono il modulo con l'area già scelta (`/scrivi/<modello>/<area>`). In **Voci** c'è il filtro per area e la pagina di una voce mostra le sue aree; l'editor dei modelli ha "Area della vita delle sue voci".

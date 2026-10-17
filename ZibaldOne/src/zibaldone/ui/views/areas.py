@@ -230,6 +230,13 @@ class AreaScreen:
 
     def _people(self, page: vm.AreaPage) -> ft.Control:
         rows: List[ft.Control] = [W.body(f"Persone ({len(page.people)})", size=16, weight=ft.FontWeight.W_600)]
+        buttons: List[ft.Control] = []
+        if page.key == "famiglia":
+            buttons.append(W.secondary_button("Albero", lambda _: self.ctx.go("/albero"), icon="ACCOUNT_TREE"))
+        if len(page.people) > 1:
+            buttons.append(W.secondary_button("Rete", lambda _: self.ctx.go(f"/rete/{page.key}"), icon="HUB"))
+        if buttons:
+            rows.append(ft.Row(buttons, wrap=True, spacing=8))
         for person in page.people:
             line = " · ".join(part for part in (person.roles, person.contact) if part)
             right: List[ft.Control] = [W.pill("da sentire", T.ACCENT_2, icon="WAVING_HAND")] if person.due else []

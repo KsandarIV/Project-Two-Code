@@ -20,6 +20,32 @@ HEIGHT_WIDE, HEIGHT_NARROW = 560, 420
 GUESS_WIDE, GUESS_NARROW = 820, 340
 
 
+def canvas_shapes(drawing: vm.GraphDrawing) -> List[cv.Shape]:
+    """Lines, dots and names of a drawn graph (also used by the network of people)."""
+    shapes: List[cv.Shape] = []
+    for edge in drawing.edges:
+        shapes.append(cv.Line(edge.x1, edge.y1, edge.x2, edge.y2, paint=ft.Paint(color=edge.color, stroke_width=edge.width, style=ft.PaintingStyle.STROKE)))
+    for node in drawing.nodes:
+        if node.center:
+            shapes.append(cv.Circle(node.x, node.y, node.radius + 5, paint=ft.Paint(color=W.fade(T.ACCENT, 0.35), style=ft.PaintingStyle.FILL)))
+        if node.kind == "missing":
+            shapes.append(cv.Circle(node.x, node.y, node.radius, paint=ft.Paint(color=node.color, stroke_width=1.5, style=ft.PaintingStyle.STROKE)))
+        else:
+            shapes.append(cv.Circle(node.x, node.y, node.radius, paint=ft.Paint(color=node.color, style=ft.PaintingStyle.FILL)))
+    for node in drawing.nodes:
+        if node.label:
+            shapes.append(
+                cv.Text(
+                    node.x,
+                    node.y + node.radius + 3,
+                    node.label,
+                    style=ft.TextStyle(size=11, color=T.TEXT if node.kind == "entry" else T.TEXT_DIM),
+                    alignment=ft.Alignment.TOP_CENTER,
+                )
+            )
+    return shapes
+
+
 class GraphScreen:
     def __init__(self, ctx: AppContext, route: Route) -> None:
         self.ctx = ctx
@@ -154,28 +180,7 @@ class GraphScreen:
 
     def redraw(self, update: bool = True) -> None:
         self.drawing = vm.draw_graph(self.graph, self.size[0], self.size[1], self.around)
-        shapes: List[cv.Shape] = []
-        for edge in self.drawing.edges:
-            shapes.append(cv.Line(edge.x1, edge.y1, edge.x2, edge.y2, paint=ft.Paint(color=edge.color, stroke_width=edge.width, style=ft.PaintingStyle.STROKE)))
-        for node in self.drawing.nodes:
-            if node.center:
-                shapes.append(cv.Circle(node.x, node.y, node.radius + 5, paint=ft.Paint(color=W.fade(T.ACCENT, 0.35), style=ft.PaintingStyle.FILL)))
-            if node.kind == "missing":
-                shapes.append(cv.Circle(node.x, node.y, node.radius, paint=ft.Paint(color=node.color, stroke_width=1.5, style=ft.PaintingStyle.STROKE)))
-            else:
-                shapes.append(cv.Circle(node.x, node.y, node.radius, paint=ft.Paint(color=node.color, style=ft.PaintingStyle.FILL)))
-        for node in self.drawing.nodes:
-            if node.label:
-                shapes.append(
-                    cv.Text(
-                        node.x,
-                        node.y + node.radius + 3,
-                        node.label,
-                        style=ft.TextStyle(size=11, color=T.TEXT if node.kind == "entry" else T.TEXT_DIM),
-                        alignment=ft.Alignment.TOP_CENTER,
-                    )
-                )
-        self.canvas.shapes = shapes
+        self.canvas.shapes = canvas_shapes(self.drawing)
         if update:
             self.ctx.update(self.canvas)
 

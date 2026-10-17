@@ -453,9 +453,6 @@ class Upcoming:
 
 # Remove an item when its version ships: a test checks that none is older than the app.
 UPCOMING: Tuple[Upcoming, ...] = (
-    Upcoming("Albero genealogico", "genitori, fratelli, nonni e cugini: la tua famiglia disegnata come un albero", "0.2.2", ("famiglia",)),
-    Upcoming("Rete sociale", "chi conosce chi, gli amici in comune e quanto è forte ogni legame", "0.2.2", ("sociale",)),
-    Upcoming("Colleghi e contatti di lavoro", "chi lavora con chi, nella rete delle persone", "0.2.2", ("lavoro",)),
     Upcoming("Diario segreto", "voci cifrate con la tua chiave, aperte da PIN o impronta, mai nella ricerca né nell'IA", "0.2.3", ("personale",)),
     Upcoming("Note mediche protette", "visite, terapie e documenti sanitari solo in blocchi cifrati", "0.2.3", ("salute",)),
     Upcoming("Foto, audio e documenti", "allegati alle voci e alle persone, dentro i backup cifrati", "0.2.4"),
@@ -466,6 +463,7 @@ UPCOMING: Tuple[Upcoming, ...] = (
     Upcoming("Lista della spesa", "quello che serve, spuntato mentre fai la spesa", "0.2.6", ("finanze", "famiglia")),
     Upcoming("Abitudini", "meditazione, movimento, acqua, sonno: la serie di giorni e un promemoria gentile", "0.2.7", ("salute", "personale")),
     Upcoming("Ore di studio e abitudini", "le sessioni di studio contate giorno per giorno, con la loro serie", "0.2.7", ("studio",)),
+    Upcoming("Abitudini di lavoro", "ore di lavoro concentrato, pause, giorni di fila: il tracker delle abitudini anche qui", "0.2.7", ("lavoro",)),
     Upcoming("Obiettivi con traguardi", "tappe, scadenze e avanzamento calcolato da solo", "0.2.7"),
     Upcoming("Una home su misura", "i riquadri che scegli tu e le ricerche salvate, come «tutti i libri in corso»", "0.2.8"),
     Upcoming("I tuoi vecchi diari", "i file della vecchia Journal App diventano voci di ZibaldOne", "0.2.9"),
