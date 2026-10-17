@@ -49,17 +49,18 @@ def progress(unit=""):
     return block("stato", "progress", "Stato", **({"unit": unit} if unit else {}))
 
 
-def review(key, name, period, icon, description):
+def review(key, name, period, icon, description, feminine=False):
+    to_the, the_next = ("alla", "la prossima") if feminine else ("al", "il prossimo")
     return {
         "slug": key, "name": name, "category": "diario", "icon": icon, "color": "#8A2BE2",
         "description": description,
         "blocks": [
-            scale("voto", f"Voto al {period}", low_label="pessimo", high_label="splendido"),
+            scale("voto", f"Voto {to_the} {period}", low_label="pessimo", high_label="splendido"),
             block("momenti_belli", "longtext", "Momenti belli"),
             block("difficolta", "longtext", "Difficoltà"),
             block("imparato", "longtext", "Cosa ho imparato"),
             block("area_focus", "choice", "Area su cui concentrarmi", choices=AREAS),
-            block("obiettivi", "checklist", f"Obiettivi per il prossimo {period}"),
+            block("obiettivi", "checklist", f"Obiettivi per {the_next} {period}"),
         ],
     }
 
@@ -67,6 +68,7 @@ def review(key, name, period, icon, description):
 DIARIO = {
     "id": "zibaldone.diario",
     "name": "Stoa · Diario",
+    "version": "1.0.1",  # 1.0.1: "Voto alla settimana", "Obiettivi per la prossima settimana"
     "description": "Il diario come esercizio quotidiano, alla maniera degli stoici: i 3 momenti della giornata, il check-in delle 8 aree della vita, le revisioni di settimana, mese e anno, i pensieri liberi.",
     "templates": [
         {
@@ -116,7 +118,7 @@ DIARIO = {
                 MOOD,
             ],
         },
-        review("settimana", "Hypomnemata", "settimana", "VIEW_WEEK", "Revisione della settimana. I quaderni di appunti dei Greci, riletti da Foucault in La scrittura di sé (1983)."),
+        review("settimana", "Hypomnemata", "settimana", "VIEW_WEEK", "Revisione della settimana. I quaderni di appunti dei Greci, riletti da Foucault in La scrittura di sé (1983).", feminine=True),
         review("mese", "Lettera a Lucilio", "mese", "CALENDAR_MONTH", "Revisione del mese, come una lettera a te stesso. Seneca, Lettere a Lucilio."),
         {
             "slug": "anno", "name": "Almanacco", "category": "diario", "icon": "AUTO_AWESOME", "color": "#8A2BE2",
@@ -278,7 +280,7 @@ PERSONE = {
 
 def build(spec):
     templates = [Template.from_dict(template) for template in spec["templates"]]
-    return Pack(spec["id"], spec["name"], "1.0.0", templates, AUTHOR, LICENSE, spec["description"]).validate()
+    return Pack(spec["id"], spec["name"], spec.get("version", "1.0.0"), templates, AUTHOR, LICENSE, spec["description"]).validate()
 
 
 def main() -> None:

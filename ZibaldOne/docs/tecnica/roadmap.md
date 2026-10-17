@@ -13,17 +13,19 @@ Numerazione ([ADR-0010](../decisioni/ADR-0010-numerazione-delle-versioni.md)): p
 | v0.0.6 | **Storia e backup**: istantanee come commit, ripristino annullabile, durata a tempo, verifica; export Markdown e CSV ([ADR-0006](../decisioni/ADR-0006-storia-e-backup-cifrati.md)) | ✅ |
 | v0.0.7 | **Cifratura**: passphrase e codice di recupero, backup sempre cifrati (AES-256-GCM + scrypt) | ✅ |
 | v0.0.8 | **Account e cloud**: accesso con Google, scelta solo locale o locale + Drive, destinazioni intercambiabili, recupero con account Google, portare i dati su un altro dispositivo ([ADR-0007](../decisioni/ADR-0007-account-google-e-destinazioni-cloud.md)) | ✅ |
+| v0.0.9 | **Notifiche** che spronano a scrivere: promemoria ai momenti della giornata, ore di silenzio, serie di giorni, toni gentili ([ADR-0008](../decisioni/ADR-0008-notifiche.md)) | ✅ |
 
 ## Fase 0.1: app per i tester
 | Versione | Capacità | Stato |
 |---|---|---|
-| v0.0.9 | **Interfaccia grafica** Flet con tema neon: Oggi, Voci, Collezioni, Modelli, Impostazioni; stesso codice per Windows e Android | ⬜ |
-| v0.1.0 | **Prima versione per i tester**: APK costruito da GitHub Actions, controllo aggiornamenti, guida tester | ⬜ |
-| v0.1.1 | **Notifiche** che spronano a scrivere: promemoria ai momenti della giornata, ore di silenzio, serie di giorni, toni gentili ([ADR-0008](../decisioni/ADR-0008-notifiche.md)) | ⬜ |
+| v0.1.0 | **Interfaccia grafica** Flet con tema neon: Oggi, Voci, Collezioni, Modelli, Impostazioni; stesso codice per Windows e Android | ⬜ |
+| v0.1.1 | **Prima versione per i tester**: APK costruito da GitHub Actions, controllo aggiornamenti, guida tester | ⬜ |
 | v0.1.2 | **Ricerca e collegamenti**: ricerca a testo pieno, filtri per tag e modello, collegamenti tra voci e "tutto su Marco" | ⬜ |
 | v0.1.3 | **Grafo** stile Obsidian delle voci e dei collegamenti | ⬜ |
 | v0.1.4 | **Statistiche e revisioni**: andamento dell'umore, punteggi delle aree per settimana e mese, collezioni in corso, revisione della settimana | ⬜ |
 | v0.1.5 | **Anonimizzatore** per preparare i testi ai futuri modelli di IA generativa: pseudonimi reversibili, tutto in locale ([ADR-0009](../decisioni/ADR-0009-anonimizzatore.md)) | ⬜ |
+
+> Ordine aggiornato il 2026-10-17: le notifiche (prima 0.1.1) vengono prima dell'interfaccia, perché l'interfaccia le usa (promemoria in app e serie di giorni). Interfaccia e prima versione per i tester scalano di una posizione.
 
 ## Fase 0.2: le 8 aree
 Le richieste della vecchia Journal App (8 aree, persone complete, albero genealogico, dati sensibili cifrati, media, finanze, abitudini, viste componibili): [requisiti della fase 0.2](requisiti-v0.2.md).

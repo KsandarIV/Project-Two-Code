@@ -22,7 +22,7 @@ ZibaldOne tiene la visione e cambia il mezzo: **ogni idea diventa un modello fat
 | Backup, verifica integrità, storia | istantanee, verifica, ripristino | v0.0.6 |
 | PIN e diario segreto | cifratura con passphrase | v0.0.7 |
 | Export PDF/CSV, ricerca, tag | export Markdown/CSV (v0.0.6), ricerca (v0.1.2) | v0.0.6, v0.1.2 |
-| App mobile con sincronizzazione | Flet su Android, backup su Drive | v0.0.8–v0.1.0 |
+| App mobile con sincronizzazione | Flet su Android, backup su Drive | v0.0.8–v0.1.1 |
 
 ## Cosa non riprendiamo
 - Una classe per tipo e un serializzatore a mano: i modelli sono dati.

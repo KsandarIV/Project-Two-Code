@@ -2,7 +2,7 @@
   "format": 1,
   "id": "zibaldone.diario",
   "name": "Stoa · Diario",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "author": "ZibaldOne",
   "license": "CC0-1.0",
   "description": "Il diario come esercizio quotidiano, alla maniera degli stoici: i 3 momenti della giornata, il check-in delle 8 aree della vita, le revisioni di settimana, mese e anno, i pensieri liberi.",
@@ -330,7 +330,7 @@
         {
           "key": "voto",
           "type": "scale",
-          "label": "Voto al settimana",
+          "label": "Voto alla settimana",
           "options": {
             "min": 0,
             "max": 10,
@@ -373,7 +373,7 @@
         {
           "key": "obiettivi",
           "type": "checklist",
-          "label": "Obiettivi per il prossimo settimana"
+          "label": "Obiettivi per la prossima settimana"
         }
       ],
       "description": "Revisione della settimana. I quaderni di appunti dei Greci, riletti da Foucault in La scrittura di sé (1983).",

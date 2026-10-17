@@ -17,6 +17,7 @@
 - Se la cartella è dentro Google Drive, i dati sono anche sui server di Google, alle condizioni dell'account Google dell'utente.
 - Le istantanee conservano anche le voci cancellate finché non scadono (di base fino a circa 12 mesi). Dalla 0.0.6 l'avviso lo dice, e per questo `NOTICE_VERSION` è passato a 2: chi aveva già accettato lo rivede una volta.
 - Con le copie su Drive le istantanee cifrate stanno anche sui server di Google; con il recupero con l'account Google, chi entra nell'account può aprirle (avviso versione 3, dalla 0.0.8).
+- Le notifiche dei promemoria si vedono anche a schermo bloccato: non contengono mai il testo delle voci, ma rivelano che si usa un diario (avviso versione 4, dalla 0.0.9). Sono calcolate sul dispositivo, senza servizi push.
 
 ## Account Google e Drive (dalla 0.0.8)
 - **Accesso**: al primo avvio si entra con Google ([ADR-0007](../decisioni/ADR-0007-account-google-e-destinazioni-cloud.md)). L'app riceve solo email e nome e li tiene sul dispositivo; i token stanno in `account-token.json` (DPAPI su Windows). Nessun server nostro: tra l'app e Google non c'è nessuno.

@@ -4,6 +4,23 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.0.9] — 2026-10-17
+### Aggiunto
+- **Promemoria** (Daimon) per i 3 momenti della giornata: mattina 08:30, metà giornata 13:30, sera 21:30, con giorni della settimana e ore di silenzio (22:30–08:00).
+- Al massimo un promemoria per momento al giorno, mai se la voce di quel momento è già scritta; un controllo in ritardo lo manda comunque una volta, dentro la sua finestra.
+- Dopo 3 promemoria ignorati di fila, ZibaldOne propone di diradarli (`--thin-out`) o di lasciarli come sono (`--keep`).
+- Messaggi brevi e gentili, che ruotano; la serie di giorni si festeggia e perderla non porta rimproveri. Le notifiche non contengono mai ciò che scrivi.
+- `zbone remind status/config/fire/test`.
+- `zbone remind install/uninstall` su Windows: attività pianificate, così i promemoria arrivano anche ad app chiusa.
+- Notifiche di sistema con il pacchetto facoltativo `zibaldone[notifiche]` (desktop-notifier); senza, il promemoria compare nel terminale.
+### Cambiato
+- Avviso privacy versione 4: le notifiche si vedono a schermo bloccato. Chi aveva accettato lo rivede una volta.
+- Roadmap: le notifiche passano prima dell'interfaccia, che le usa. Interfaccia grafica ora 0.1.0, prima versione per i tester 0.1.1.
+### Corretto
+- Pacchetto Stoa · Diario 1.0.1: "Voto alla settimana" e "Obiettivi per la prossima settimana" (prima "al settimana", "il prossimo settimana"). Per aggiornarli: `zbone pack install diario`.
+### Documentazione
+- Guida rapida con i promemoria; ADR-0008 con le scelte fatte.
+
 ## [0.0.8] — 2026-10-17
 ### Aggiunto
 - **Account e copie fuori** (Le Nuvole): `zbone account login/logout` con Google (OAuth per app desktop, PKCE, ritorno su 127.0.0.1) e `zbone account` per vedere chi sei.
