@@ -79,7 +79,25 @@ zbone pack install diario
 zbone entry add sera
 ```
 
-## Il pensiero del giorno e i nomi
+## Condividere i tuoi modelli
+Un modello che ti piace si può mandare a un amico come file `.zbpack.json`. Il file contiene **solo la struttura** dei modelli (blocchi, etichette, regole): nessuna delle tue voci.
+
+```powershell
+zbone pack export libro film --name "Le mie letture" --author Alex   # crea le_mie_letture.zbpack.json
+zbone pack show le_mie_letture.zbpack.json                          # chi lo riceve guarda cosa c'è dentro
+zbone pack import le_mie_letture.zbpack.json                        # e lo installa, con la conferma
+```
+| Opzione di `export` | Cosa fa |
+|---|---|
+| `--output`, `-o` | dove salvare il file |
+| `--name` | il nome del pacchetto (di base il nome del modello) |
+| `--author` | il tuo nome o nickname |
+| `--description` | a cosa serve |
+| `--version` | la versione del pacchetto, per esempio `1.1.0` quando lo migliori |
+| `--license` | la licenza, di base `CC-BY-4.0` (chi lo usa ti cita) |
+
+Un file più grande di 1 MB, scritto male o con blocchi sconosciuti viene rifiutato prima di toccare qualsiasi cosa. Un pacchetto non contiene codice: non può fare nulla oltre ad aggiungere modelli.
+
 - `zbone pensiero`: una frase di un filosofo, diversa ogni giorno, con la fonte.
 - `zbone about`: da dove viene il nome, le mascotte delle 8 aree e i nomi filosofici di ogni parte dell'app ([identità](../brand/identita.md)).
 
