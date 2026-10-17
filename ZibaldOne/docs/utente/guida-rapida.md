@@ -139,6 +139,11 @@ Per ogni persona scrivi il legame (Famiglia, Amico, Collega …), i ruoli (madre
 | `zbone persona list --area famiglia` | solo le persone di un'area (`--da-sentire` solo chi è da sentire) |
 | `zbone persona show marco` | tutto di Marco: contatti, ritmo, voci per area, chi lo nomina |
 | `zbone persona sentito marco --tipo chiamata --nota "il progetto nuovo"` | segna che vi siete sentiti (anche `-d ieri`) |
+| `zbone persona lega anna genitore luca` | Anna è genitore di Luca (anche `figlio`, `fratello`, `collega`, `conosce`) |
+| `zbone persona albero` | la famiglia generazione per generazione |
+| `zbone persona rete` | i legami più forti; `rete marco` chi conosce Marco e chi avete in comune, `--area lavoro` solo un'area |
+
+Nella voce di una persona scrivi anche i suoi **Genitori**, **Fratelli e sorelle**, **Colleghi** e chi **Conosce** tra le tue persone: basta da una parte sola. Con i ruoli (madre, nonno …) l'app disegna l'**Albero** di famiglia; la **Rete** mostra chi conosce chi, anche solo perché vi siete visti insieme. Si aprono dalla pagina della persona o dal riquadro Persone di un'area.
 
 "Da sentire" vuol dire solo che è passato il tempo che hai scelto: nessuna notifica, nessun rimprovero. Come funziona: [le persone](../tecnica/persone.md).
 
@@ -150,7 +155,7 @@ ZibaldOne ha cinque **pacchetti** di modelli già pronti, ognuno con il nome di 
 | `diario` · Stoa | mattina, metà giornata e sera; il check-in delle 8 aree della vita; pensieri liberi; revisioni di settimana, mese e anno |
 | `collezioni` · Museion | libri, film, serie, anime, videogiochi, giochi da tavolo, sport, musica, guardaroba |
 | `io` · Delfi | identità, filosofia personale, capitoli di vita, desideri, abitudini |
-| `persone` · Agorà | le persone della tua vita, con ruoli e contatti, e gli incontri con loro |
+| `persone` · Agorà | le persone della tua vita, con ruoli, contatti e legami, e gli incontri con loro |
 | `aree` · Liceo | il check-in di una sola area, gli obiettivi e le cose da fare di ogni area |
 
 | Comando | Cosa fa |

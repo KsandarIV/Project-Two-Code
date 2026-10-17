@@ -21,7 +21,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 from zibaldone.core.areas import AREA_LIST, area_label, entry_areas
 from zibaldone.core.links import PERSON_CATEGORIES, alias_blocks, is_person_template, name_key
 from zibaldone.core.roles import bond_of, roles_of
-from zibaldone.core.stats import entry_date
+from zibaldone.core.stats import entry_date, is_mood_block, mood_score
 from zibaldone.core.templates import Entry, Template
 
 PERSON_TEMPLATE = "persona"
@@ -36,6 +36,8 @@ SOCIAL_BLOCK = "social"
 BIRTHDAY_BLOCK = "compleanno"
 FREQUENCY_BLOCK = "frequenza"
 NOTES_BLOCK = "note"
+# Links between people (0.2.2, `core/relations.py`): block key → what the linked people are to this one.
+RELATION_BLOCKS: Dict[str, str] = {"genitori": "genitore", "fratelli": "fratello", "colleghi": "collega", "conosce": "conosce"}
 RHYTHM_CONTACTS = 10  # the rhythm is the average gap between the last ones
 NO_AREA = ""
 
@@ -132,6 +134,7 @@ class Contact:
     kind: str
     title: str
     note: str = ""
+    mood: Optional[float] = None  # 1–5 from the meeting's mood block (Umore)
 
     @property
     def label(self) -> str:
@@ -157,6 +160,7 @@ class Person:
     frequency: str = ""
     note: str = ""
     contacts: List[Contact] = field(default_factory=list)  # newest first
+    relations: Dict[str, List[str]] = field(default_factory=dict)  # relation block key → linked person ids
 
     @property
     def id(self) -> str:
@@ -250,6 +254,11 @@ def person_from(entry: Entry, template: Template, contacts: Sequence[Contact] = 
         frequency=_text(entry, FREQUENCY_BLOCK),
         note=_text(entry, NOTES_BLOCK),
         contacts=sorted(contacts, key=lambda contact: (contact.day, contact.entry_id), reverse=True),
+        relations={
+            spec.key: [ref for ref in entry.values.get(spec.key, []) if isinstance(ref, str) and ref != entry.id]
+            for spec in template.blocks
+            if spec.type == "link" and spec.key in RELATION_BLOCKS
+        },
     )
 
 
@@ -264,7 +273,9 @@ def meeting_people(entry: Entry, template: Template) -> List[str]:
 
 def contact_of(entry: Entry, template: Template) -> Contact:
     kind = _text(entry, KIND_BLOCK)
-    return Contact(entry.id, entry_date(entry), kind, entry.title(template), _text(entry, NOTE_BLOCK))
+    moods = [mood_score(spec, entry.values.get(spec.key)) for spec in template.blocks if is_mood_block(spec)]
+    mood = next((value for value in moods if value is not None), None)
+    return Contact(entry.id, entry_date(entry), kind, entry.title(template), _text(entry, NOTE_BLOCK), mood)
 
 
 def people_from(entries: Iterable[Entry], templates: Mapping[str, Template]) -> List[Person]:
@@ -363,13 +374,14 @@ def person_page(store: Any, person: Person, mentions: int = 20) -> PersonPage:
     templates = {template.slug: template for template in store.list_templates()}
     related: List[Tuple[Entry, Template, str]] = []
     seen = set()
+    # Other people (relatives, colleagues) are in the person's Legami, not here.
     for info in about.backlinks:
         if info.source in seen:
             continue
         seen.add(info.source)
         entry = store.get_entry(info.source)
         template = templates.get(entry.template)
-        if template is not None:
+        if template is not None and not is_person_template(template):
             related.append((entry, template, info.how))
     for info in about.outgoing:
         if info.target is None or info.target in seen:
@@ -377,7 +389,7 @@ def person_page(store: Any, person: Person, mentions: int = 20) -> PersonPage:
         seen.add(info.target)
         entry = store.get_entry(info.target)
         template = templates.get(entry.template)
-        if template is not None:
+        if template is not None and not is_person_template(template):
             related.append((entry, template, f"collegata da «{info.block_label}»"))
     hits = [hit for hit in about.mentions if hit.entry.id not in seen]
     return PersonPage(person, group_by_area(related), hits, len(related) + len(hits))

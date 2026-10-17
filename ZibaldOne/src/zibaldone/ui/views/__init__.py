@@ -29,6 +29,8 @@ SCREENS: Dict[str, Builder] = {
     "aree": areas.build_overview,
     "area": areas.build_area,
     "persona": people.build_person,
+    "albero": people.build_tree,
+    "rete": people.build_network,
     "organon": settings.build_index,
     "parte": settings.build_part,
     "consenso": onboarding.consent,

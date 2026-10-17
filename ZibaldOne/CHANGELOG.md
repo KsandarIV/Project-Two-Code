@@ -4,6 +4,19 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.2.2] — 2026-10-17
+### Aggiunto
+- **Legami tra persone**: Genitori, Fratelli e sorelle, Colleghi e Conosce nella Persona; ogni legame vale nei due sensi (i genitori di Luca hanno Luca tra i figli). Chi incontri nello stesso Simposio si lega da solo.
+- **Albero di famiglia** (`/albero`): generazione per generazione intorno a te, dai ruoli (madre, nonno, figlia …) e dai Genitori e Fratelli scritti nelle persone.
+- **Rete** (`/rete`, `/rete/<area>`): chi conosce chi, disegnato come il grafo e toccabile; per area, così Lavoro mostra chi lavora con chi.
+- **Contatti in comune** e **forza del legame** (0–10, da quanto spesso e quanto di recente vi sentite, e dall'umore degli incontri): nella pagina della persona, nella rete e in `zbone persona show`.
+- `zbone persona albero`, `zbone persona rete [NOME] [--area]`, `zbone persona lega ANNA genitore LUCA`.
+### Cambiato
+- Agorà · Persone 1.3.0: L'Altro ha i quattro blocchi dei legami. Le voci di prima restano valide.
+- "Tutto di Marco" non elenca più le altre persone tra le voci che lo collegano: sono nei suoi Legami.
+### Documentazione
+- [Le persone](docs/tecnica/persone.md) con legami, albero e rete; guida rapida, aree, interfaccia, roadmap e requisiti aggiornati.
+
 ## [0.2.1] — 2026-10-17
 ### Aggiunto
 - **Persone complete** (Agorà): legame e ruoli di base o tuoi (madre, capo, medico …) che mettono la persona nelle aree giuste da soli; telefono ed email controllati mentre li scrivi; social; "ogni quanto sentirvi".

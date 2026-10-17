@@ -2,6 +2,7 @@
 
 import asyncio
 import dataclasses
+from datetime import date
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Iterator, List, Optional
@@ -16,6 +17,7 @@ from zibaldone.storage import backups  # noqa: E402
 from zibaldone.storage.database import Store  # noqa: E402
 from zibaldone.storage.settings import load_settings, record_consent, save_settings  # noqa: E402
 from zibaldone.ui import services  # noqa: E402
+from zibaldone.ui import viewmodels as vm  # noqa: E402
 from zibaldone.ui.app import Shell  # noqa: E402
 from zibaldone.ui.context import AppContext  # noqa: E402
 from zibaldone.ui.navigation import parse_route  # noqa: E402
@@ -142,6 +144,7 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
         "/grafo", f"/grafo/{known['persona']}", "/grafo/nonesiste", "/theoria",
         "/aree", "/aree/salute", "/aree/svago", "/scrivi/checkin_area/salute", "/scrivi/riflessione/lavoro",
         f"/persone/{known['persona']}", f"/persone/{known['libro']}", "/persone/nonesiste",
+        "/albero", "/rete", "/rete/famiglia",
     ]
     paths += [f"/scrivi/{slug}" for slug in ("sera", "aree", "mattina", "libro", "serie", "incontro", "persona", "desiderio")]
     paths += [f"/organon/{part}" for part in ("parresia", "daimon", "mnemosyne", "nuvole", "velo", "info")]
@@ -154,7 +157,7 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
 
 def test_screens_cover_every_route_kind() -> None:
     assert ONBOARDING_SCREENS <= set(SCREENS)
-    assert {"oggi", "voci", "voce", "scrivi", "modifica", "collezioni", "modelli", "modello", "scuole", "grafo", "theoria", "aree", "area", "persona", "organon", "parte"} <= set(SCREENS)
+    assert {"oggi", "voci", "voce", "scrivi", "modifica", "collezioni", "modelli", "modello", "scuole", "grafo", "theoria", "aree", "area", "persona", "albero", "rete", "organon", "parte"} <= set(SCREENS)
 
 
 def test_missing_entry_and_template_say_so_gently(ready: Path) -> None:
@@ -564,3 +567,31 @@ def test_a_person_from_the_area_page_with_contacts(ready: Path) -> None:
     shell.start(f"/voci/{giulia.id}")
     click(button(shell.body.content, "Tutto di Giulia"))
     assert shell.current.path == f"/persone/{giulia.id}"
+
+
+# * — 0.2.2: family tree and network —
+
+
+def test_family_tree_and_network_from_a_person(ready: Path) -> None:
+    with Store.open(ready) as store:
+        giulia = next(entry for entry in store.list_entries(template="persona"))
+        anna = store.add_entry("persona", {"nome": "Anna", "ruoli": ["madre"]})
+        store.update_entry(giulia.id, {"ruoli": ["sorella"], "genitori": [anna.id]})
+    assert parse_route("/rete/Famiglia").arg == "famiglia" and parse_route("/rete/nonesiste").screen == "oggi"
+    shell = Shell(FakePage(), ready)
+    shell.start(f"/persone/{giulia.id}")
+    shown = texts(shell.body.content)
+    assert "Legami (1)" in shown and "Anna" in shown and "genitore" in shown
+    click(button(shell.body.content, "Albero"))
+    assert shell.current.path == "/albero"
+    shown = texts(shell.body.content)
+    assert shown.index("Genitori e zii") < shown.index("Anna") < shown.index("Tu, fratelli e cugini") < shown.index("Giulia")
+    assert "sorella · genitori: Anna" in shown
+    shell.start("/aree/famiglia")
+    click(button(shell.body.content, "Rete"))
+    assert shell.current.path == "/rete/famiglia"
+    shown = texts(shell.body.content)
+    assert "Rete · Famiglia" in shown and "2 persone, 1 legame" in shown
+    with Store.open(ready) as store:
+        view = vm.network_view(store, "", date(2026, 10, 17))
+    assert {node.label for node in view.graph.nodes} == {"Anna", "Giulia"} and view.strongest[0].name == "Giulia"

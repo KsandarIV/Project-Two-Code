@@ -14,6 +14,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from zibaldone.core import areas as eudaimonia
 from zibaldone.core import people as agora
+from zibaldone.core import relations as legami
 from zibaldone.core.blocks import BLOCK_TYPES, PROGRESS_STATUSES, is_number
 from zibaldone.core.brand import AREAS, MASCOTS, Mascot, Quote, mascot_for, quote_of_the_day
 from zibaldone.core.packs import InstallPlan, Pack, build_pack, write_pack_file
@@ -1057,7 +1058,11 @@ def mascot_cards() -> List[MascotCard]:
 GRAPH_LABEL_CHARS = 18
 GRAPH_ALL_LABELS_UP_TO = 30  # with more nodes, only the most connected ones get a name
 GRAPH_HUB_LABELS = 12
-GRAPH_EDGE_COLORS = {"block": "#3B6E8F", "wiki": "#5C5F8A", "shared_tag": "#4A4D66", "tag": "#4A4D66", "template": "#4A4D66"}
+GRAPH_EDGE_COLORS = {
+    "block": "#3B6E8F", "wiki": "#5C5F8A", "shared_tag": "#4A4D66", "tag": "#4A4D66", "template": "#4A4D66",
+    # the network of people (0.2.2)
+    "famiglia": "#8F3B66", "lavoro": "#8F5A3B", "conosce": "#3B6E8F", "incontri": "#4A4D66",
+}
 
 
 @dataclass
@@ -1572,14 +1577,27 @@ class PersonView:
     groups: Tuple[PersonGroup, ...]
     mentions: Tuple[EntryRow, ...]
     can_log: bool  # the meeting template is installed
+    strength: str = ""
+    ties: Tuple["TieRow", ...] = ()
+    in_family: bool = False  # in the family tree
+
+
+@dataclass(frozen=True)
+class TieRow:
+    id: str
+    name: str
+    how: str  # 'genitore', 'collega, 2 incontri insieme'
+    common: str  # '2 in comune' or ''
 
 
 def person_view(store: Any, entry_id: str, today: date, contacts: int = 3) -> Optional[PersonView]:
     """The page "tutto di Marco"; None when the entry is not a person."""
-    found = next((person for person in agora.load_people(store) if person.id == entry_id), None)
+    people = agora.load_people(store)
+    found = next((person for person in people if person.id == entry_id), None)
     if found is None:
         return None
     page = agora.person_page(store, found)
+    links = legami.network(people).connections(found.id)
     templates = {template.slug: template for template in store.list_templates()}
     details = []
     if found.phone:
@@ -1615,6 +1633,9 @@ def person_view(store: Any, entry_id: str, today: date, contacts: int = 3) -> Op
         groups=groups,
         mentions=tuple(entry_row(hit.entry, templates[hit.entry.template], today) for hit in page.mentions if hit.entry.template in templates),
         can_log=store.find_template(agora.MEETING_TEMPLATE) is not None,
+        strength=legami.strength_line(found, today).capitalize(),
+        ties=tuple(TieRow(link.person.id, link.person.name, link.how, link.common_line) for link in links),
+        in_family=any(member.person is not None and member.person.id == found.id for row in legami.family_tree(people) for member in row.members),
     )
 
 
@@ -1628,3 +1649,69 @@ def entry_area_problem(template: Template, area: str) -> str:
     if template.slug == eudaimonia.CHECKIN_TEMPLATE and not (area or template.area):
         return "scegli l'area di questo check-in"
     return ""
+
+
+# * — Legami: family tree and network (0.2.2) —
+
+
+@dataclass(frozen=True)
+class TreeRow:
+    id: str  # '' for you
+    name: str
+    caption: str
+    color: str
+
+
+@dataclass(frozen=True)
+class GenerationRow:
+    label: str
+    members: Tuple[TreeRow, ...]
+
+
+def family_tree_rows(store: Any) -> Tuple[GenerationRow, ...]:
+    """The family tree, oldest generation first."""
+    return tuple(
+        GenerationRow(
+            row.label,
+            tuple(
+                TreeRow(member.person.id if member.person else "", member.name, member.caption, legami.area_color(member.person.main_area) if member.person else ACCENT)
+                for member in row.members
+            ),
+        )
+        for row in legami.family_tree(agora.load_people(store))
+    )
+
+
+@dataclass(frozen=True)
+class StrongRow:
+    id: str
+    name: str
+    score: str  # '8/10'
+    meta: str  # 'molto stretto · conosce 3 delle tue persone'
+
+
+@dataclass(frozen=True)
+class NetworkView:
+    area: str  # '' for everyone
+    title: str
+    graph: Any
+    summary: str
+    strongest: Tuple[StrongRow, ...]
+
+
+def network_view(store: Any, area: str, today: date, limit: int = 8) -> NetworkView:
+    """Who knows whom among your people (all, or one area's), and the strongest bonds."""
+    people = agora.load_people(store)
+    net = legami.network(people, area or None)
+    graph = legami.network_graph(net)
+    count = len(net.people)
+    parts = ["1 persona" if count == 1 else f"{count} persone", "1 legame" if graph.facts.edges == 1 else f"{graph.facts.edges} legami"]
+    if graph.facts.components > 1 and graph.facts.edges:
+        parts.append(f"{graph.facts.components} gruppi")
+    rows = []
+    for person, score in legami.strongest(net.people, today)[:limit]:
+        known = len(net.neighbours(person.id))
+        meta = legami.strength_word(score) + (f" · conosce {known} delle tue persone" if known else "")
+        rows.append(StrongRow(person.id, person.name, f"{score}/10", meta))
+    title = f"Rete · {eudaimonia.area_label(area)}" if area else "Rete"
+    return NetworkView(area, title, graph, ", ".join(parts), tuple(rows))
