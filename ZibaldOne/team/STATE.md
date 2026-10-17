@@ -3,8 +3,8 @@
 Aggiornato: 2026-10-17 · Owner del file: Orchestratore (solo lui lo modifica; i worker scrivono solo il proprio handoff).
 
 ## Versione
-- Ultima rilasciata: **0.1.5** (commit + tag sul PC, non pushati).
-- In corso nel thread "Vibe Coding su ZibaldOne": **0.2.0** (8 aree), piano fino alla 0.2.9.
+- Ultima rilasciata: **0.2.0** (commit + tag sul PC, non pushati; contiene il registro temi T002 e la cartella team/, 551 test verdi).
+- In corso nel thread "Vibe Coding su ZibaldOne": **0.2.1** (persone), piano fino alla 0.2.9.
 - Trigger del team: fine 0.2.9. Avvio anticipato solo per setup e task isolati (vedi Decisioni D2).
 
 ## Ruoli
@@ -20,7 +20,7 @@ Aggiornato: 2026-10-17 · Owner del file: Orchestratore (solo lui lo modifica; i
 | T001 | Design registro temi (interfaccia) | Architect (opus) | fatto | — |
 | T002 | Refactor brand.py → registro temi + test | Developer (sonnet) | fatto | T001 |
 | T003 | Revisione T001+T002 sui criteri di accettazione | Reviewer (opus) | APPROVATO | T002 |
-| T006 | Integrare T002.patch nella prossima versione (nomi Diggy/Ary/Hobbsy) | thread di sviluppo | da fare | T003 |
+| T006 | Integrare T002.patch nella prossima versione (nomi Diggy/Ary/Hobbsy) | thread di sviluppo | fatto (0.2.0) | T003 |
 | T007 | UI e CLI leggono `active_theme`; nomenclatura immutabile (MappingProxyType) | Developer | futuro | T006 |
 | T004 | Due temi finali da proporre (oltre a Filosofia) | Creative | solo appuntato | temi non ancora scelti da Alex |
 | T005 | Installer: scelta di 1, 2 o 3 temi da scaricare | Architect + Packaging | in attesa | T003, T004 |

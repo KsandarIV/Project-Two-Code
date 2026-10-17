@@ -80,9 +80,9 @@ def test_built_in_templates_belong_to_their_area() -> None:
 
 def test_a_person_can_be_in_more_areas(store: Store) -> None:
     marco = store.add_entry("persona", {"nome": "Marco", "aree": ["Famiglia", "lavoro", "boh"]})
-    assert store.areas_of(marco.id) == ["sociale", "famiglia", "lavoro"]
+    assert store.areas_of(marco.id) == ["famiglia", "lavoro"]  # the template's Sociale is only the fallback
     assert [entry.id for entry in store.list_entries(area="famiglia")] == [marco.id]
-    assert store.area_counts() == {"sociale": 1, "famiglia": 1, "lavoro": 1}
+    assert store.area_counts() == {"famiglia": 1, "lavoro": 1}
 
 
 def test_scores_come_from_the_eight_area_check_in_and_the_area_check_in(store: Store) -> None:

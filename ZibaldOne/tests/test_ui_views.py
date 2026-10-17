@@ -141,6 +141,7 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
         "/benvenuto/consenso", "/benvenuto/accesso", "/benvenuto/copie", "/benvenuto/diario", "/scrivi/nonesiste",
         "/grafo", f"/grafo/{known['persona']}", "/grafo/nonesiste", "/theoria",
         "/aree", "/aree/salute", "/aree/svago", "/scrivi/checkin_area/salute", "/scrivi/riflessione/lavoro",
+        f"/persone/{known['persona']}", f"/persone/{known['libro']}", "/persone/nonesiste",
     ]
     paths += [f"/scrivi/{slug}" for slug in ("sera", "aree", "mattina", "libro", "serie", "incontro", "persona", "desiderio")]
     paths += [f"/organon/{part}" for part in ("parresia", "daimon", "mnemosyne", "nuvole", "velo", "info")]
@@ -153,7 +154,7 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
 
 def test_screens_cover_every_route_kind() -> None:
     assert ONBOARDING_SCREENS <= set(SCREENS)
-    assert {"oggi", "voci", "voce", "scrivi", "modifica", "collezioni", "modelli", "modello", "scuole", "grafo", "theoria", "aree", "area", "organon", "parte"} <= set(SCREENS)
+    assert {"oggi", "voci", "voce", "scrivi", "modifica", "collezioni", "modelli", "modello", "scuole", "grafo", "theoria", "aree", "area", "persona", "organon", "parte"} <= set(SCREENS)
 
 
 def test_missing_entry_and_template_say_so_gently(ready: Path) -> None:
@@ -537,3 +538,29 @@ def test_entries_by_area_and_the_area_of_a_template(ready: Path) -> None:
     shell.navigate("/modelli/libro")
     editor_menu = find(shell.body.content, ft.Dropdown, label="Area della vita delle sue voci")
     assert editor_menu.value == "svago"
+
+
+# * — 0.2.1: people —
+
+
+def test_a_person_from_the_area_page_with_contacts(ready: Path) -> None:
+    with Store.open(ready) as store:
+        giulia = next(entry for entry in store.list_entries(template="persona"))
+        store.update_entry(giulia.id, {"telefono": "+39 333 1234567", "frequenza": "Ogni settimana", "ruoli": ["sorella"]})
+    shell = Shell(FakePage(), ready)
+    shell.start("/aree/famiglia")
+    shown = texts(shell.body.content)
+    assert "Persone (1)" in shown and "Giulia" in shown and "da sentire" not in shown
+    row = next(item for item in walk(shell.body.content) if getattr(item, "on_click", None) and "Giulia" in texts(item) and "Persone (1)" not in texts(item))
+    click(row)
+    assert shell.current.path == f"/persone/{giulia.id}"
+    shown = texts(shell.body.content)
+    assert "Giulia" in shown and "sorella" in shown and "+39 333 1234567" in shown and "Cena" in shown
+    assert "Famiglia" in shown and "Sociale (1)" in shown  # the dinner (Simposio) is in Sociale
+    click(button(shell.body.content, "Chiamata"))
+    assert "Segnato: Chiamata con Giulia." in shell.ctx.toasts
+    shown = texts(shell.body.content)
+    assert "Chiamata con Giulia" in shown and "Famiglia (1)" in shown
+    shell.start(f"/voci/{giulia.id}")
+    click(button(shell.body.content, "Tutto di Giulia"))
+    assert shell.current.path == f"/persone/{giulia.id}"

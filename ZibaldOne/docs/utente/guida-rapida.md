@@ -114,7 +114,7 @@ Come è andata la settimana o il mese: quante voci, l'umore giorno per giorno, l
 La proposta è una bozza: il voto viene dai voti alle giornate, l'area su cui concentrarti è la più bassa, gli obiettivi sono le cose ancora aperte, i momenti belli sono presi dalle tue voci. Nell'app il pulsante **Revisione della settimana** fa lo stesso e apre il modulo per completarla. Come funziona: [statistiche e revisioni](../tecnica/statistiche.md).
 
 ## Le otto aree · Eudaimonia
-Personale, Salute, Finanze, Famiglia, Sociale, Lavoro, Studio e Svago: ogni modello e ogni voce può appartenere a un'area. I libri vanno da soli in Svago, lo sport in Salute, le persone in Sociale; a una voce puoi dare un'altra area. Ogni area ha la sua pagina: il punteggio da 0 a 10 settimana per settimana, le cose da fare, gli obiettivi, le voci, e le novità **in arrivo**. Nell'app: **Oggi → Aree**, oppure tocca un'area in Oggi.
+Personale, Salute, Finanze, Famiglia, Sociale, Lavoro, Studio e Svago: ogni modello e ogni voce può appartenere a un'area. I libri vanno da soli in Svago, lo sport in Salute, la mamma in Famiglia e il capo in Lavoro; a una voce puoi dare un'altra area. Ogni area ha la sua pagina: il punteggio da 0 a 10 settimana per settimana, le cose da fare, gli obiettivi, le voci, e le novità **in arrivo**. Nell'app: **Oggi → Aree**, oppure tocca un'area in Oggi.
 
 | Comando | Cosa fa |
 |---|---|
@@ -130,6 +130,18 @@ Personale, Salute, Finanze, Famiglia, Sociale, Lavoro, Studio e Svago: ogni mode
 
 Il punteggio viene dal check-in delle 8 aree (Eudaimonia) e dai check-in di una sola area. I modelli per le aree (check-in, obiettivo, cose da fare) sono nella Scuola **Liceo · Aree**: l'app la installa al primo avvio, oppure `zbone pack install aree`. Come funziona: [le 8 aree](../tecnica/aree.md).
 
+## Le persone · Agorà
+Per ogni persona scrivi il legame (Famiglia, Amico, Collega …), i ruoli (madre, capo, medico, o uno tuo), telefono, email e ogni quanto vorresti sentirvi. I ruoli la mettono da soli nell'area giusta. Ogni Simposio con lei è un contatto: chiamata, messaggi, un'uscita. Nell'app la trovi nel riquadro **Persone** della sua area, oppure con **Tutto di Marco** dalla sua voce: contatti, ritmo e tutte le voci che la riguardano, area per area.
+
+| Comando | Cosa fa |
+|---|---|
+| `zbone persona` | le persone con l'ultimo contatto, prima chi è da sentire |
+| `zbone persona list --area famiglia` | solo le persone di un'area (`--da-sentire` solo chi è da sentire) |
+| `zbone persona show marco` | tutto di Marco: contatti, ritmo, voci per area, chi lo nomina |
+| `zbone persona sentito marco --tipo chiamata --nota "il progetto nuovo"` | segna che vi siete sentiti (anche `-d ieri`) |
+
+"Da sentire" vuol dire solo che è passato il tempo che hai scelto: nessuna notifica, nessun rimprovero. Come funziona: [le persone](../tecnica/persone.md).
+
 ## Modelli pronti
 ZibaldOne ha cinque **pacchetti** di modelli già pronti, ognuno con il nome di una scuola filosofica. Installarli non tocca le tue voci e puoi modificarli come i tuoi.
 
@@ -138,7 +150,7 @@ ZibaldOne ha cinque **pacchetti** di modelli già pronti, ognuno con il nome di 
 | `diario` · Stoa | mattina, metà giornata e sera; il check-in delle 8 aree della vita; pensieri liberi; revisioni di settimana, mese e anno |
 | `collezioni` · Museion | libri, film, serie, anime, videogiochi, giochi da tavolo, sport, musica, guardaroba |
 | `io` · Delfi | identità, filosofia personale, capitoli di vita, desideri, abitudini |
-| `persone` · Agorà | le persone della tua vita e gli incontri con loro |
+| `persone` · Agorà | le persone della tua vita, con ruoli e contatti, e gli incontri con loro |
 | `aree` · Liceo | il check-in di una sola area, gli obiettivi e le cose da fare di ogni area |
 
 | Comando | Cosa fa |

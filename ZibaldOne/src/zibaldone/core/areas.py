@@ -2,7 +2,10 @@
 
 Every template can have an area (Libro → svago, Mens sana → salute) and every
 entry can have its own, which wins over the template's. A `tags` block keyed
-`aree` (in "L'Altro", the person template) puts an entry in more areas at once.
+`aree` (in "L'Altro", the person template) puts an entry in more areas at once,
+and so do a person's bond and roles (0.2.1, `core/roles.py`: a mother is in
+Famiglia, a colleague in Lavoro). The template's area is then only the
+fallback, for entries that get no area in any other way.
 
 For each area the app shows:
 
@@ -24,6 +27,8 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from zibaldone.core.blocks import BLOCK_TYPES, PROGRESS_STATUSES
 from zibaldone.core.brand import AREAS, Mascot, mascot_for
+from zibaldone.core.links import is_person_template
+from zibaldone.core.roles import role_areas
 from zibaldone.core.stats import Period, entry_date, number, week_of
 from zibaldone.core.templates import BlockSpec, Entry, Template
 
@@ -125,17 +130,30 @@ def own_area(entry: Entry, template: Optional[Template]) -> str:
 
 
 def entry_areas(entry: Entry, template: Optional[Template]) -> List[str]:
-    """Every area of the entry: its own first, then those listed in an `aree` tags block."""
-    found: List[str] = []
-    own = own_area(entry, template)
-    if own:
-        found.append(own)
-    if template is not None:
-        for spec in template.blocks:
-            if spec.type == "tags" and spec.key == AREA_TAGS_BLOCK:
-                listed = {find_area(tag) for tag in entry.values.get(spec.key, [])}
-                found += [key for key in AREAS if key in listed and key not in found]
+    """Every area of the entry, the main one first.
+
+    Its own area, then those listed in an `aree` tags block, then (people) the
+    areas of its bond and roles; the template's area only when none of these
+    gives one.
+    """
+    found: List[str] = [entry.area] if entry.area else []
+    if template is None:
+        return found
+    for spec in template.blocks:
+        if spec.type == "tags" and spec.key == AREA_TAGS_BLOCK:
+            listed = {find_area(tag) for tag in entry.values.get(spec.key, [])}
+            found += [key for key in AREAS if key in listed and key not in found]
+    if is_person_template(template):
+        found += [key for key in role_areas(entry, template) if key not in found]
+    if not found and template.area:
+        found.append(template.area)
     return found
+
+
+def main_area(entry: Entry, template: Optional[Template]) -> str:
+    """The first of the entry's areas, '' when it has none."""
+    found = entry_areas(entry, template)
+    return found[0] if found else ""
 
 
 def in_area(entry: Entry, template: Optional[Template], area: str) -> bool:
@@ -435,7 +453,6 @@ class Upcoming:
 
 # Remove an item when its version ships: a test checks that none is older than the app.
 UPCOMING: Tuple[Upcoming, ...] = (
-    Upcoming("Persone a tutto tondo", "ruoli, contatti, incontri e chiamate, l'ultima volta che vi siete sentiti; «tutto di Marco» in ogni area", "0.2.1", ("famiglia", "sociale", "lavoro")),
     Upcoming("Albero genealogico", "genitori, fratelli, nonni e cugini: la tua famiglia disegnata come un albero", "0.2.2", ("famiglia",)),
     Upcoming("Rete sociale", "chi conosce chi, gli amici in comune e quanto è forte ogni legame", "0.2.2", ("sociale",)),
     Upcoming("Colleghi e contatti di lavoro", "chi lavora con chi, nella rete delle persone", "0.2.2", ("lavoro",)),

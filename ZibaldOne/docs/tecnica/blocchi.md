@@ -4,7 +4,7 @@ Un **blocco** è un tipo di campo con le sue regole. Ogni modello è una lista o
 
 | Tipo | Cosa contiene | Opzioni | Come si scrive da terminale |
 |---|---|---|---|
-| `text` | una riga di testo | `max_length` (di base 300), `placeholder` | `Il nome della rosa` |
+| `text` | una riga di testo | `max_length` (di base 300), `placeholder`, `format` (`email` o `telefono`, dalla 0.2.1) | `Il nome della rosa` |
 | `longtext` | testo su più righe | `max_length` (di base 50 000), `placeholder` | un testo qualsiasi |
 | `number` | un numero | `min`, `max`, `unit`, `integer` | `12`, `3,5` |
 | `rating` | voto a stelle | `max` da 3 a 10 (di base 5) | `4` |

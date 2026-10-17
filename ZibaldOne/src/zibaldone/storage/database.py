@@ -144,6 +144,9 @@ MIGRATIONS: Sequence[str] = (
 # Python steps run right after a migration, inside its transaction (method names).
 BACKFILLS: Dict[int, str] = {2: "_reindex_all", 3: "_reindex_areas"}
 AREAS_SCHEMA = 3
+# Bump when the rules that give an entry its areas change: the index is rebuilt at open.
+# 1 — 0.2.0 (own, template, `aree` tags); 2 — 0.2.1 (people's bond and roles, template as fallback).
+AREA_RULES = "2"
 
 # Order for resolving [[Titolo]]: not itself, people first, titles before nicknames, oldest first
 # (rowid breaks ties within the same second).
@@ -610,6 +613,13 @@ class Store:
             entry = self._entry_from_row(row)
             rows += [(entry.id, area) for area in entry_areas(entry, templates.get(entry.template))]
         self.connection.executemany("INSERT INTO entry_areas (entry_id, area) VALUES (?, ?)", rows)
+        self.connection.execute("INSERT OR REPLACE INTO index_state (key, value) VALUES ('area_rules', ?)", (AREA_RULES,))
+
+    def _stale_area_rules(self) -> bool:
+        if not self.has_areas:
+            return False
+        row = self.connection.execute("SELECT value FROM index_state WHERE key = 'area_rules'").fetchone()
+        return row is None or row[0] != AREA_RULES
 
     def _table_exists(self, name: str) -> bool:
         return self.connection.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (name,)).fetchone() is not None
@@ -693,12 +703,16 @@ class Store:
         stale_fts = self.connection.execute("SELECT value FROM index_state WHERE key = 'fts_stale'").fetchone()
         needs_fts = self.fts and (not self._fts_table_exists() or stale_fts is not None)
         stale = self._stale_index()
-        if not needs_fts and not stale:
+        stale_areas = self._stale_area_rules()
+        if not needs_fts and not stale and not stale_areas:
             return
         with self.transaction():
             if stale:
                 self._reindex_all()
-            else:
+                return
+            if stale_areas:
+                self._reindex_areas()
+            if needs_fts:
                 self._ensure_fts()
                 if self.fts:
                     self._fill_fts()

@@ -124,6 +124,7 @@ def route_path(screen: str, arg: str = "", extra: str = "") -> str:
         "scrivi": f"/scrivi/{arg}/{extra}" if extra else f"/scrivi/{arg}",
         "aree": "/aree",
         "area": f"/aree/{arg}",
+        "persona": f"/persone/{arg}",
         "modello": f"/modelli/{arg or 'nuovo'}",
         "scuole": "/scuole",
         "grafo": f"/grafo/{arg}" if arg else "/grafo",
@@ -161,6 +162,8 @@ def parse_route(path: Optional[str]) -> Route:
         return Route("aree", "oggi")
     if head == "aree" and len(rest) == 1 and rest[0].lower() in AREAS:
         return Route("area", "oggi", rest[0].lower())
+    if head == "persone" and len(rest) == 1:
+        return Route("persona", "voci", rest[0])
     if head == "modelli" and len(rest) == 1:
         return Route("modello", "modelli", "" if rest[0] == "nuovo" else rest[0])
     if head == "scuole" and not rest:

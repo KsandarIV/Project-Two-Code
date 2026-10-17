@@ -6,9 +6,10 @@
   filled block, written with the block's `to_text`. Links to other entries
   become `[[wikilinks]]`.
 - **CSV** (for spreadsheets and pandas): one `<template>.csv` per template,
-  UTF-8 with BOM (Excel reads the accents), columns id, day, area (the entry's
-  own, else its template's), created_at, updated_at and then the block keys. Numbers and texts are written as they
-  are, lists and objects as JSON, so nothing is lost.
+  UTF-8 with BOM (Excel reads the accents), columns id, day, area (the
+  entry's main area), created_at, updated_at and then the block keys. Numbers
+  and texts are written as they are, lists and objects as JSON, so nothing is
+  lost.
 
 `markdown_files` and `csv_files` only read the Store; `export_*` write the zip.
 Exports are not encrypted: whoever opens the file can read the entries.
@@ -25,7 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple
 
-from zibaldone.core.areas import entry_areas, own_area
+from zibaldone.core.areas import entry_areas, main_area
 from zibaldone.core.templates import BlockSpec, Entry, Template
 from zibaldone.storage.database import Store
 
@@ -179,7 +180,7 @@ def template_csv(template: Template, entries: List[Entry]) -> str:
     writer = csv.writer(buffer)
     writer.writerow(columns)
     for entry in entries:
-        writer.writerow([entry.id, entry.day, own_area(entry, template), entry.created_at, entry.updated_at, *(_csv_value(entry.values.get(key)) for key in keys)])
+        writer.writerow([entry.id, entry.day, main_area(entry, template), entry.created_at, entry.updated_at, *(_csv_value(entry.values.get(key)) for key in keys)])
     return buffer.getvalue()
 
 
