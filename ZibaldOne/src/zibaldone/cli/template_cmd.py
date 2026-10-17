@@ -43,7 +43,7 @@ def ask_blocks() -> List[BlockSpec]:
     typer.echo("\nTipi di blocco:")
     names = list(BLOCK_TYPES)
     for number, name in enumerate(names, 1):
-        typer.echo(f"  {number:>2}. {name:<10} {BLOCK_TYPES[name].description}")
+        typer.echo(f"  {number:>2}. {name:<10} {BLOCK_TYPES[name].nickname} · {BLOCK_TYPES[name].description}")
     blocks: List[BlockSpec] = []
     while True:
         label = typer.prompt("\nEtichetta del blocco (vuoto per finire)", default="", show_default=False).strip()
@@ -153,5 +153,5 @@ def list_block_types() -> None:
     """Elenca i tipi di blocco disponibili."""
     for name, block_type in BLOCK_TYPES.items():
         options = ", ".join(block_type.options) or "nessuna"
-        typer.echo(f"  {name:<10} {block_type.label}: {block_type.description} (opzioni: {options})")
+        typer.echo(f"  {name:<10} {block_type.nickname} · {block_type.label}: {block_type.description} (opzioni: {options})")
 

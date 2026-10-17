@@ -5,12 +5,12 @@ from typing import Callable, List, Optional, Tuple
 import typer
 
 from zibaldone import __version__
+from zibaldone.core.brand import APP_MOTTO, APP_NAME, APP_TAGLINE, MASCOTS, NOMENCLATURE, quote_of_the_day
 from zibaldone.cli.entry_cmd import entry_app
+from zibaldone.cli.pack_cmd import pack_app
 from zibaldone.cli.privacy_cmd import data_app, privacy_app
 from zibaldone.cli.template_cmd import template_app
 
-APP_NAME = "ZibaldOne"
-APP_TAGLINE = "il tuo zibaldone personale, fatto a blocchi"
 
 app = typer.Typer(
     name="zibaldone",
@@ -22,6 +22,7 @@ app.add_typer(privacy_app, name="privacy")
 app.add_typer(data_app, name="data")
 app.add_typer(template_app, name="template")
 app.add_typer(entry_app, name="entry")
+app.add_typer(pack_app, name="pack")
 
 
 def _first_line(callback: Optional[Callable]) -> str:
@@ -61,6 +62,26 @@ def show_help() -> None:
 def show_version() -> None:
     """Stampa la versione installata."""
     typer.echo(f"{APP_NAME} {__version__}")
+
+
+@app.command("pensiero")
+def show_quote() -> None:
+    """Il pensiero del giorno, da un filosofo."""
+    quote = quote_of_the_day()
+    typer.echo(f"«{quote.text}»\n  — {quote.author}, {quote.source}")
+
+
+@app.command("about")
+def show_about() -> None:
+    """Il nome, le mascotte e i nomi filosofici dell'app."""
+    typer.echo(f"{APP_NAME} {__version__} — {APP_TAGLINE}. {APP_MOTTO}")
+    typer.echo("Il nome viene dallo Zibaldone di pensieri di Giacomo Leopardi; One sta per tutto in uno.\n")
+    typer.echo("Mascotte:")
+    for mascot in MASCOTS:
+        typer.echo(f"  {mascot.name:<7} {mascot.animal:<9} {mascot.sphere:<10} {mascot.story}")
+    typer.echo("\nNomi:")
+    for item in NOMENCLATURE.values():
+        typer.echo(f"  {item.name:<17} {item.meaning} — {item.source}")
 
 
 def main() -> None:

@@ -1,0 +1,518 @@
+{
+  "format": 1,
+  "id": "zibaldone.collezioni",
+  "name": "Museion · Collezioni",
+  "version": "1.0.0",
+  "author": "ZibaldOne",
+  "license": "CC0-1.0",
+  "description": "Come il Museo di Alessandria, la casa delle Muse e dei libri: libri, film, serie, anime, videogiochi, giochi da tavolo, sport, musica e guardaroba.",
+  "required_blocks": [
+    "bookmark",
+    "choice",
+    "longtext",
+    "number",
+    "progress",
+    "rating",
+    "scale",
+    "tags",
+    "text"
+  ],
+  "templates": [
+    {
+      "slug": "libro",
+      "name": "Biblioteca di Babele",
+      "blocks": [
+        {
+          "key": "titolo",
+          "type": "text",
+          "label": "Titolo",
+          "required": true
+        },
+        {
+          "key": "autore",
+          "type": "text",
+          "label": "Autore"
+        },
+        {
+          "key": "stato",
+          "type": "progress",
+          "label": "Stato",
+          "options": {
+            "unit": "pagine"
+          }
+        },
+        {
+          "key": "segnalibro",
+          "type": "bookmark",
+          "label": "Segnalibro"
+        },
+        {
+          "key": "voto",
+          "type": "rating",
+          "label": "Voto",
+          "options": {
+            "max": 5
+          }
+        },
+        {
+          "key": "generi",
+          "type": "tags",
+          "label": "Generi"
+        },
+        {
+          "key": "recensione",
+          "type": "longtext",
+          "label": "Recensione"
+        },
+        {
+          "key": "citazioni",
+          "type": "longtext",
+          "label": "Citazioni"
+        },
+        {
+          "key": "isbn",
+          "type": "text",
+          "label": "ISBN",
+          "options": {
+            "max_length": 20
+          }
+        }
+      ],
+      "description": "Libri: la tua libreria e il tuo viaggio intellettuale. Borges, La biblioteca di Babele (1941).",
+      "icon": "MENU_BOOK",
+      "color": "#00E5FF",
+      "category": "collezioni"
+    },
+    {
+      "slug": "film",
+      "name": "Caverna",
+      "blocks": [
+        {
+          "key": "titolo",
+          "type": "text",
+          "label": "Titolo",
+          "required": true
+        },
+        {
+          "key": "regista",
+          "type": "text",
+          "label": "Regia"
+        },
+        {
+          "key": "anno",
+          "type": "number",
+          "label": "Anno",
+          "options": {
+            "integer": true,
+            "min": 1880,
+            "max": 2100
+          }
+        },
+        {
+          "key": "stato",
+          "type": "progress",
+          "label": "Stato"
+        },
+        {
+          "key": "voto",
+          "type": "rating",
+          "label": "Voto",
+          "options": {
+            "max": 5
+          }
+        },
+        {
+          "key": "generi",
+          "type": "tags",
+          "label": "Generi"
+        },
+        {
+          "key": "recensione",
+          "type": "longtext",
+          "label": "Recensione"
+        }
+      ],
+      "description": "Film visti e da vedere: ombre su una parete, come nel mito di Platone (Repubblica VII).",
+      "icon": "MOVIE",
+      "color": "#FF5500",
+      "category": "collezioni"
+    },
+    {
+      "slug": "serie",
+      "name": "Eterno ritorno",
+      "blocks": [
+        {
+          "key": "titolo",
+          "type": "text",
+          "label": "Titolo",
+          "required": true
+        },
+        {
+          "key": "piattaforma",
+          "type": "text",
+          "label": "Dove la guardo"
+        },
+        {
+          "key": "stato",
+          "type": "progress",
+          "label": "Stato",
+          "options": {
+            "unit": "episodi"
+          }
+        },
+        {
+          "key": "segnalibro",
+          "type": "bookmark",
+          "label": "Segnalibro",
+          "options": {
+            "placeholder": "S02E05"
+          }
+        },
+        {
+          "key": "voto",
+          "type": "rating",
+          "label": "Voto",
+          "options": {
+            "max": 5
+          }
+        },
+        {
+          "key": "generi",
+          "type": "tags",
+          "label": "Generi"
+        },
+        {
+          "key": "recensione",
+          "type": "longtext",
+          "label": "Recensione"
+        }
+      ],
+      "description": "Serie TV, un episodio dopo l'altro. Nietzsche, La gaia scienza, 341.",
+      "icon": "TV",
+      "color": "#FF007F",
+      "category": "collezioni"
+    },
+    {
+      "slug": "anime",
+      "name": "Anima mundi",
+      "blocks": [
+        {
+          "key": "titolo",
+          "type": "text",
+          "label": "Titolo",
+          "required": true
+        },
+        {
+          "key": "studio",
+          "type": "text",
+          "label": "Studio"
+        },
+        {
+          "key": "stato",
+          "type": "progress",
+          "label": "Stato",
+          "options": {
+            "unit": "episodi"
+          }
+        },
+        {
+          "key": "segnalibro",
+          "type": "bookmark",
+          "label": "Segnalibro"
+        },
+        {
+          "key": "voto",
+          "type": "rating",
+          "label": "Voto",
+          "options": {
+            "max": 5
+          }
+        },
+        {
+          "key": "generi",
+          "type": "tags",
+          "label": "Generi"
+        },
+        {
+          "key": "recensione",
+          "type": "longtext",
+          "label": "Recensione"
+        }
+      ],
+      "description": "Anime e manga. L'anima del mondo di Platone, Timeo.",
+      "icon": "AUTO_AWESOME_MOTION",
+      "color": "#B3F3F6",
+      "category": "collezioni"
+    },
+    {
+      "slug": "videogioco",
+      "name": "Homo ludens",
+      "blocks": [
+        {
+          "key": "titolo",
+          "type": "text",
+          "label": "Titolo",
+          "required": true
+        },
+        {
+          "key": "piattaforma",
+          "type": "text",
+          "label": "Piattaforma"
+        },
+        {
+          "key": "stato",
+          "type": "progress",
+          "label": "Stato"
+        },
+        {
+          "key": "ore",
+          "type": "number",
+          "label": "Ore di gioco",
+          "options": {
+            "min": 0,
+            "unit": "ore"
+          }
+        },
+        {
+          "key": "voto",
+          "type": "rating",
+          "label": "Voto",
+          "options": {
+            "max": 5
+          }
+        },
+        {
+          "key": "generi",
+          "type": "tags",
+          "label": "Generi"
+        },
+        {
+          "key": "recensione",
+          "type": "longtext",
+          "label": "Recensione"
+        }
+      ],
+      "description": "Videogiochi, piattaforme e ore di gioco. Huizinga, Homo ludens (1938).",
+      "icon": "SPORTS_ESPORTS",
+      "color": "#74EE15",
+      "category": "collezioni"
+    },
+    {
+      "slug": "gioco_tavolo",
+      "name": "Alea",
+      "blocks": [
+        {
+          "key": "titolo",
+          "type": "text",
+          "label": "Titolo",
+          "required": true
+        },
+        {
+          "key": "tipo",
+          "type": "choice",
+          "label": "Tipo",
+          "options": {
+            "choices": [
+              "Gioco di ruolo",
+              "Gioco da tavolo",
+              "Gioco di carte",
+              "Wargame",
+              "Altro"
+            ]
+          }
+        },
+        {
+          "key": "giocatori",
+          "type": "text",
+          "label": "Giocatori"
+        },
+        {
+          "key": "stato",
+          "type": "progress",
+          "label": "Stato"
+        },
+        {
+          "key": "voto",
+          "type": "rating",
+          "label": "Voto",
+          "options": {
+            "max": 5
+          }
+        },
+        {
+          "key": "note",
+          "type": "longtext",
+          "label": "Note"
+        }
+      ],
+      "description": "Giochi da tavolo, di carte e di ruolo. Caillois, I giochi e gli uomini (1958).",
+      "icon": "CASINO",
+      "color": "#FFFF00",
+      "category": "collezioni"
+    },
+    {
+      "slug": "sport",
+      "name": "Mens sana",
+      "blocks": [
+        {
+          "key": "attivita",
+          "type": "text",
+          "label": "Attività",
+          "required": true
+        },
+        {
+          "key": "durata",
+          "type": "number",
+          "label": "Durata",
+          "options": {
+            "min": 0,
+            "unit": "min"
+          }
+        },
+        {
+          "key": "intensita",
+          "type": "scale",
+          "label": "Intensità",
+          "options": {
+            "min": 1,
+            "max": 10
+          }
+        },
+        {
+          "key": "record",
+          "type": "text",
+          "label": "Record personale"
+        },
+        {
+          "key": "note",
+          "type": "longtext",
+          "label": "Note"
+        }
+      ],
+      "description": "Sport: allenamenti, partite e record. Giovenale, Satire X.",
+      "icon": "FITNESS_CENTER",
+      "color": "#FF0000",
+      "category": "collezioni"
+    },
+    {
+      "slug": "musica",
+      "name": "Armonia delle sfere",
+      "blocks": [
+        {
+          "key": "titolo",
+          "type": "text",
+          "label": "Titolo",
+          "required": true
+        },
+        {
+          "key": "artista",
+          "type": "text",
+          "label": "Artista"
+        },
+        {
+          "key": "tipo",
+          "type": "choice",
+          "label": "Tipo",
+          "options": {
+            "choices": [
+              "Album",
+              "Canzone",
+              "Playlist"
+            ]
+          }
+        },
+        {
+          "key": "voto",
+          "type": "rating",
+          "label": "Voto",
+          "options": {
+            "max": 5
+          }
+        },
+        {
+          "key": "generi",
+          "type": "tags",
+          "label": "Generi"
+        },
+        {
+          "key": "testo",
+          "type": "longtext",
+          "label": "Testo o appunti"
+        },
+        {
+          "key": "ricordo",
+          "type": "longtext",
+          "label": "A cosa la associo"
+        }
+      ],
+      "description": "Musica: la colonna sonora della tua vita. Dalla tradizione pitagorica.",
+      "icon": "MUSIC_NOTE",
+      "color": "#8A2BE2",
+      "category": "collezioni"
+    },
+    {
+      "slug": "capo",
+      "name": "Maschera",
+      "blocks": [
+        {
+          "key": "nome",
+          "type": "text",
+          "label": "Nome",
+          "required": true
+        },
+        {
+          "key": "categoria",
+          "type": "choice",
+          "label": "Categoria",
+          "options": {
+            "choices": [
+              "Maglia",
+              "Camicia",
+              "Pantaloni",
+              "Giacca",
+              "Scarpe",
+              "Accessorio",
+              "Altro"
+            ]
+          }
+        },
+        {
+          "key": "colori",
+          "type": "tags",
+          "label": "Colori"
+        },
+        {
+          "key": "stagione",
+          "type": "choice",
+          "label": "Stagione",
+          "options": {
+            "choices": [
+              "Primavera",
+              "Estate",
+              "Autunno",
+              "Inverno",
+              "Tutto l'anno"
+            ]
+          }
+        },
+        {
+          "key": "stile",
+          "type": "tags",
+          "label": "Stile"
+        },
+        {
+          "key": "voto",
+          "type": "rating",
+          "label": "Quanto mi piace",
+          "options": {
+            "max": 5
+          }
+        }
+      ],
+      "description": "Guardaroba: come ti presenti al mondo. In latino persona è la maschera; Pirandello, Uno, nessuno e centomila (1926).",
+      "icon": "CHECKROOM",
+      "color": "#00E5FF",
+      "category": "collezioni"
+    }
+  ]
+}

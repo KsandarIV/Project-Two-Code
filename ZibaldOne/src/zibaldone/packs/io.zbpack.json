@@ -1,0 +1,184 @@
+{
+  "format": 1,
+  "id": "zibaldone.io",
+  "name": "Delfi · Io",
+  "version": "1.0.0",
+  "author": "ZibaldOne",
+  "license": "CC0-1.0",
+  "description": "Il secondo cervello, all'ombra del tempio di Delfi: identità, filosofia personale, capitoli di vita, desideri e abitudini.",
+  "required_blocks": [
+    "checklist",
+    "longtext",
+    "progress",
+    "tags",
+    "text"
+  ],
+  "templates": [
+    {
+      "slug": "identita",
+      "name": "Conosci te stesso",
+      "blocks": [
+        {
+          "key": "tratti",
+          "type": "tags",
+          "label": "I miei tratti"
+        },
+        {
+          "key": "punti_forza",
+          "type": "longtext",
+          "label": "Punti di forza"
+        },
+        {
+          "key": "crescita",
+          "type": "longtext",
+          "label": "Dove voglio crescere"
+        },
+        {
+          "key": "successo",
+          "type": "longtext",
+          "label": "Cos'è per me il successo"
+        },
+        {
+          "key": "felicita",
+          "type": "longtext",
+          "label": "Cos'è per me la felicità"
+        },
+        {
+          "key": "eredita",
+          "type": "longtext",
+          "label": "Cosa voglio lasciare"
+        }
+      ],
+      "description": "Chi sono, ridotto all'essenziale. Il motto del tempio di Delfi.",
+      "icon": "FINGERPRINT",
+      "color": "#FF007F",
+      "category": "io"
+    },
+    {
+      "slug": "filosofia",
+      "name": "Arché",
+      "blocks": [
+        {
+          "key": "valori",
+          "type": "tags",
+          "label": "Valori"
+        },
+        {
+          "key": "principi",
+          "type": "checklist",
+          "label": "Principi di vita"
+        },
+        {
+          "key": "domande",
+          "type": "longtext",
+          "label": "Le domande che mi guidano"
+        },
+        {
+          "key": "maestri",
+          "type": "tags",
+          "label": "Chi mi ha ispirato"
+        },
+        {
+          "key": "chiarezza",
+          "type": "longtext",
+          "label": "Momenti di chiarezza"
+        }
+      ],
+      "description": "La mia filosofia: valori, principi e domande che guidano le scelte. I presocratici cercavano l'arché, il principio di tutte le cose.",
+      "icon": "BALANCE",
+      "color": "#8A2BE2",
+      "category": "io"
+    },
+    {
+      "slug": "capitolo",
+      "name": "Confessioni",
+      "blocks": [
+        {
+          "key": "titolo",
+          "type": "text",
+          "label": "Titolo",
+          "required": true
+        },
+        {
+          "key": "periodo",
+          "type": "text",
+          "label": "Periodo"
+        },
+        {
+          "key": "racconto",
+          "type": "longtext",
+          "label": "Racconto"
+        },
+        {
+          "key": "svolta",
+          "type": "longtext",
+          "label": "Il punto di svolta"
+        }
+      ],
+      "description": "L'autobiografia, un capitolo di vita alla volta. Agostino, Confessioni.",
+      "icon": "AUTO_STORIES",
+      "color": "#00E5FF",
+      "category": "io"
+    },
+    {
+      "slug": "desiderio",
+      "name": "Conatus",
+      "blocks": [
+        {
+          "key": "desiderio",
+          "type": "text",
+          "label": "Desiderio",
+          "required": true
+        },
+        {
+          "key": "stato",
+          "type": "progress",
+          "label": "Stato"
+        },
+        {
+          "key": "perche",
+          "type": "longtext",
+          "label": "Perché lo voglio"
+        }
+      ],
+      "description": "La lista dei desideri, da sognare a realizzato. Spinoza, Etica III: il desiderio è l'essenza stessa dell'uomo.",
+      "icon": "STAR",
+      "color": "#FFFF00",
+      "category": "io"
+    },
+    {
+      "slug": "abitudine",
+      "name": "Hexis",
+      "blocks": [
+        {
+          "key": "nome",
+          "type": "text",
+          "label": "Abitudine",
+          "required": true
+        },
+        {
+          "key": "frequenza",
+          "type": "text",
+          "label": "Ogni quanto"
+        },
+        {
+          "key": "stato",
+          "type": "progress",
+          "label": "Stato",
+          "options": {
+            "unit": "giorni"
+          }
+        },
+        {
+          "key": "note",
+          "type": "longtext",
+          "label": "Note"
+        }
+      ],
+      "description": "Un'abitudine da costruire o da lasciare. Aristotele, Etica Nicomachea II: le virtù nascono dall'abitudine.",
+      "icon": "REPEAT",
+      "color": "#74EE15",
+      "category": "io"
+    }
+  ]
+}

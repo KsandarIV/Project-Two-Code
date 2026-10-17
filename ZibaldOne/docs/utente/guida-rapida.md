@@ -55,5 +55,33 @@ zbone entry add libro --set "titolo=Il nome della rosa" --set autore=Eco --set v
 
 Le date si scrivono `2026-10-17`, `17/10/2026`, `oggi` oppure `ieri`.
 
+## Modelli pronti
+ZibaldOne ha quattro **pacchetti** di modelli già pronti, ognuno con il nome di una scuola filosofica. Installarli non tocca le tue voci e puoi modificarli come i tuoi.
+
+| Pacchetto | Cosa contiene |
+|---|---|
+| `diario` · Stoa | mattina, metà giornata e sera; il check-in delle 8 aree della vita; pensieri liberi; revisioni di settimana, mese e anno |
+| `collezioni` · Museion | libri, film, serie, anime, videogiochi, giochi da tavolo, sport, musica, guardaroba |
+| `io` · Delfi | identità, filosofia personale, capitoli di vita, desideri, abitudini |
+| `persone` · Agorà | le persone della tua vita e gli incontri con loro |
+
+| Comando | Cosa fa |
+|---|---|
+| `zbone pack list` | i pacchetti pronti e se sono già installati |
+| `zbone pack show diario` | i modelli di un pacchetto, senza installarlo |
+| `zbone pack install diario` | mostra cosa cambierà, chiede conferma e installa |
+
+Se hai già un modello con lo stesso nome tecnico, il pacchetto lo installa come copia (`persona_2`) e non tocca il tuo. Se reinstalli lo stesso pacchetto non succede nulla; se il pacchetto è più nuovo, i suoi modelli vengono aggiornati.
+
+Per esempio, la sera:
+```powershell
+zbone pack install diario
+zbone entry add sera
+```
+
+## Il pensiero del giorno e i nomi
+- `zbone pensiero`: una frase di un filosofo, diversa ogni giorno, con la fonte.
+- `zbone about`: da dove viene il nome, le mascotte delle 8 aree e i nomi filosofici di ogni parte dell'app ([identità](../brand/identita.md)).
+
 ## Dove finiscono i dati
 Tutto va nel file `zibaldone.db` nella tua cartella dati (`zbone data path`). È un database SQLite: puoi copiarlo per farne una copia di sicurezza a mano, finché non arrivano i backup automatici della v0.0.6.

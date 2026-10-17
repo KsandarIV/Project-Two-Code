@@ -23,3 +23,11 @@ def test_help_lists_every_command() -> None:
 def test_no_arguments_shows_usage() -> None:
     result = runner.invoke(app, [])
     assert "Usage" in result.output
+
+
+def test_quote_and_about() -> None:
+    quote = runner.invoke(app, ["pensiero"])
+    assert quote.exit_code == 0 and "«" in quote.output
+    about = runner.invoke(app, ["about"])
+    for name in ("Leopy", "Hegy", "Archy", "Monty", "Diogy", "Mandy", "Aristy", "Hobby", "Velo d'ignoranza"):
+        assert name in about.output

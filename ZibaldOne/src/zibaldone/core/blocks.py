@@ -98,6 +98,9 @@ class BlockType:
     name: str = ""
     label: str = ""
     description: str = ""
+    # Philosophical name shown next to the plain label (brand identity).
+    nickname: str = ""
+    nickname_source: str = ""
     options: Dict[str, OptionCheck] = {}
 
     def check_options(self, options: Dict[str, Any]) -> Dict[str, Any]:
@@ -132,6 +135,8 @@ class TextBlock(BlockType):
     name = "text"
     label = "Testo breve"
     description = "una riga di testo, per esempio un titolo"
+    nickname = "Aforisma"
+    nickname_source = "il pensiero breve: Ippocrate, Leopardi, Nietzsche"
     options = {"max_length": _int_option, "placeholder": _str_option}
 
     def normalize(self, value: Any, options: Dict[str, Any]) -> str:
@@ -148,6 +153,8 @@ class LongTextBlock(TextBlock):
     name = "longtext"
     label = "Testo lungo"
     description = "riflessioni, note, recensioni, su più righe"
+    nickname = "Saggio"
+    nickname_source = "Montaigne, Saggi (1580): scrivere per provarsi"
 
     def normalize(self, value: Any, options: Dict[str, Any]) -> str:
         if not isinstance(value, str):
@@ -167,6 +174,8 @@ class NumberBlock(BlockType):
     name = "number"
     label = "Numero"
     description = "un numero, con unità facoltativa (pagine, ore, euro)"
+    nickname = "Misura"
+    nickname_source = "Protagora: l'uomo è misura di tutte le cose"
     options = {"min": _number_option, "max": _number_option, "unit": _str_option, "integer": _bool_option}
 
     def check_option_rules(self, options: Dict[str, Any]) -> None:
@@ -200,6 +209,8 @@ class RatingBlock(BlockType):
     name = "rating"
     label = "Voto a stelle"
     description = "un voto da 0 al massimo scelto (5 di base)"
+    nickname = "Giudizio"
+    nickname_source = "Kant, Critica del Giudizio (1790): il giudizio di gusto"
     options = {"max": _int_option}
 
     def check_option_rules(self, options: Dict[str, Any]) -> None:
@@ -232,6 +243,8 @@ class TagsBlock(BlockType):
     name = "tags"
     label = "Etichette"
     description = "parole chiave, per filtrare e collegare"
+    nickname = "Categorie"
+    nickname_source = "Aristotele, Categorie"
     options = {"suggestions": _str_list_option}
 
     def normalize(self, value: Any, options: Dict[str, Any]) -> List[str]:
@@ -264,6 +277,8 @@ class DateBlock(BlockType):
     name = "date"
     label = "Data"
     description = "un giorno (compleanno, uscita, scadenza)"
+    nickname = "Chronos"
+    nickname_source = "il tempo che scorre, per i Greci"
     options = {}
 
     def normalize(self, value: Any, options: Dict[str, Any]) -> str:
@@ -276,6 +291,8 @@ class ChecklistBlock(BlockType):
     name = "checklist"
     label = "Lista di cose da fare"
     description = "voci da spuntare: obiettivi, priorità, to-do"
+    nickname = "Regole"
+    nickname_source = "Descartes, Discorso sul metodo (1637): le regole e la morale provvisoria"
     options = {"max_items": _int_option}
 
     def normalize(self, value: Any, options: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -315,6 +332,8 @@ class ScaleBlock(BlockType):
     name = "scale"
     label = "Scala"
     description = "un punteggio su una scala, per esempio da 0 a 10"
+    nickname = "Giusto mezzo"
+    nickname_source = "Aristotele, Etica Nicomachea II: la virtù sta tra due estremi"
     options = {"min": _int_option, "max": _int_option, "low_label": _str_option, "high_label": _str_option}
 
     def bounds(self, options: Dict[str, Any]) -> Tuple[int, int]:
@@ -348,6 +367,8 @@ class ChoiceBlock(BlockType):
     name = "choice"
     label = "Scelta"
     description = "una voce da un elenco, per esempio l'umore"
+    nickname = "Aut-Aut"
+    nickname_source = "Kierkegaard, Aut-Aut (1843)"
     # `values` gives each choice a number, so statistics can follow it over time.
     options = {"choices": _str_list_option, "values": _number_list_option}
 
@@ -392,6 +413,8 @@ class ProgressBlock(BlockType):
     name = "progress"
     label = "Avanzamento"
     description = "stato (da fare, in corso, completato …) e contatore, per esempio pagine lette"
+    nickname = "Divenire"
+    nickname_source = "Eraclito: tutto scorre"
     options = {"unit": _str_option, "total": _int_option}
 
     def normalize(self, value: Any, options: Dict[str, Any]) -> Dict[str, Any]:
@@ -454,6 +477,8 @@ class BookmarkBlock(TextBlock):
     name = "bookmark"
     label = "Segnalibro"
     description = "dove sei arrivato: 'pag. 150', 'S02E05', 'capitolo 7'"
+    nickname = "Anamnesi"
+    nickname_source = "Platone, Menone: conoscere è ricordare"
     options = {"placeholder": _str_option}
 
     def normalize(self, value: Any, options: Dict[str, Any]) -> str:
@@ -464,6 +489,8 @@ class LinkBlock(BlockType):
     name = "link"
     label = "Collegamento"
     description = "collega questa voce ad altre (per esempio a una Persona)"
+    nickname = "Nesso"
+    nickname_source = "Hume, Ricerca sull'intelletto umano: la connessione tra le idee"
     options = {"template": _str_option, "multiple": _bool_option}
 
     def normalize(self, value: Any, options: Dict[str, Any]) -> List[str]:
