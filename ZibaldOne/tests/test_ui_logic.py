@@ -77,7 +77,8 @@ def test_sections_have_a_plain_and_a_philosophical_name() -> None:
     assert section("organon").nickname == "Organon"
     assert section_index("modelli") == 3
     assert settings_part("nuvole").nickname == "Le Nuvole"
-    assert set(SETTINGS_KEYS) == {"parresia", "daimon", "mnemosyne", "nuvole", "info"}
+    assert set(SETTINGS_KEYS) == {"parresia", "daimon", "mnemosyne", "nuvole", "velo", "info"}
+    assert settings_part("velo").nickname == "Velo d'ignoranza"
 
 
 @pytest.mark.parametrize(

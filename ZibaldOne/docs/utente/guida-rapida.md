@@ -223,6 +223,17 @@ ZibaldOne ti ricorda di scrivere nei 3 momenti della giornata: mattina (08:30), 
 
 Per le notifiche di sistema sul PC installa il pacchetto facoltativo: `pip install -e ".[notifiche]"`. Senza, il promemoria compare nel terminale.
 
+## Anonimizzatore · Velo d'ignoranza
+Prima che un testo arrivi a un'intelligenza artificiale, ZibaldOne toglie nomi, email, telefoni, codici, IBAN, carte e indirizzi e mette dei segnaposto come `[PERSONA_1]`. Tutto qui sul dispositivo. Per ora si può provare; le funzioni di IA arriveranno più avanti e passeranno tutte da qui.
+
+| Comando | Cosa fa |
+|---|---|
+| `zbone anon preview "Ieri ho visto Giulia, mi ha scritto a giulia@example.com"` | mostra il testo pulito e cosa è stato sostituito |
+| `zbone anon preview "…" --mode anon` | anonimato: senza la tabella per tornare indietro |
+| `zbone anon eval` | quanto funzionano le regole, su frasi di prova |
+
+I nomi di persona li riconosce dalle tue voci **Persona** (con i soprannomi): più persone hai scritto, meglio funziona. Nell'app: **Impostazioni → Anonimizzatore**. Come funziona: [anonimizzatore](../tecnica/anonimizzatore.md).
+
 ## Esportare
 - `zbone export markdown`: uno zip con un file per voce, da aprire in Obsidian.
 - `zbone export csv`: uno zip con un foglio per modello, da aprire in Excel.

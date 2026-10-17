@@ -1228,3 +1228,73 @@ def prepare_review(store: Any, kind: str, day: date, today: date) -> Tuple[Optio
         return existing[0], False
     when = min(result.period.end, today) if result.period.start <= today else result.period.end
     return store.add_entry(target.slug, propose_review_values(result, target), when.isoformat()), True
+
+
+# * — Organon: Velo d'ignoranza, the anonymizer (0.1.5) —
+
+
+@dataclass(frozen=True)
+class AnonRow:
+    kind: str  # Italian description: "nome di persona", "indirizzo email" …
+    original: str
+    placeholder: str
+    times: int
+
+
+@dataclass(frozen=True)
+class AnonPreview:
+    text: str  # what would be sent to a model
+    mode: str
+    mode_label: str
+    rows: Tuple[AnonRow, ...]
+    name_forms: int  # names, surnames and nicknames known from the Persona entries
+
+
+def person_names(store: Any) -> List[List[str]]:
+    """Alias groups from the person entries, as the CLI uses them."""
+    from zibaldone.core.anonymizer import PERSON_CATEGORY, people_from_entries
+
+    pairs = [
+        (entry, template)
+        for template in store.list_templates(category=PERSON_CATEGORY)
+        for entry in store.list_entries(template=template.slug, newest_first=False)
+    ]
+    return people_from_entries(pairs)
+
+
+def anonymize_preview(store: Any, text: str, mode: str = "pseudo") -> AnonPreview:
+    """What the anonymizer would replace in `text`. Nothing is saved or sent."""
+    from zibaldone.core.anonymizer import KIND_DESCRIPTIONS, MODES, Anonymizer
+
+    people = person_names(store)
+    result = Anonymizer(people=people).anonymize(text, mode)
+    counts: Dict[Tuple[str, str, str], int] = {}
+    for replacement in result.replacements:
+        finding = replacement.finding
+        key = (KIND_DESCRIPTIONS.get(finding.kind, finding.kind.lower()), finding.text, replacement.placeholder)
+        counts[key] = counts.get(key, 0) + 1
+    rows = tuple(AnonRow(kind, original, placeholder, times) for (kind, original, placeholder), times in counts.items())
+    return AnonPreview(result.text, mode, MODES[mode], rows, sum(len(group) for group in people))
+
+
+ANON_TEXT_TYPES = ("text", "longtext", "checklist", "bookmark")
+
+
+def latest_entry_text(store: Any, limit: int = 4000) -> str:
+    """The texts of the most recent entry that has some, to try the anonymizer on."""
+    from zibaldone.core.links import plain_text
+
+    templates = {template.slug: template for template in store.list_templates()}
+    for entry in store.list_entries():
+        template = templates.get(entry.template)
+        if template is None:
+            continue
+        parts = []
+        for spec in template.blocks:
+            if spec.type in ANON_TEXT_TYPES and spec.key in entry.values:
+                text = spec.block_type.to_text(entry.values[spec.key], spec.options).strip()
+                if text:
+                    parts.append(plain_text(text))
+        if parts:
+            return "\n".join(parts)[:limit]
+    return ""

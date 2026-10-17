@@ -51,4 +51,5 @@ Le parti senza Flet (`navigation`, `forms`, `viewmodels`, `cloud_model`, `theme`
 - 0.1.2 ✅: la casella di Voci cerca in tutti i blocchi ([ricerca e collegamenti](ricerca-e-collegamenti.md)); la pagina di una voce mostra chi la cita e chi la nomina.
 - 0.1.3 ✅: **Rizoma**, il grafo su una tela toccabile (`/grafo`, `/grafo/<id>`), da Voci e dalla pagina di una voce ([il grafo](grafo.md)).
 - 0.1.4 ✅: **Theoria**, le statistiche della settimana o del mese (`/theoria`, da Oggi) e la revisione preparata dai numeri ([statistiche e revisioni](statistiche.md)).
-- 0.1.5: l'anonimizzatore.
+- 0.1.5 ✅: **Velo d'ignoranza**, l'anonimizzatore da provare in Impostazioni (`/organon/velo`) ([anonimizzatore](anonimizzatore.md)).
+- 0.2.x: lo sprint delle 8 aree ([requisiti](requisiti-v0.2.md)).

@@ -62,6 +62,7 @@ SETTINGS_PARTS: Tuple[SettingsPart, ...] = (
     SettingsPart("daimon", "Promemoria", NOMENCLATURE["reminders"].name, "quando e come ricordarti di scrivere", "NOTIFICATIONS_OUTLINED"),
     SettingsPart("mnemosyne", "Backup", NOMENCLATURE["history"].name, "le istantanee dei tuoi dati", "HISTORY"),
     SettingsPart("nuvole", "Account e cloud", NOMENCLATURE["cloud"].name, "l'account e dove vanno le copie", "CLOUD_OUTLINED"),
+    SettingsPart("velo", "Anonimizzatore", NOMENCLATURE["anonymizer"].name, "togliere i dati personali da un testo, prima di un'IA", "VISIBILITY_OFF_OUTLINED"),
     SettingsPart("info", "Informazioni", "ZibaldOne", "il nome, le mascotte e i nomi filosofici", "INFO_OUTLINE"),
 )
 SETTINGS_KEYS: Tuple[str, ...] = tuple(part.key for part in SETTINGS_PARTS)

@@ -32,6 +32,10 @@
 - Si spegne in Impostazioni → Informazioni o con `zbone update --no-auto`. L'avviso privacy (versione 5) lo dice, quindi chi aveva già accettato lo rilegge una volta.
 - La CLI non controlla da sola: solo con `zbone update`.
 
+## Anonimizzatore (dalla 0.1.5)
+- Prima di qualsiasi funzione di IA i testi passano dall'anonimizzatore locale ([anonimizzatore](anonimizzatore.md), [ADR-0009](../decisioni/ADR-0009-anonimizzatore.md)). Oggi si può solo provare: nessun testo va a un modello.
+- La tabella dei pseudonimi resta in memoria e non si salva. Un testo con pseudonimi è ancora un dato personale (GDPR, considerando 26).
+
 ## Sicurezza tecnica
 - **Backup cifrati con storia** ([ADR-0006](../decisioni/ADR-0006-storia-e-backup-cifrati.md)): istantanee che durano un tempo scelto, cifrate sul dispositivo e copiabili fuori; nessuno tranne l'utente può aprirle. Una voce cancellata resta nei backup fino alla loro scadenza, e l'avviso lo deve dire.
 - **Cifratura opzionale** dei dati con una passphrase (un diario può contenere salute, opinioni e convinzioni: dati delicati). Se l'utente dimentica la passphrase, i dati non sono recuperabili: va detto chiaramente.
