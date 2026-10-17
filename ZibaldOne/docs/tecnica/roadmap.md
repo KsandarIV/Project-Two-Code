@@ -12,7 +12,7 @@ Numerazione ([ADR-0010](../decisioni/ADR-0010-numerazione-delle-versioni.md)): p
 | v0.0.5 | **Pacchetti condivisibili** `.zbpack.json`: `zbone pack export/import` ([ADR-0005](../decisioni/ADR-0005-pacchetti-di-modelli.md)); commit e tag automatici a ogni versione ([versionamento](../sviluppo/versionamento.md)) | ✅ |
 | v0.0.6 | **Storia e backup**: istantanee come commit, ripristino annullabile, durata a tempo, verifica; export Markdown e CSV ([ADR-0006](../decisioni/ADR-0006-storia-e-backup-cifrati.md)) | ✅ |
 | v0.0.7 | **Cifratura**: passphrase e codice di recupero, backup sempre cifrati (AES-256-GCM + scrypt) | ✅ |
-| v0.0.8 | **Account e cloud**: accesso con Google, scelta solo locale o locale + Drive, destinazioni intercambiabili, recupero con account Google, portare i dati su un altro dispositivo ([ADR-0007](../decisioni/ADR-0007-account-google-e-destinazioni-cloud.md)) | ⬜ |
+| v0.0.8 | **Account e cloud**: accesso con Google, scelta solo locale o locale + Drive, destinazioni intercambiabili, recupero con account Google, portare i dati su un altro dispositivo ([ADR-0007](../decisioni/ADR-0007-account-google-e-destinazioni-cloud.md)) | ✅ |
 
 ## Fase 0.1: app per i tester
 | Versione | Capacità | Stato |

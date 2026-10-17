@@ -123,6 +123,32 @@ Scegli una passphrase (almeno 10 caratteri) e scrivi su carta il **codice di rec
 
 Senza passphrase e senza codice di recupero nessuno può aprire i backup, nemmeno chi ha creato l'app.
 
+## Account e copie fuori · Le Nuvole
+Al primo avvio ZibaldOne ti chiede di entrare con il tuo **account Google**: si apre il browser, scegli l'account e lasci spuntato Drive. Serve a sapere chi sei su questo dispositivo; il diario resta qui. Poi scegli dove tenere i backup:
+
+| Comando | Dove vanno le copie |
+|---|---|
+| `zbone cloud use local` | solo su questo dispositivo |
+| `zbone cloud use google` | anche sul tuo Google Drive, in uno spazio nascosto dell'app (non vede gli altri tuoi file) |
+| `zbone cloud use folder E:\` | anche in una cartella: una chiavetta, o la cartella di OneDrive o Dropbox |
+
+Fuori vanno **solo istantanee cifrate**: prima serve `zbone backup setup`. Dopo, ogni backup automatico viene copiato da solo.
+
+| Comando | Cosa fa |
+|---|---|
+| `zbone account` | con quale account sei entrato |
+| `zbone account logout` | esci da questo dispositivo; diario e backup restano |
+| `zbone cloud` | dove vanno le copie e com'è andata l'ultima |
+| `zbone cloud sync` | copia adesso |
+| `zbone cloud list` | le istantanee che ci sono fuori |
+| `zbone cloud recover` | **telefono o PC nuovo**: riporta qui i dati (la più recente, o un ID) |
+| `zbone cloud recovery on` | recupero con l'account Google, senza passphrase (vedi sotto) |
+| `zbone cloud forget` | cancella tutte le copie fuori e torna a solo locale |
+
+**Recupero con l'account Google.** Quando scegli Drive, ZibaldOne ti propone di poter riavere i backup su un dispositivo nuovo solo entrando con Google, senza passphrase: comodo come in tutte le app. Il prezzo è che chi riesce a entrare nel tuo account Google può aprirli. Se non lo attivi, per il recupero servono la passphrase o il codice di recupero. Lo togli quando vuoi con `zbone cloud recovery off`.
+
+Backup, export e privacy funzionano sempre, anche senza account: riavere i tuoi dati non dipende mai da Google.
+
 ## Esportare
 - `zbone export markdown`: uno zip con un file per voce, da aprire in Obsidian.
 - `zbone export csv`: uno zip con un foglio per modello, da aprire in Excel.
@@ -134,4 +160,4 @@ Il file esportato non è cifrato: chi lo apre legge le tue voci.
 - `zbone about`: da dove viene il nome, le mascotte delle 8 aree e i nomi filosofici di ogni parte dell'app ([identità](../brand/identita.md)).
 
 ## Dove finiscono i dati
-Tutto va nel file `zibaldone.db` nella tua cartella dati (`zbone data path`), un database SQLite. Le istantanee stanno nella sottocartella `backups`.
+Tutto va nel file `zibaldone.db` nella tua cartella dati (`zbone data path`), un database SQLite. Le istantanee stanno nella sottocartella `backups`. Se scegli Drive o una cartella, lì vanno solo copie cifrate delle istantanee e il file delle chiavi, che senza passphrase (o codice di recupero) non serve a nulla.

@@ -14,7 +14,8 @@ src/zibaldone/
   core/      dominio: blocchi, modelli, voci, validazione (nessuna dipendenza esterna)
   storage/   persistenza nella cartella dati dell'utente (dalla v0.0.2)
   cli/       comandi Typer: zibaldone / zbone
-  ui/        interfaccia grafica (dalla v0.0.8), sopra gli stessi moduli
+  cloud/     account Google, destinazioni e copie dei backup (dalla v0.0.8)
+  ui/        interfaccia grafica (dalla v0.0.9), sopra gli stessi moduli
   ai/        funzioni IA (rinviate: si definiranno molto più avanti)
 ```
 Regola: `cli/` e `ui/` chiamano `core/` e `storage/`, mai il contrario.
@@ -32,3 +33,8 @@ Diario, Collezioni, Documenti, Finanze, Password, Grafo, Raccomandazioni: ognuno
 ## Backup (dalla 0.0.6)
 - Istantanee complete in `backups/` nella cartella dati, una al giorno in automatico dopo un comando che salva dati, più quelle a mano. `cli/common.open_store()` le avvia: prima di un aggiornamento dello schema e dopo un comando che ha cambiato qualcosa.
 - Formato, durata e ripristino: [storia e backup](backup.md).
+
+## Account e cloud (dalla 0.0.8)
+- `cloud/` non dipende dalla CLI: `account.py` (account e modalità in `settings.json`), `google_auth.py` (OAuth con PKCE), `tokens.py`, `destinations.py`, `sync.py`. L'HTTP passa da `cloud/http.py` (solo libreria standard), che nei test si sostituisce con un finto Google.
+- `cli/common.open_store()` chiede l'accesso al primo avvio, quando un client Google è configurato; dopo un backup automatico avvia la copia sulla destinazione scelta. Backup, export e privacy non chiedono l'accesso.
+- Dettagli: [copie fuori dal dispositivo](backup.md#copie-fuori-dal-dispositivo--le-nuvole-dalla-008).

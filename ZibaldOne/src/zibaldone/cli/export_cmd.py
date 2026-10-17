@@ -17,7 +17,7 @@ OUTPUT_HELP = "il file .zip da creare (di base nella cartella attuale)"
 
 
 def run_export(kind: str, output: Optional[Path], export: Callable[[Store, Path], ExportResult]) -> None:
-    with open_store() as store:
+    with open_store(require_account=False) as store:
         if store.count_entries() == 0:
             typer.echo("Nessuna voce da esportare.")
             return

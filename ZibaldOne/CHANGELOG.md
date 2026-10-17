@@ -4,6 +4,22 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.0.8] — 2026-10-17
+### Aggiunto
+- **Account e copie fuori** (Le Nuvole): `zbone account login/logout` con Google (OAuth per app desktop, PKCE, ritorno su 127.0.0.1) e `zbone account` per vedere chi sei.
+- Al primo avvio l'accesso con Google è obbligatorio per usare il diario, quando l'app ha un client Google configurato; senza client resta tutto locale. Backup, export e privacy non chiedono mai l'accesso.
+- Tre modalità: `zbone cloud use local`, `google` (spazio nascosto dell'app su Drive, ambito `drive.appdata`) o `folder PERCORSO` (chiavetta, OneDrive, Dropbox…).
+- Dopo ogni backup automatico (e dopo `backup create`, `setup`, `passphrase`, `recover`) le istantanee cifrate nuove vengono copiate sulla destinazione, con la stessa durata del dispositivo. Le istantanee in chiaro non escono mai.
+- `zbone cloud`, `cloud sync`, `cloud list`, `cloud forget`.
+- **Dispositivo nuovo**: `zbone cloud recover [ID]` riporta i dati con passphrase, codice di recupero (`--code`) o account Google.
+- **Recupero con l'account Google**, facoltativo: `zbone cloud recovery on/off`, proposto quando scegli Drive, con il compromesso spiegato.
+- Token Google in `account-token.json`, protetti con DPAPI su Windows; mai in `settings.json`.
+### Cambiato
+- Avviso privacy versione 3: account Google e copie su Drive. Chi aveva accettato lo rivede una volta.
+### Documentazione
+- [Creare il client OAuth di Google](docs/sviluppo/google-cloud.md), passo passo e gratis in modalità test.
+- [Copie fuori dal dispositivo](docs/tecnica/backup.md#copie-fuori-dal-dispositivo--le-nuvole-dalla-008); guida rapida con Le Nuvole; ADR-0007 con le scelte fatte.
+
 ## [0.0.7] — 2026-10-17
 ### Aggiunto
 - **Cifratura dei backup** (Anello di Gige): `zbone backup setup` con passphrase e codice di recupero; da lì ogni istantanea è cifrata (X25519 + AES-256-GCM) e quelle già fatte vengono cifrate al loro posto.

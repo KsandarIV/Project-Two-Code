@@ -13,5 +13,11 @@
   - Il primo avvio richiede internet per l'accesso; dopo, l'app funziona anche offline.
   - Con pochi tester il progetto Google resta in **modalità test** (gratuita, fino a 100 tester aggiunti per email). In modalità test Google fa scadere l'accesso dopo circa 7 giorni, quindi i tester dovranno rientrare ogni tanto finché l'app non è verificata.
   - Privacy: l'avviso del primo avvio deve dire che l'accesso Google serve solo sul dispositivo e che nessun dato arriva a chi sviluppa. Minimizzazione: si chiedono solo email e i permessi di Drive indicati sopra.
-  - Fino alla v0.0.6 la CLI funziona in locale senza accesso, per sviluppare e testare. L'accesso con Google arriva alla **v0.0.7** insieme al cloud, e da lì è obbligatorio al primo avvio.
+  - Fino alla 0.0.7 la CLI funziona in locale senza accesso. L'accesso con Google arriva alla **0.0.8** insieme al cloud, e da lì è obbligatorio al primo avvio nelle copie che hanno un client Google configurato ([come crearlo](../sviluppo/google-cloud.md)); senza client l'app resta solo locale, per sviluppare e testare.
+- **Come è stata realizzata (0.0.8)**:
+  - Ambiti: `openid`, `email`, `profile` e `drive.appdata`, cioè lo spazio nascosto dell'app su Drive: ancora più stretto dei "file creati dall'app".
+  - Tre modalità invece di due: solo locale, locale + Google Drive, locale + una **cartella** (chiavetta, OneDrive, Dropbox…), che è già la prima "destinazione configurata dall'utente".
+  - Il recupero con l'account Google è **proposto** quando si sceglie Drive, con il compromesso spiegato (chi entra nell'account può aprire i backup), e si può togliere. Chi non lo attiva recupera con passphrase o codice di recupero.
+  - L'accesso è obbligatorio per usare il diario, non per riavere i propri dati: backup, export e privacy funzionano sempre, anche senza account.
+  - Fuori dal dispositivo escono solo istantanee cifrate; nessuna copia remota viene cancellata perché manca sul dispositivo.
 - **Alternative scartate**: accesso facoltativo (più privato ma Alex vuole un'esperienza unica); account con email e password su un server nostro (costi e obblighi GDPR).
