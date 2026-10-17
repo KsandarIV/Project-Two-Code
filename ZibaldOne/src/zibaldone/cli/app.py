@@ -16,6 +16,7 @@ from zibaldone.cli.pack_cmd import pack_app
 from zibaldone.cli.privacy_cmd import data_app, privacy_app
 from zibaldone.cli.remind_cmd import remind_app
 from zibaldone.cli.search_cmd import SEARCH_CONTEXT, links_command, search_command
+from zibaldone.cli.stats_cmd import review_command, stats_command
 from zibaldone.cli.template_cmd import template_app
 from zibaldone.cli.update_cmd import check_updates
 
@@ -40,6 +41,8 @@ app.command("update")(check_updates)
 app.command("search", context_settings=SEARCH_CONTEXT)(search_command)
 app.command("links")(links_command)
 app.command("graph")(graph_command)
+app.command("stats")(stats_command)
+app.command("review")(review_command)
 
 
 def _first_line(callback: Optional[Callable]) -> str:

@@ -139,7 +139,7 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
         "/oggi", "/voci", f"/voci/{known['incontro']}", f"/voci/{known['libro']}/modifica", "/voci/nonesiste",
         "/collezioni", "/modelli", "/modelli/nuovo", "/modelli/libro", "/modelli/nonesiste", "/scuole", "/organon",
         "/benvenuto/consenso", "/benvenuto/accesso", "/benvenuto/copie", "/benvenuto/diario", "/scrivi/nonesiste",
-        "/grafo", f"/grafo/{known['persona']}", "/grafo/nonesiste",
+        "/grafo", f"/grafo/{known['persona']}", "/grafo/nonesiste", "/theoria",
     ]
     paths += [f"/scrivi/{slug}" for slug in ("sera", "aree", "mattina", "libro", "serie", "incontro", "persona", "desiderio")]
     paths += [f"/organon/{part}" for part in ("parresia", "daimon", "mnemosyne", "nuvole", "info")]
@@ -152,7 +152,7 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
 
 def test_screens_cover_every_route_kind() -> None:
     assert ONBOARDING_SCREENS <= set(SCREENS)
-    assert {"oggi", "voci", "voce", "scrivi", "modifica", "collezioni", "modelli", "modello", "scuole", "grafo", "organon", "parte"} <= set(SCREENS)
+    assert {"oggi", "voci", "voce", "scrivi", "modifica", "collezioni", "modelli", "modello", "scuole", "grafo", "theoria", "organon", "parte"} <= set(SCREENS)
 
 
 def test_missing_entry_and_template_say_so_gently(ready: Path) -> None:
@@ -398,3 +398,23 @@ def test_the_graph_opens_an_entry_on_tap(ready: Path) -> None:
     graph_screen = next(item for item in walk(shell.body.content) if isinstance(item, ft.GestureDetector)).on_tap_down.__self__
     graph_screen.resized(SimpleNamespace(width=500, height=300))
     assert graph_screen.drawing.width == 500
+
+
+def test_statistics_and_the_weekly_review_from_oggi(ready: Path) -> None:
+    page = FakePage()
+    shell = Shell(page, ready)
+    shell.start("/oggi")
+    click(button(shell.body.content, "Statistiche"))
+    assert shell.current.path == "/theoria"
+    shown = texts(shell.body.content)
+    assert "Scrittura" in shown and any(text.startswith("settimana ") for text in shown)
+    click(button(shell.body.content, "Mese"))
+    from zibaldone.core.stats import month_of
+
+    assert button(shell.body.content, "Revisione del mese") and month_of(shell.ctx.now().date()).label in texts(shell.body.content)
+    click(button(shell.body.content, "Settimana"))
+    click(button(shell.body.content, "Revisione della settimana"))
+    assert shell.current.screen == "modifica"
+    assert "Revisione preparata con i dati del periodo: rileggila e completala." in shell.ctx.toasts
+    with Store.open(ready) as store:
+        assert len(store.list_entries(template="settimana")) == 1

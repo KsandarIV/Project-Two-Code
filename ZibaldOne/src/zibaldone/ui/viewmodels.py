@@ -1153,3 +1153,78 @@ def graph_summary(graph: Any) -> str:
     if facts.components > 1:
         parts.append(f"{facts.components} gruppi")
     return ", ".join(parts)
+
+
+# * — Theoria: statistics and reviews (0.1.4) —
+
+
+@dataclass
+class StatsQuery:
+    """Which period the Statistiche screen shows (kept between visits)."""
+
+    kind: str = "week"  # "week" or "month"
+    day: str = ""  # any day of the period, ISO; "" = today
+
+
+def stats_day(query: StatsQuery, today: date) -> date:
+    try:
+        return date.fromisoformat(query.day) if query.day else today
+    except ValueError:
+        return today
+
+
+def load_stats(store: Any, query: StatsQuery, today: date) -> Any:
+    """The `core.stats.Review` of the chosen week or month."""
+    from zibaldone.core.stats import review
+
+    templates = {template.slug: template for template in store.list_templates()}
+    kind = "month" if query.kind == "month" else "week"
+    return review(store.list_entries(newest_first=False), templates, store.all_links(), kind, stats_day(query, today), today)
+
+
+def move_period(query: StatsQuery, today: date, step: int) -> bool:
+    """Go to the previous (-1) or next (+1) period; never past the current one. True when it moved."""
+    from zibaldone.core.stats import period_of
+
+    period = period_of("month" if query.kind == "month" else "week", stats_day(query, today))
+    target = period.previous() if step < 0 else period.next()
+    if target.start > today:
+        return False
+    query.day = "" if target.contains(today) else target.start.isoformat()
+    return True
+
+
+def mood_point_label(point: Any) -> str:
+    from zibaldone.core.stats import short_day
+
+    if point.start == point.end:
+        return short_day(point.start)
+    return f"sett. {point.start.isocalendar()[1]} ({point.start.day}/{point.start.month}–{point.end.day}/{point.end.month})"
+
+
+def writing_line(result: Any) -> str:
+    period, activity = result.period, result.activity
+    if not result.activity.total:
+        return "Nessuna voce in questo periodo."
+    previous = f"la {period.noun} prima" if period.kind == "week" else f"il {period.noun} prima"
+    entries = "1 voce" if activity.total == 1 else f"{activity.total} voci"
+    days = "1 giorno" if activity.active_days == 1 else f"{activity.active_days} giorni"
+    return f"{entries} in {days} su {activity.days} ({previous}: {result.previous_entries})."
+
+
+def prepare_review(store: Any, kind: str, day: date, today: date) -> Tuple[Optional[Entry], bool]:
+    """The review entry of the period: (entry, True) when just written from the proposal,
+    (entry, False) when one already exists, (None, False) when no review template is installed."""
+    from zibaldone.core.stats import in_period, propose_review_values, review, review_slugs, review_template
+
+    kind = "month" if kind == "month" else "week"
+    templates = {template.slug: template for template in store.list_templates()}
+    target = review_template(templates, kind)
+    if target is None:
+        return None, False
+    result = review(store.list_entries(newest_first=False), templates, store.all_links(), kind, day, today, exclude_templates=sorted(set(review_slugs(templates)) | {target.slug}))
+    existing = in_period(store.list_entries(template=target.slug), result.period)
+    if existing:
+        return existing[0], False
+    when = min(result.period.end, today) if result.period.start <= today else result.period.end
+    return store.add_entry(target.slug, propose_review_values(result, target), when.isoformat()), True

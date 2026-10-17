@@ -122,6 +122,7 @@ def route_path(screen: str, arg: str = "") -> str:
         "modello": f"/modelli/{arg or 'nuovo'}",
         "scuole": "/scuole",
         "grafo": f"/grafo/{arg}" if arg else "/grafo",
+        "theoria": "/theoria",
         "parte": f"/organon/{arg}",
         "consenso": "/benvenuto/consenso",
         "accesso": "/benvenuto/accesso",
@@ -155,6 +156,8 @@ def parse_route(path: Optional[str]) -> Route:
         return Route("scuole", "modelli")
     if head == "grafo" and len(rest) <= 1:
         return Route("grafo", "voci", rest[0] if rest else "")
+    if head == "theoria" and not rest:
+        return Route("theoria", "oggi")
     if head == "organon" and len(rest) == 1 and rest[0] in SETTINGS_KEYS:
         return Route("parte", "organon", rest[0])
     if head == "benvenuto" and len(rest) == 1 and rest[0] in ("consenso", "accesso", "copie", "diario"):

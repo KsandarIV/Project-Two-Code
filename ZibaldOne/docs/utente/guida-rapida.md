@@ -101,6 +101,18 @@ Tutte le voci e i loro collegamenti, come una mappa. Nell'app: **Voci → Grafo*
 
 Come funziona: [il grafo](../tecnica/grafo.md).
 
+## Statistiche e revisioni · Theoria
+Come è andata la settimana o il mese: quante voci, l'umore giorno per giorno, le 8 aree, le collezioni in corso, le persone più presenti, le cose ancora da fare. Nell'app: **Oggi → Statistiche**, con le frecce per i periodi passati.
+
+| Comando | Cosa fa |
+|---|---|
+| `zbone stats` | i numeri di questa settimana (`--month` per il mese, `--date 2026-09-15` per un altro periodo) |
+| `zbone stats --html theoria.html` | una pagina con i grafici, da aprire nel browser |
+| `zbone review week` | la revisione della settimana, con una proposta già compilata |
+| `zbone review month --save` | prepara la revisione del mese e la salva come voce, da completare con `zbone entry edit` |
+
+La proposta è una bozza: il voto viene dai voti alle giornate, l'area su cui concentrarti è la più bassa, gli obiettivi sono le cose ancora aperte, i momenti belli sono presi dalle tue voci. Nell'app il pulsante **Revisione della settimana** fa lo stesso e apre il modulo per completarla. Come funziona: [statistiche e revisioni](../tecnica/statistiche.md).
+
 ## Modelli pronti
 ZibaldOne ha quattro **pacchetti** di modelli già pronti, ognuno con il nome di una scuola filosofica. Installarli non tocca le tue voci e puoi modificarli come i tuoi.
 

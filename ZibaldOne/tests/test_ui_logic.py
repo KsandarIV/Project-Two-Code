@@ -93,6 +93,7 @@ def test_sections_have_a_plain_and_a_philosophical_name() -> None:
         ("/scuole", "scuole", "modelli", ""),
         ("/grafo", "grafo", "voci", ""),
         ("/grafo/abc123", "grafo", "voci", "abc123"),
+        ("/theoria", "theoria", "oggi", ""),
         ("/organon/daimon", "parte", "organon", "daimon"),
         ("/benvenuto/consenso", "consenso", "", ""),
         ("/benvenuto/copie", "copie", "", ""),
@@ -110,7 +111,7 @@ def test_unknown_routes_go_home(path) -> None:
 
 
 def test_route_paths_round_trip() -> None:
-    for path in ["/oggi", "/voci/x1", "/voci/x1/modifica", "/scrivi/aree", "/modelli/nuovo", "/modelli/sera", "/scuole", "/grafo", "/grafo/x1", "/organon/info", "/benvenuto/diario"]:
+    for path in ["/oggi", "/voci/x1", "/voci/x1/modifica", "/scrivi/aree", "/modelli/nuovo", "/modelli/sera", "/scuole", "/grafo", "/grafo/x1", "/theoria", "/organon/info", "/benvenuto/diario"]:
         assert parse_route(path).path == path
     assert route_path("modello") == "/modelli/nuovo"
     assert parse_route("/oggi").is_top_level and not parse_route("/voci/x").is_top_level

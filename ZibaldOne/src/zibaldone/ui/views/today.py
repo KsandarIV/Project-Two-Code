@@ -22,7 +22,10 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
         model = vm.build_today(store, now, reminder, streak, config)
 
     info = section("oggi")
-    actions: List[ft.Control] = [W.primary_button("Nuova voce", lambda _: choose_template(ctx), icon="ADD")]
+    actions: List[ft.Control] = [
+        W.primary_button("Nuova voce", lambda _: choose_template(ctx), icon="ADD"),
+        W.secondary_button("Statistiche", lambda _: ctx.go("/theoria"), icon="INSIGHTS"),
+    ]
     if model.streak_label:
         actions.append(W.pill(model.streak_label, T.ACCENT_2, icon="LOCAL_FIRE_DEPARTMENT"))
     controls: List[ft.Control] = [

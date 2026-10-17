@@ -21,7 +21,7 @@ Un **blocco** è un tipo di campo con le sue regole. Ogni modello è una lista o
 - Un blocco vuoto si salva come assente; un blocco obbligatorio vuoto blocca il salvataggio con un messaggio in italiano.
 - Le opzioni sconosciute sono rifiutate: un modello con un errore di battitura non viene salvato a metà.
 - Gli stati di `progress` sono: lista dei desideri, da iniziare, in corso, in pausa, completato, abbandonato. "Completato" porta il contatore al totale.
-- `choice` con `values` dà un punteggio a ogni scelta (per esempio l'umore da 1 a 5), che userà la v0.1.4 per le statistiche.
+- `choice` con `values` dà un punteggio a ogni scelta (per esempio l'umore da 1 a 5): dalla v0.1.4 le statistiche lo usano per l'umore ([statistiche e revisioni](statistiche.md)).
 - `link` salva gli id delle voci collegate. Dalla v0.1.2 ogni collegamento (anche `[[Titolo]]` in un testo) è nella tabella `links`: chi cita chi, "tutto su Marco" ([ricerca e collegamenti](ricerca-e-collegamenti.md)); dalla 0.1.3 diventa il grafo.
 
 ## Aggiungere un tipo nuovo
