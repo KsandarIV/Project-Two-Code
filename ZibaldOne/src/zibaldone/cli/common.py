@@ -1,11 +1,14 @@
 """Helpers shared by every CLI command: consent, opening the store, answers, errors."""
 
+import sqlite3
 from contextlib import contextmanager
 from typing import Iterator
 
 import typer
 
 from zibaldone.core.privacy import NOTICE_VERSION, notice_text
+from zibaldone.storage import backups
+from zibaldone.storage.backups import BackupError
 from zibaldone.storage.database import Store, StoreError
 from zibaldone.storage.paths import data_dir
 from zibaldone.storage.settings import SettingsError, has_consent, record_consent
@@ -51,17 +54,46 @@ def fail(message: str, code: int = 1) -> None:
     raise typer.Exit(code=code)
 
 
+def warn(message: str) -> None:
+    typer.secho(f"Attenzione: {message}", fg=typer.colors.YELLOW, err=True)
+
+
+def run_auto_backup() -> None:
+    """The daily automatic snapshot, after a command saved data.
+
+    Silent when there is nothing to do; a failure becomes a warning and never
+    fails the command, because the user's data is already saved.
+    """
+    try:
+        backups.maybe_auto_snapshot(data_dir())
+    except (BackupError, SettingsError, OSError, sqlite3.Error) as error:
+        warn(f"backup automatico non riuscito: {error}")
+
+
 @contextmanager
 def open_store() -> Iterator[Store]:
-    """Ask for consent if needed, open the database and turn known errors into messages."""
+    """Ask for consent if needed, open the database and turn known errors into messages.
+
+    Before an update migrates the database a copy is saved; after a command
+    that changed something the daily snapshot runs (Mnemosyne, ADR-0006).
+    """
     ensure_consent()
+    folder = data_dir()
     try:
-        store = Store.open(data_dir())
+        backups.maybe_pre_migration_snapshot(folder)
+    except BackupError as error:
+        warn(f"copia prima dell'aggiornamento non riuscita: {error}")
+    try:
+        store = Store.open(folder)
     except StoreError as error:
         fail(str(error))
+    changes_at_start = store.connection.total_changes
     try:
         yield store
+        changed = store.connection.total_changes > changes_at_start
     except (StoreError, ValueError) as error:
         fail(str(error))
     finally:
         store.close()
+    if changed:
+        run_auto_backup()

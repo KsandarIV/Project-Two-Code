@@ -10,8 +10,8 @@ The version lives in one place: `src/zibaldone/__init__.py` (`__version__`);
 To keep it running in the background on Windows without a window:
     Start-Process pythonw -ArgumentList "scripts/version_watch.py" -WindowStyle Hidden
 
-When `__version__` goes from 0.2.0 to 0.3.0 the watcher moves the [Unreleased]
-changelog entries under 0.3.0 (unless that section already exists; with no
+When `__version__` goes from 0.0.2 to 0.0.3 the watcher moves the [Unreleased]
+changelog entries under 0.0.3 (unless that section already exists; with no
 entries it writes a placeholder line to fill in later), creates
 `docs/versioni/v0.0.3.md` if missing, commits the ZibaldOne folder with
 "release: ZibaldOne v0.0.3" and adds the tag `zibaldone-v0.0.3`.

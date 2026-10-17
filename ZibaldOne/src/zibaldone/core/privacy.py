@@ -7,13 +7,15 @@ NOTICE_VERSION, so everyone is asked again.
 from pathlib import Path
 from typing import List
 
-NOTICE_VERSION = 1
+NOTICE_VERSION = 2
 
 RISKS: List[str] = [
     "Se perdi o rompi il dispositivo senza un backup, perdi i dati.",
     "Chi usa questo dispositivo con il tuo account può leggere i file: per ora non sono cifrati.",
     "Se metti la cartella dentro Google Drive, i dati stanno anche sui server di Google, "
     "alle condizioni del tuo account Google.",
+    "Le istantanee (backup) conservano anche le voci che cancelli finché non scadono: "
+    "con la durata predefinita fino a circa 12 mesi. Puoi accorciarla con `zbone backup config`.",
 ]
 
 

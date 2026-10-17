@@ -11,7 +11,7 @@ Obiettivo: far provare ZibaldOne agli amici, che useranno **smartphone Android**
 Scelta tecnica ([ADR-0004](../decisioni/ADR-0004-flet-e-sqlite.md)): **un solo codice Python** per il cuore dell'app (`core/`, `storage/`) e un'interfaccia con **Flet**, che produce sia l'app Windows sia l'APK Android dallo stesso codice. La CLI resta un'interfaccia in più sopra lo stesso cuore.
 
 ## Versioni
-- **SemVer**: `MAJOR.MINOR.PATCH`. Una correzione è una *patch* (`0.3.0` → `0.3.1`), una funzione nuova è una *minor* (`0.3.1` → `0.4.0`).
+- **Numerazione** ([ADR-0010](../decisioni/ADR-0010-numerazione-delle-versioni.md)): prima della 1.0 ogni versione `0.Y.Z` aggiunge una capacità `Z` dentro una fase `Y` (`0.0.x` fondamenta, `0.1.x` app per i tester, `0.2.x` sprint delle 8 aree). La **1.0** è l'app davvero usabile ogni giorno. Dopo la 1.0 si torna al SemVer classico: correzione `1.0.1`, funzione nuova `1.1.0`.
 - Ogni versione ha un tag git, una voce nel CHANGELOG e una nota in `docs/versioni/`.
 
 ## Canale per i tester Android

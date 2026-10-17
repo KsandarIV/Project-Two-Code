@@ -6,7 +6,9 @@ import typer
 
 from zibaldone import __version__
 from zibaldone.core.brand import APP_MOTTO, APP_NAME, APP_TAGLINE, MASCOTS, NOMENCLATURE, quote_of_the_day
+from zibaldone.cli.backup_cmd import backup_app
 from zibaldone.cli.entry_cmd import entry_app
+from zibaldone.cli.export_cmd import export_app
 from zibaldone.cli.pack_cmd import pack_app
 from zibaldone.cli.privacy_cmd import data_app, privacy_app
 from zibaldone.cli.template_cmd import template_app
@@ -23,6 +25,8 @@ app.add_typer(data_app, name="data")
 app.add_typer(template_app, name="template")
 app.add_typer(entry_app, name="entry")
 app.add_typer(pack_app, name="pack")
+app.add_typer(backup_app, name="backup")
+app.add_typer(export_app, name="export")
 
 
 def _first_line(callback: Optional[Callable]) -> str:
