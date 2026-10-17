@@ -34,6 +34,7 @@ from zibaldone.ui.views.common import error_screen
 logger = logging.getLogger("zibaldone.ui")
 
 REMINDER_FIRST_CHECK_SECONDS = 60
+UPDATE_CHECK_DELAY_SECONDS = 5
 REMINDER_INTERVAL_SECONDS = 300
 
 
@@ -92,6 +93,7 @@ class Shell:
         self.start_path = start_path if start_path and start_path != "/" else "/oggi"
         self.advance()
         page.run_task(self.reminder_loop)
+        page.run_task(self.update_check)
 
     def first_run_step(self) -> Optional[str]:
         """The onboarding page still to show, or None when the app can open."""
@@ -306,6 +308,22 @@ class Shell:
                 self.ctx.toast(warning, error=True)
 
         self.page.run_task(task)
+
+    # — is there a newer version? (0.1.1) —
+
+    async def update_check(self) -> None:
+        await asyncio.sleep(UPDATE_CHECK_DELAY_SECONDS)
+        try:
+            if not has_consent(self.folder, NOTICE_VERSION):
+                return
+            release = await asyncio.to_thread(services.check_updates, self.folder)
+        except Exception:
+            logger.debug("update check failed", exc_info=True)
+            return
+        if release is not None:
+            url = release.apk_url if services.running_on_android() and release.apk_url else release.page_url
+            self.ctx.toast(f"È uscita ZibaldOne {release.version}.", action="Scarica", on_action=lambda: self.ctx.open_url(url))
+            self.ctx.update()
 
     # — the Daimon while the app is open —
 

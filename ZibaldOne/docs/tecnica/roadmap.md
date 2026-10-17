@@ -19,7 +19,7 @@ Numerazione ([ADR-0010](../decisioni/ADR-0010-numerazione-delle-versioni.md)): p
 | Versione | Capacità | Stato |
 |---|---|---|
 | v0.1.0 | **Interfaccia grafica** Flet con tema neon: Oggi, Voci, Collezioni, Modelli, Impostazioni; stesso codice per Windows e Android ([interfaccia](interfaccia.md)) | ✅ |
-| v0.1.1 | **Prima versione per i tester**: APK costruito da GitHub Actions, controllo aggiornamenti, guida tester | ⬜ |
+| v0.1.1 | **Prima versione per i tester**: APK costruito da GitHub Actions, controllo aggiornamenti, [guida tester](../utente/guida-tester.md) | ✅ |
 | v0.1.2 | **Ricerca e collegamenti**: ricerca a testo pieno, filtri per tag e modello, collegamenti tra voci e "tutto su Marco" | ⬜ |
 | v0.1.3 | **Grafo** stile Obsidian delle voci e dei collegamenti | ⬜ |
 | v0.1.4 | **Statistiche e revisioni**: andamento dell'umore, punteggi delle aree per settimana e mese, collezioni in corso, revisione della settimana | ⬜ |

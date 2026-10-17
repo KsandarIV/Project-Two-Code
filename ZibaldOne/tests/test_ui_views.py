@@ -47,7 +47,7 @@ class FakePage:
 
     def run_task(self, handler, *args):
         coroutine = handler(*args)
-        if handler.__name__ == "reminder_loop":
+        if handler.__name__ in ("reminder_loop", "update_check"):  # long-running or online: tested on their own
             coroutine.close()
             return None
         asyncio.run(coroutine)
@@ -321,3 +321,48 @@ def test_main_entry_point_uses_the_start_route(ready: Path, monkeypatch) -> None
     monkeypatch.setattr(app.Shell, "start", lambda self, path="": started.append(path))
     app.main(page)
     assert started == ["/collezioni"]
+
+
+def test_the_shell_says_when_a_new_version_is_out(ready: Path, monkeypatch) -> None:
+    from zibaldone.cloud.updates import Release
+    from zibaldone.ui import app
+
+    release = Release("9.9.9", "zibaldone-v9.9.9", "https://example.org/release", "https://example.org/ZibaldOne-9.9.9.apk")
+    monkeypatch.setattr(app, "UPDATE_CHECK_DELAY_SECONDS", 0)
+    monkeypatch.setattr(services, "check_updates", lambda folder: release)
+    page = FakePage()
+    shell = Shell(page, ready)
+    shell.start("/oggi")
+    asyncio.run(shell.update_check())
+    assert shell.ctx.toasts[-1] == "È uscita ZibaldOne 9.9.9."
+    assert page.dialogs[-1].action == "Scarica"
+
+
+def test_the_shell_stays_quiet_when_up_to_date(ready: Path, monkeypatch) -> None:
+    from zibaldone.ui import app
+
+    monkeypatch.setattr(app, "UPDATE_CHECK_DELAY_SECONDS", 0)
+    monkeypatch.setattr(services, "check_updates", lambda folder: None)
+    shell = Shell(FakePage(), ready)
+    shell.start("/oggi")
+    before = list(shell.ctx.toasts)
+    asyncio.run(shell.update_check())
+    assert shell.ctx.toasts == before
+
+
+def test_the_info_screen_checks_for_updates_on_request(ready: Path, monkeypatch) -> None:
+    from zibaldone.cloud.updates import Release
+
+    asked: List[bool] = []
+    monkeypatch.setattr(services, "check_updates_now", lambda folder: asked.append(True) or Release("9.9.9", "zibaldone-v9.9.9", "https://example.org/r"))
+    shell = Shell(FakePage(), ready)
+    shell.start("/organon/info")
+    screen = shell.body.content
+    assert "Controlla da sola una volta al giorno" in texts(screen)
+    click(button(screen, "Controlla adesso"))
+    assert asked == [True]
+    assert any(text.startswith("È uscita ZibaldOne 9.9.9") for text in texts(shell.body.content))
+    switch = next(item for item in walk(screen) if isinstance(item, ft.Switch) and item.label == "Controlla da sola una volta al giorno")
+    switch.value = False
+    switch.on_change(SimpleNamespace(control=switch))
+    assert services.update_check_enabled(ready) is False

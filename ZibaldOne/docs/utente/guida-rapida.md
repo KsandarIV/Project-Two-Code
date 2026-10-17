@@ -188,6 +188,16 @@ Per le notifiche di sistema sul PC installa il pacchetto facoltativo: `pip insta
 
 Il file esportato non è cifrato: chi lo apre legge le tue voci.
 
+## Aggiornamenti
+L'app guarda una volta al giorno se è uscita una versione nuova e, se c'è, te lo dice con un pulsante **Scarica**. Chiede solo a GitHub, senza account: GitHub vede l'indirizzo IP e la versione dell'app, nient'altro.
+
+| Comando | Cosa fa |
+|---|---|
+| `zbone update` | controlla adesso |
+| `zbone update --no-auto` | spegne il controllo automatico dell'app (`--auto` lo riaccende) |
+
+Nell'app: **Impostazioni → Informazioni**. Chi prova l'app sul telefono trova i passi nella [guida per i tester](guida-tester.md).
+
 ## Il pensiero del giorno e i nomi
 - `zbone pensiero`: una frase di un filosofo, diversa ogni giorno, con la fonte.
 - `zbone about`: da dove viene il nome, le mascotte delle 8 aree e i nomi filosofici di ogni parte dell'app ([identità](../brand/identita.md)).
