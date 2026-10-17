@@ -55,5 +55,5 @@ zbone cloud             # come va
 - Nella pagina di Google comparirà "Google non ha verificato questa app": è normale in modalità test. I tester cliccano **Continua**.
 - Se un tester toglie la spunta su Drive, ZibaldOne funziona lo stesso, ma le copie possono stare solo sul dispositivo o in una cartella.
 - Il redirect usa `http://127.0.0.1:<porta>/`, una porta libera scelta ogni volta: con un client "App desktop" non serve registrarlo.
-- **Android: da verificare sul telefono.** Il flusso con il browser e il ritorno su 127.0.0.1 funziona sul PC. Su Android l'app deve restare viva mentre il browser è aperto; se non basta, alla 0.1.0 si passa a un client "Android" con la firma dell'APK.
+- **Android: da verificare sul telefono.** Il flusso con il browser e il ritorno su 127.0.0.1 funziona sul PC. Su Android l'app deve restare viva mentre il browser è aperto; se non basta, alla 0.1.1 si passa a un client "Android" con la firma dell'APK.
 - Per togliere l'accesso a ZibaldOne: [myaccount.google.com/permissions](https://myaccount.google.com/permissions). `zbone account logout` lo revoca già da solo.

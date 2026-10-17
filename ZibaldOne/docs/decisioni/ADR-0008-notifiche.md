@@ -1,6 +1,6 @@
 # ADR-0008 — Notifiche che spronano a scrivere
 
-- **Data**: 2026-10-17 · **Stato**: accettata (richiesta di Alex), dettagli tecnici da verificare su Android alla v0.1.1
+- **Data**: 2026-10-17 · **Stato**: accettata (richiesta di Alex); realizzata nella 0.0.9, consegna su Android da verificare sul telefono con la prima APK (0.1.1)
 - **Contesto**: un diario funziona se lo si apre ogni giorno. La Journal App ruotava intorno a 3 momenti (inizio, metà, fine giornata). Serve un promemoria che sproni senza diventare fastidioso o colpevolizzante.
 - **Decisione**:
   - **Promemoria per momento**: Mattina, Metà giornata, Sera, con orari predefiniti 08:30, 13:30, 21:30. Ogni momento si accende, si spegne e cambia orario; si scelgono i giorni della settimana.
@@ -14,3 +14,10 @@
     - Android: notifiche locali native con `android-notify`. **Da verificare sul telefono**: le notifiche ad app chiusa su Android possono richiedere lavoro nativo in più.
 - **Alternative scartate**: notifiche push da un server (servirebbe un server nostro); l'estensione `flet-local-notifications` (richiede Flet 0.28, noi usiamo Flet 1.0).
 - **Conseguenze**: nuove impostazioni `reminders` in `settings.json`; un registro locale di cosa è stato notificato; l'avviso privacy cita i promemoria.
+- **Come è stata realizzata (0.0.9)**:
+  - `core/reminders.py` è puro: riceve sempre l'ora, non legge orologio, disco o rete. `notify/service.py` lo collega al database e al registro (`storage/reminder_log.py`, 60 giorni).
+  - Un promemoria è dovuto dal suo orario per la "finestra" (di base 180 minuti) o fino al momento successivo: un controllo in ritardo lo manda comunque, una volta sola.
+  - Consegna: `notify/desktop.py` (desktop-notifier, facoltativo: `pip install "zibaldone[notifiche]"`), `notify/android.py` (android-notify, da verificare), altrimenti il terminale.
+  - Windows ad app chiusa: `zbone remind install` crea un'attività pianificata per momento, che lancia `zbone remind fire` e riprova ogni 30 minuti dentro la finestra.
+  - Le attività pianificate non chiedono nulla: senza consenso privacy si fermano, e non chiedono l'accesso con Google.
+  - Avviso privacy versione 4: le notifiche si vedono a schermo bloccato, ma non contengono mai ciò che scrivi.

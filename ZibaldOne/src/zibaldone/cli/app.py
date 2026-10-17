@@ -12,6 +12,7 @@ from zibaldone.cli.entry_cmd import entry_app
 from zibaldone.cli.export_cmd import export_app
 from zibaldone.cli.pack_cmd import pack_app
 from zibaldone.cli.privacy_cmd import data_app, privacy_app
+from zibaldone.cli.remind_cmd import remind_app
 from zibaldone.cli.template_cmd import template_app
 
 
@@ -30,6 +31,7 @@ app.add_typer(backup_app, name="backup")
 app.add_typer(export_app, name="export")
 app.add_typer(account_app, name="account")
 app.add_typer(cloud_app, name="cloud")
+app.add_typer(remind_app, name="remind")
 
 
 def _first_line(callback: Optional[Callable]) -> str:

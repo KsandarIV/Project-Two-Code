@@ -15,7 +15,8 @@ src/zibaldone/
   storage/   persistenza nella cartella dati dell'utente (dalla v0.0.2)
   cli/       comandi Typer: zibaldone / zbone
   cloud/     account Google, destinazioni e copie dei backup (dalla v0.0.8)
-  ui/        interfaccia grafica (dalla v0.0.9), sopra gli stessi moduli
+  notify/    consegna dei promemoria: desktop, Android, attività di Windows (dalla v0.0.9)
+  ui/        interfaccia grafica (dalla v0.1.0), sopra gli stessi moduli
   ai/        funzioni IA (rinviate: si definiranno molto più avanti)
 ```
 Regola: `cli/` e `ui/` chiamano `core/` e `storage/`, mai il contrario.

@@ -13,6 +13,9 @@ dependencies = [
 dev = [
   "pytest>=8",
 ]
+notifiche = [
+  "desktop-notifier>=6.1,<7",
+]
 
 [project.scripts]
 zibaldone = "zibaldone.cli.app:main"

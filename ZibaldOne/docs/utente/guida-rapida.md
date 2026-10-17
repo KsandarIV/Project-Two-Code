@@ -149,6 +149,22 @@ Fuori vanno **solo istantanee cifrate**: prima serve `zbone backup setup`. Dopo,
 
 Backup, export e privacy funzionano sempre, anche senza account: riavere i tuoi dati non dipende mai da Google.
 
+## Promemoria · Daimon
+ZibaldOne ti ricorda di scrivere nei 3 momenti della giornata: mattina (08:30), metà giornata (13:30) e sera (21:30). Un promemoria arriva al massimo una volta per momento, mai se hai già scritto la voce di quel momento e mai nelle ore di silenzio (22:30–08:00). Se ne ignori 3 di fila, ZibaldOne ti propone di diradarli; non li spegne mai da solo. Le notifiche non mostrano mai ciò che scrivi.
+
+| Comando | Cosa fa |
+|---|---|
+| `zbone remind status` | promemoria, voci di oggi, serie di giorni e suggerimenti |
+| `zbone remind config --moment sera --time 22:00` | cambia l'orario di un momento |
+| `zbone remind config --moment mattina --off` | spegne un momento (`--on` lo riaccende; senza `--moment` vale per tutti) |
+| `zbone remind config --days feriali` | solo dal lunedì al venerdì (anche `weekend`, `lun,mer,ven`, `lun-ven`) |
+| `zbone remind config --quiet-start 23:00 --quiet-end 07:30` | ore di silenzio |
+| `zbone remind config --moment sera --thin-out` | un giorno sì e uno no |
+| `zbone remind test` | una notifica di prova |
+| `zbone remind install` | **Windows**: i promemoria arrivano anche ad app chiusa (`uninstall` per toglierli) |
+
+Per le notifiche di sistema sul PC installa il pacchetto facoltativo: `pip install -e ".[notifiche]"`. Senza, il promemoria compare nel terminale.
+
 ## Esportare
 - `zbone export markdown`: uno zip con un file per voce, da aprire in Obsidian.
 - `zbone export csv`: uno zip con un foglio per modello, da aprire in Excel.
