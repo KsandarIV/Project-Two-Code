@@ -356,3 +356,15 @@ def test_stats_periods_and_the_review(store: Store) -> None:
     assert created and entry.template == "settimana" and entry.values["obiettivi"] == [{"text": "comprare pane", "done": False}]
     again, created_again = vm.prepare_review(store, "week", TODAY, TODAY)
     assert again.id == entry.id and not created_again
+
+
+def test_anonymizer_preview_uses_the_people(store: Store) -> None:
+    add(store, "persona", {"nome": "Giulia Bianchi", "soprannomi": ["Giuli"]})
+    preview = vm.anonymize_preview(store, "Ieri Giuli mi ha scritto a giulia@example.com, poi ho visto Giulia.", "pseudo")
+    assert "Giuli" not in preview.text and "giulia@example.com" not in preview.text
+    assert preview.text.count("[PERSONA_1]") == 2 and preview.name_forms >= 3
+    kinds = {row.kind for row in preview.rows}
+    assert {"nome di persona", "indirizzo email"} <= kinds
+    assert vm.anonymize_preview(store, "niente di personale", "anon").rows == ()
+    add(store, "riflessione", {"titolo": "Pensieri", "testo": "Parlato con [[Giulia Bianchi]]."})
+    assert vm.latest_entry_text(store) == "Pensieri\nParlato con Giulia Bianchi."

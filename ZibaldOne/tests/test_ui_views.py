@@ -142,7 +142,7 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
         "/grafo", f"/grafo/{known['persona']}", "/grafo/nonesiste", "/theoria",
     ]
     paths += [f"/scrivi/{slug}" for slug in ("sera", "aree", "mattina", "libro", "serie", "incontro", "persona", "desiderio")]
-    paths += [f"/organon/{part}" for part in ("parresia", "daimon", "mnemosyne", "nuvole", "info")]
+    paths += [f"/organon/{part}" for part in ("parresia", "daimon", "mnemosyne", "nuvole", "velo", "info")]
     for path in paths:
         ctx = AppContext(ready)
         ctx.wide = wide
@@ -418,3 +418,19 @@ def test_statistics_and_the_weekly_review_from_oggi(ready: Path) -> None:
     assert "Revisione preparata con i dati del periodo: rileggila e completala." in shell.ctx.toasts
     with Store.open(ready) as store:
         assert len(store.list_entries(template="settimana")) == 1
+
+
+def test_trying_the_anonymizer_from_organon(ready: Path) -> None:
+    shell = Shell(FakePage(), ready)
+    shell.start("/organon/velo")
+    screen = shell.body.content
+    click(button(screen, "Prova"))
+    assert "Scrivi o incolla un testo, poi tocca Prova." in texts(shell.body.content)
+    field = next(item for item in walk(screen) if isinstance(item, ft.TextField))
+    field.value = "Cena con Giulia, chiamala al 333 123 4567."
+    click(button(screen, "Prova"))
+    shown = texts(shell.body.content)
+    assert any("[PERSONA_1]" in text and "Giulia" not in text for text in shown)
+    assert any(text.startswith("Sostituzioni (2)") for text in shown)
+    click(button(screen, "Usa l'ultima voce"))
+    assert field.value

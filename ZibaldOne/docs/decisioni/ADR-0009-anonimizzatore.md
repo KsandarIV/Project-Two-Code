@@ -16,3 +16,6 @@
   - **GDPR**: i dati pseudonimizzati restano dati personali (considerando 26): l'anonimizzatore riduce il rischio, non lo azzera. La tabella dei pseudonimi va protetta come il resto dei dati (cifrata quando la cifratura è attiva).
   - Le regole sbagliano: meglio sostituire troppo che troppo poco (si privilegia il richiamo).
 - **Alternative scartate**: mandare i testi così come sono; affidarsi solo a un modello NER (meno prevedibile e più pesante su Android).
+
+## Nota 2026-10-17 (0.1.5)
+Messo in pratica come deciso: `core/anonymizer.py` con le regole elencate sopra, `core/anon_eval.py` con 92 frasi di prova (precisione 96,7%, richiamo 95,6% al rilascio), `zbone anon preview/eval` e la prova nell'app in Impostazioni → Anonimizzatore. Il modello NER locale resta per dopo. Dettagli in [anonimizzatore](../tecnica/anonimizzatore.md).

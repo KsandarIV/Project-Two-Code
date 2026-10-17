@@ -4,6 +4,16 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.1.5] — 2026-10-17
+### Aggiunto
+- **Anonimizzatore** (Velo d'ignoranza), tutto locale: toglie nomi di persona (dalle voci Persona, con i soprannomi), email, telefoni, codice fiscale, partita IVA, IBAN, carte, URL, indirizzi IP e stradali, date di nascita, e mette segnaposto coerenti come `[PERSONA_1]`.
+- Due modalità: pseudonimi reversibili (la tabella resta in memoria, per riportare la risposta di un modello ai nomi veri) e anonimato.
+- Controlli veri dove esistono: codice fiscale, partita IVA, IBAN (mod 97), carte (Luhn).
+- `zbone anon preview` e `zbone anon eval` (precisione e richiamo per tipo, su 92 frasi di prova: 96,7% e 95,6%).
+- App: **Impostazioni → Anonimizzatore**, per provarlo su un testo o sull'ultima voce, senza salvare né inviare nulla.
+### Documentazione
+- [Anonimizzatore](docs/tecnica/anonimizzatore.md); guida rapida, privacy, interfaccia e ADR-0009 aggiornati.
+
 ## [0.1.4] — 2026-10-17
 ### Aggiunto
 - **Statistiche** (Theoria) di una settimana o di un mese: scrittura e giorni di fila, umore da 1 a 5 giorno per giorno con la tendenza, medie delle 8 aree e degli altri punteggi, collezioni in corso e completate, persone più presenti, cose ancora aperte. Tutto riconosciuto dal tipo di blocco, quindi anche nei modelli fatti da te.

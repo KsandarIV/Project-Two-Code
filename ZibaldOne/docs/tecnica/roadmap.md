@@ -23,7 +23,7 @@ Numerazione ([ADR-0010](../decisioni/ADR-0010-numerazione-delle-versioni.md)): p
 | v0.1.2 | **Ricerca e collegamenti**: ricerca a testo pieno, filtri per tag e modello, collegamenti tra voci e "tutto su Marco" ([ricerca e collegamenti](ricerca-e-collegamenti.md)) | ✅ |
 | v0.1.3 | **Grafo** stile Obsidian delle voci e dei collegamenti ([il grafo](grafo.md)) | ✅ |
 | v0.1.4 | **Statistiche e revisioni**: andamento dell'umore, punteggi delle aree per settimana e mese, collezioni in corso, revisione della settimana ([statistiche e revisioni](statistiche.md)) | ✅ |
-| v0.1.5 | **Anonimizzatore** per preparare i testi ai futuri modelli di IA generativa: pseudonimi reversibili, tutto in locale ([ADR-0009](../decisioni/ADR-0009-anonimizzatore.md)) | ⬜ |
+| v0.1.5 | **Anonimizzatore** per preparare i testi ai futuri modelli di IA generativa: pseudonimi reversibili, tutto in locale ([ADR-0009](../decisioni/ADR-0009-anonimizzatore.md), [anonimizzatore](anonimizzatore.md)) | ✅ |
 
 > Ordine aggiornato il 2026-10-17: le notifiche (prima 0.1.1) vengono prima dell'interfaccia, perché l'interfaccia le usa (promemoria in app e serie di giorni). Interfaccia e prima versione per i tester scalano di una posizione.
 

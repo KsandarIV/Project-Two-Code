@@ -2,7 +2,7 @@
 
 Un **tutto in uno personale**, componibile e local-first: diario, collezioni, appunti, documenti, finanze e altro, costruiti a blocchi (testo, slider, voti, tag, segnalibri…) come vuoi tu. Per Windows e Android, in futuro Linux. Vedi la [visione](docs/tecnica/visione.md).
 
-> Stato: **v0.1.4**, ricerca, collegamenti, grafo, statistiche e revisioni delle voci, sopra la prima versione per i tester: interfaccia grafica per Windows e Android (APK nelle [release](https://github.com/KsandarIV/Project-Two-Code/releases)), modelli a blocchi, voci, modelli pronti, pacchetti da condividere, backup cifrati, accesso con Google e copie su Drive, promemoria per scrivere, avviso quando esce una versione nuova. Vedi la [roadmap](docs/tecnica/roadmap.md) e il [CHANGELOG](CHANGELOG.md).
+> Stato: **v0.1.5**, la fase 0.1 completa: ricerca, collegamenti, grafo, statistiche e revisioni delle voci, anonimizzatore per le future funzioni di IA, sopra la prima versione per i tester: interfaccia grafica per Windows e Android (APK nelle [release](https://github.com/KsandarIV/Project-Two-Code/releases)), modelli a blocchi, voci, modelli pronti, pacchetti da condividere, backup cifrati, accesso con Google e copie su Drive, promemoria per scrivere, avviso quando esce una versione nuova. Vedi la [roadmap](docs/tecnica/roadmap.md) e il [CHANGELOG](CHANGELOG.md).
 
 ## Avvio rapido (Windows, PowerShell)
 
