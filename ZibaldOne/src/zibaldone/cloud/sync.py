@@ -14,22 +14,29 @@
 
 Nothing is ever deleted remotely because it is missing locally: a lost
 device must not wipe its own backups.
+
+Attached files (0.2.4) travel as their sealed copies (`<file>.zbblob`): the
+ones the uploaded snapshots need go up, and a remote copy is deleted only
+when no remote snapshot names it in its public header.
 """
 
 import base64
+import io
 import json
 import os
 import secrets
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 
 from zibaldone.cloud.account import account_status, get_destination, update_cloud_settings
 from zibaldone.cloud.destinations import Destination, RemoteFile
 from zibaldone.cloud.http import CloudError, HttpClient
+from zibaldone.core import crypto
+from zibaldone.core.blocks import MEDIA_FILE
 from zibaldone.storage import backups, keys
 from zibaldone.storage.backups import BackupError, RestoreResult, SnapshotInfo
 from zibaldone.storage.keys import KeysError
@@ -51,11 +58,15 @@ class SyncResult:
     deleted: List[str] = field(default_factory=list)
     skipped: List[str] = field(default_factory=list)  # plain snapshots, never uploaded
     remote_count: int = 0
+    media_uploaded: List[str] = field(default_factory=list)
+    media_deleted: List[str] = field(default_factory=list)
 
     @property
     def message(self) -> str:
         parts = [f"{len(self.uploaded)} caricate", f"{len(self.deleted)} scadute cancellate", f"{self.remote_count} in tutto"]
         text = f"Sincronizzato con {self.destination}: " + ", ".join(parts) + "."
+        if self.media_uploaded:
+            text += f" {len(self.media_uploaded)} allegati caricati."
         if self.skipped:
             text += f" {len(self.skipped)} istantanee in chiaro restano solo qui."
         return text
@@ -100,6 +111,51 @@ def remote_snapshots(files: List[RemoteFile]) -> List[SnapshotInfo]:
     return sorted(found, key=lambda info: (info.created_at, info.id), reverse=True)
 
 
+def remote_blobs(files: List[RemoteFile]) -> Dict[str, RemoteFile]:
+    """Attached file name -> its sealed copy on the destination."""
+    suffix = backups.BLOB_SUFFIX
+    return {item.name[: -len(suffix)]: item for item in files if item.name.endswith(suffix) and MEDIA_FILE.match(item.name[: -len(suffix)])}
+
+
+def _remote_media(destination: Destination, snapshot: SnapshotInfo, local: Dict[str, SnapshotInfo]) -> Optional[List[str]]:
+    """The files a remote snapshot needs, from the local copy or its public header; None if unreadable."""
+    known = local.get(snapshot.id)
+    if known is not None and not known.problem:
+        return known.media
+    try:
+        header = crypto.read_sealed_header(io.BytesIO(destination.download(snapshot.path.name)))
+    except (CloudError, crypto.CryptoError):
+        return None
+    return backups.media_list(header.get("media"))
+
+
+def _push_media(folder: Path, destination: Destination, local: List[SnapshotInfo], result: SyncResult) -> None:
+    remote = remote_blobs(destination.list_files())
+    for file in sorted({file for snapshot in local if snapshot.encrypted for file in snapshot.media}):
+        path = backups.blob_path(folder, file)
+        if not path.exists() or file in remote and remote[file].size == path.stat().st_size:
+            continue
+        data = path.read_bytes()
+        if not crypto.is_sealed(data):
+            continue  # never in clear: `encrypt_existing_snapshots` seals it first
+        destination.upload(path.name, data)
+        result.media_uploaded.append(file)
+
+
+def _prune_remote_media(destination: Destination, local: List[SnapshotInfo], result: SyncResult) -> None:
+    files = destination.list_files()
+    by_id = {snapshot.id: snapshot for snapshot in local}
+    needed = set()
+    for snapshot in remote_snapshots(files):
+        found = _remote_media(destination, snapshot, by_id)
+        if found is None:
+            return  # a snapshot that cannot be read might need any of them
+        needed.update(found)
+    for file, item in remote_blobs(files).items():
+        if file not in needed and destination.delete(item.name):
+            result.media_deleted.append(file)
+
+
 def list_remote(folder: Path, destination: Optional[Destination] = None, http: Optional[HttpClient] = None) -> List[SnapshotInfo]:
     return remote_snapshots(_destination(folder, destination, http).list_files())
 
@@ -118,6 +174,7 @@ def _push(folder: Path, destination: Destination) -> SyncResult:
             )
     destination.upload(REMOTE_KEYS, local_keys)
     local = backups.list_snapshots(folder)
+    _push_media(folder, destination, local, result)  # first: a snapshot up there must find its files
     for snapshot in local:
         name = snapshot.path.name
         if not snapshot.encrypted:
@@ -136,6 +193,7 @@ def _push(folder: Path, destination: Destination) -> SyncResult:
         if destination.delete(info.path.name):
             result.deleted.append(info.id)
     result.remote_count = len(remote_now) - len(result.deleted)
+    _prune_remote_media(destination, local, result)
     return result
 
 
@@ -297,7 +355,24 @@ def recover_from_cloud(
         temporary = local_path.with_name(f"{backups.TEMP_PREFIX}{secrets.token_hex(4)}")
         temporary.write_bytes(chosen.download(snapshot.path.name))
         os.replace(temporary, local_path)
+    _download_media(folder, chosen, local_path)
     return backups.restore_snapshot(folder, snapshot.id, private_key)
+
+
+def _download_media(folder: Path, destination: Destination, snapshot_path: Path) -> None:
+    """The sealed copies of the attached files a downloaded snapshot needs."""
+    with open(snapshot_path, "rb") as handle:
+        if not crypto.is_sealed(handle.read(len(crypto.MAGIC))):
+            return
+        handle.seek(0)
+        files = backups.media_list(crypto.read_sealed_header(handle).get("media"))
+    for file in files:
+        target = backups.blob_path(folder, file)
+        if target.exists():
+            continue
+        temporary = target.with_name(f"{backups.TEMP_PREFIX}{secrets.token_hex(4)}")
+        temporary.write_bytes(destination.download(target.name))
+        os.replace(temporary, target)
 
 
 def forget_remote(folder: Path, destination: Optional[Destination] = None, http: Optional[HttpClient] = None) -> int:
@@ -305,7 +380,7 @@ def forget_remote(folder: Path, destination: Optional[Destination] = None, http:
     chosen = _destination(folder, destination, http)
     count = 0
     for item in chosen.list_files():
-        if item.name in (REMOTE_KEYS, REMOTE_RECOVERY) or backups.SNAPSHOT_NAME.match(item.name):
+        if item.name in (REMOTE_KEYS, REMOTE_RECOVERY) or backups.SNAPSHOT_NAME.match(item.name) or item.name.endswith(backups.BLOB_SUFFIX):
             if chosen.delete(item.name):
                 count += 1
     update_cloud_settings(folder, google_recovery=False)

@@ -2,14 +2,15 @@
   "format": 1,
   "id": "zibaldone.diario",
   "name": "Stoa · Diario",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "author": "ZibaldOne",
   "license": "CC0-1.0",
-  "description": "Il diario come esercizio quotidiano, alla maniera degli stoici: i 3 momenti della giornata, il check-in delle 8 aree della vita, le revisioni di settimana, mese e anno, i pensieri liberi.",
+  "description": "Il diario come esercizio quotidiano, alla maniera degli stoici: i 3 momenti della giornata, il check-in delle 8 aree della vita, le revisioni di settimana, mese e anno, i pensieri liberi, con le foto del giorno.",
   "required_blocks": [
     "checklist",
     "choice",
     "longtext",
+    "media",
     "scale",
     "tags",
     "text"
@@ -180,6 +181,14 @@
             "low_label": "da dimenticare",
             "high_label": "perfetta"
           }
+        },
+        {
+          "key": "foto",
+          "type": "media",
+          "label": "Foto del giorno",
+          "options": {
+            "max_items": 10
+          }
         }
       ],
       "description": "Fine giornata: cosa ho fatto, cosa ho imparato, cosa farò domani. Seneca, De ira III, 36.",
@@ -316,6 +325,11 @@
               1
             ]
           }
+        },
+        {
+          "key": "allegati",
+          "type": "media",
+          "label": "Allegati"
         }
       ],
       "description": "Scrittura libera: pensieri, idee, domande. Leopardi, Zibaldone di pensieri.",

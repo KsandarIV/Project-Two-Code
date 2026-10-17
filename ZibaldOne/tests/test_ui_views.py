@@ -655,3 +655,24 @@ def test_secrets_in_the_app_write_freely_and_open_with_the_pin(ready: Path, monk
     assert "caro diario, oggi" not in texts(shell.body.content)
     with Store.open(ready) as store:
         assert vm.entry_detail(store, entry_id, date(2026, 10, 17)).blocks[0].text == secrets.LOCKED_TEXT
+
+
+def test_attaching_a_photo_and_a_document_to_the_evening(ready: Path, tmp_path: Path) -> None:
+    photo, document = tmp_path / "mare.jpg", tmp_path / "biglietto.pdf"
+    photo.write_bytes(b"\x89PNG il mare")
+    document.write_bytes(b"%PDF il biglietto")
+    shell = Shell(FakePage(), ready)
+    shell.ctx.pick_files = lambda on_picked: on_picked([SimpleNamespace(name=path.name, path=str(path), bytes=None) for path in (photo, document)])
+    shell.start("/scrivi/sera")
+    form = shell.body.content
+    click(button(form, "Aggiungi file"))
+    assert "mare.jpg" in texts(form) and "biglietto.pdf" in texts(form)
+    click(button(form, "Salva"))
+    assert shell.current.screen == "voce"
+    detail = shell.body.content
+    thumbnail = next(item for item in walk(detail) if isinstance(item, ft.Container) and isinstance(item.content, ft.Image))
+    assert thumbnail.content.src == b"\x89PNG il mare" and "biglietto.pdf" in texts(detail)
+    click(thumbnail)
+    click(button(detail, "Apri"))
+    assert [path.name.rsplit(".", 1)[-1] for path in shell.ctx.opened] == ["jpg", "pdf"]
+    assert all(path.read_bytes() in (photo.read_bytes(), document.read_bytes()) for path in shell.ctx.opened)

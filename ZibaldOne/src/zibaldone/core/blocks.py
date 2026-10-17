@@ -583,6 +583,65 @@ class SecretBlock(BlockType):
         return LOCKED_TEXT
 
 
+# — 0.2.4: photos, audio, video and documents —
+
+MEDIA_FILE = re.compile(r"^[0-9a-f]{64}(\.[a-z0-9]{1,8})?$")  # sha256 of the content + extension
+MEDIA_KINDS: Dict[str, Tuple[str, ...]] = {
+    "foto": ("jpg", "jpeg", "png", "gif", "webp", "heic", "heif", "bmp"),
+    "video": ("mp4", "mov", "m4v", "webm", "mkv", "3gp", "avi"),
+    "audio": ("mp3", "m4a", "aac", "wav", "ogg", "opus", "flac", "amr"),
+}
+MAX_MEDIA_ITEMS = 50
+
+
+def media_kind(name: str) -> str:
+    """'foto', 'video', 'audio' or 'documento', from the extension of a file name."""
+    extension = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+    return next((kind for kind, extensions in MEDIA_KINDS.items() if extension in extensions), "documento")
+
+
+class MediaBlock(BlockType):
+    """Files attached to the entry. The value only names them: the files are in `media/` (`storage/media.py`)."""
+
+    name = "media"
+    label = "Allegati"
+    description = "foto, video, audio e documenti allegati alla voce, compresi nei backup"
+    nickname = "Mimesis"
+    nickname_source = "Aristotele, Poetica: l'arte imita la vita, e così la ricorda"
+    options = {"max_items": _int_option}
+
+    def check_option_rules(self, options: Dict[str, Any]) -> None:
+        if not 1 <= options.get("max_items", MAX_MEDIA_ITEMS) <= MAX_MEDIA_ITEMS:
+            raise ValueError(f"max_items va da 1 a {MAX_MEDIA_ITEMS}")
+
+    def normalize(self, value: Any, options: Dict[str, Any]) -> List[Dict[str, Any]]:
+        if not isinstance(value, list):
+            raise ValueError("gli allegati sono una lista di file")
+        items: List[Dict[str, Any]] = []
+        for item in value:
+            if not isinstance(item, dict) or set(item) - {"file", "name", "size"}:
+                raise ValueError("allegato non valido")
+            file, name, size = item.get("file"), item.get("name"), item.get("size")
+            if not isinstance(file, str) or not MEDIA_FILE.match(file):
+                raise ValueError("allegato non valido: manca il file")
+            if not isinstance(name, str) or not name.strip() or len(name) > 200 or "/" in name or "\\" in name:
+                raise ValueError("il nome di un allegato è un nome di file, senza cartelle")
+            if isinstance(size, bool) or not isinstance(size, int) or size < 0:
+                raise ValueError("la dimensione di un allegato è un numero di byte")
+            if all(existing["file"] != file for existing in items):
+                items.append({"file": file, "name": name.strip(), "size": size})
+        limit = options.get("max_items", MAX_MEDIA_ITEMS)
+        if len(items) > limit:
+            raise ValueError(f"al massimo {limit} allegati")
+        return items
+
+    def parse(self, raw: str, options: Dict[str, Any]) -> List[Dict[str, Any]]:
+        raise ValueError("gli allegati si aggiungono con `zbone allegati aggiungi VOCE FILE`, o dall'app")
+
+    def to_text(self, value: Any, options: Dict[str, Any]) -> str:
+        return ", ".join(item["name"] for item in value)
+
+
 BLOCK_TYPES: Dict[str, BlockType] = {
     block.name: block
     for block in (
@@ -599,6 +658,7 @@ BLOCK_TYPES: Dict[str, BlockType] = {
         BookmarkBlock(),
         LinkBlock(),
         SecretBlock(),
+        MediaBlock(),
     )
 }
 

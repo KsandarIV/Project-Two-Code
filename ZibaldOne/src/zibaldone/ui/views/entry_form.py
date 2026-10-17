@@ -6,6 +6,7 @@ core decides what is valid and its Italian messages appear under the field.
 """
 
 from datetime import date
+from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
 import flet as ft
@@ -21,7 +22,9 @@ from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route
+from zibaldone.storage import media
 from zibaldone.ui.views.common import not_found, pick_date
+from zibaldone.ui.views.media_view import attachment_list
 from zibaldone.ui.views.vault import unlock_secrets, vault_of
 
 AREA_KEY = "_area"
@@ -457,6 +460,52 @@ class SecretEditor(FieldEditor):
         self._redraw()
 
 
+class MediaEditor(FieldEditor):
+    """Attached files (0.2.4): «Aggiungi file» copies them into the media folder at once."""
+
+    def build(self) -> ft.Control:
+        self.holder = ft.Column(spacing=8)
+        self.add_button = W.secondary_button("Aggiungi file", lambda _: self.ctx.pick_files(self.add_files), icon="ATTACH_FILE")
+        self._redraw(update=False)
+        return ft.Column([self.holder, ft.Row([self.add_button])], spacing=8)
+
+    def _redraw(self, update: bool = True) -> None:
+        self.holder.controls = [attachment_list(self.ctx, self.state, on_remove=self.remove)] if self.state else []
+        self.holder.visible = bool(self.state)
+        if update:
+            self.ctx.update(self.holder)
+
+    def add_files(self, files: List[Any]) -> None:
+        """Files from the picker: a path on PC and phone, the bytes in the browser."""
+        folder = self.ctx.folder
+
+        def work() -> List[Dict[str, Any]]:
+            added = []
+            for picked in files:
+                if getattr(picked, "path", None):
+                    added.append(media.add_file(folder, Path(picked.path)).to_value())
+                elif getattr(picked, "bytes", None):
+                    added.append(media.add_bytes(folder, picked.name, picked.bytes).to_value())
+                else:
+                    raise media.MediaError(f"non riesco a leggere «{picked.name}» da qui")
+            return added
+
+        def done(added: List[Dict[str, Any]]) -> None:
+            known = {item["file"] for item in self.state}
+            self.state = list(self.state) + [item for item in added if item["file"] not in known]
+            self._redraw()
+
+        def failed(problem: Exception) -> None:
+            self.ctx.toast(cm.error_text(problem), error=True)
+
+        if files:
+            self.ctx.run_blocking(work, done, failed)
+
+    def remove(self, file: str) -> None:
+        self.state = [item for item in self.state if item["file"] != file]
+        self._redraw()
+
+
 EDITORS: Dict[str, Callable[["EntryForm", BlockSpec], FieldEditor]] = {
     "text": TextEditor,
     "longtext": TextEditor,
@@ -471,6 +520,7 @@ EDITORS: Dict[str, Callable[["EntryForm", BlockSpec], FieldEditor]] = {
     "progress": ProgressEditor,
     "link": LinkEditor,
     "secret": SecretEditor,
+    "media": MediaEditor,
 }
 
 

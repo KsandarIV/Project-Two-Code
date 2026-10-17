@@ -15,6 +15,7 @@ L'*agorà* era la piazza dove ci si incontrava. Una persona è una voce del mode
 | Social, Compleanno, Note | come prima |
 | Ogni quanto sentirvi (`frequenza`) | ogni settimana … ogni anno |
 | Genitori, Fratelli e sorelle, Colleghi, Conosce (`genitori`, `fratelli`, `colleghi`, `conosce`) | le altre persone a cui è legata (dalla 0.2.2, Agorà 1.3.0) |
+| Foto e file (`allegati`) | foto e documenti della persona (dalla 0.2.4, Agorà 1.5.0; [gli allegati](allegati.md)); il Simposio ha *Foto* |
 | Indirizzo, Documenti, Salute (`indirizzo`, `documenti`, `salute`) | blocchi segreti, cifrati: l'indirizzo al livello protetto, documenti e salute al livello massimo (dalla 0.2.3, Agorà 1.4.0; [i segreti](segreti.md)) |
 
 ## In quali aree sta
@@ -47,5 +48,5 @@ La pagina di una persona raccoglie ogni voce che la collega (blocchi collegament
 
 ## Codice
 - `core/roles.py` (ruoli e aree), `core/people.py` (persone, contatti, ritmo, pagina, `log_contact`), `core/relations.py` (legami, albero, rete, contatti in comune, forza del legame, `add_tie`), `core/areas.py` (`entry_areas` con i ruoli), `storage/database.py` (`AREA_RULES`).
-- `ui/views/people.py` (persona, albero, rete), `ui/viewmodels.py` (`person_view`, `people_rows`, `family_tree_rows`, `network_view`), `cli/person_cmd.py`, `packs/persone.zbpack.json` (Agorà 1.4.0).
+- `ui/views/people.py` (persona, albero, rete), `ui/viewmodels.py` (`person_view`, `people_rows`, `family_tree_rows`, `network_view`), `cli/person_cmd.py`, `packs/persone.zbpack.json` (Agorà 1.5.0).
 - Test: `tests/test_people.py`, `tests/test_relations.py`, `tests/test_ui_views.py`.

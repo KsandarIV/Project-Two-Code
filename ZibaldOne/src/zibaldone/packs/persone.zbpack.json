@@ -2,7 +2,7 @@
   "format": 1,
   "id": "zibaldone.persone",
   "name": "Agorà · Persone",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "author": "ZibaldOne",
   "license": "CC0-1.0",
   "description": "La piazza dove ci si incontra: le persone della tua vita, i loro ruoli, contatti e legami, e i momenti con loro. Indirizzi, documenti e salute delle persone solo in blocchi cifrati.",
@@ -11,6 +11,7 @@
     "date",
     "link",
     "longtext",
+    "media",
     "secret",
     "tags",
     "text"
@@ -215,6 +216,11 @@
           "key": "note",
           "type": "longtext",
           "label": "Note"
+        },
+        {
+          "key": "allegati",
+          "type": "media",
+          "label": "Foto e file"
         }
       ],
       "description": "Una persona della tua vita: famiglia, amici, lavoro, con i suoi ruoli e i contatti. Levinas, Totalità e infinito (1961).",
@@ -289,6 +295,11 @@
               1
             ]
           }
+        },
+        {
+          "key": "foto",
+          "type": "media",
+          "label": "Foto"
         }
       ],
       "description": "Un incontro, una chiamata, un momento passato con qualcuno. Platone, Simposio.",

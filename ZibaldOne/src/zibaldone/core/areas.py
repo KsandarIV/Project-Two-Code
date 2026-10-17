@@ -453,7 +453,6 @@ class Upcoming:
 
 # Remove an item when its version ships: a test checks that none is older than the app.
 UPCOMING: Tuple[Upcoming, ...] = (
-    Upcoming("Foto, audio e documenti", "allegati alle voci e alle persone, dentro i backup cifrati", "0.2.4"),
     Upcoming("Svago su misura", "date di inizio e fine automatiche, voti con mezzo punto, recensioni con avviso spoiler, preferiti e lista dei desideri", "0.2.5", ("svago",)),
     Upcoming("Import da Goodreads, Letterboxd, MyAnimeList e Steam", "porta i libri, i film, gli anime e i giochi che hai già segnato altrove, da file", "0.2.5", ("svago",)),
     Upcoming("Bilancio cifrato", "saldo, entrate e spese per categoria, budget e obiettivi di risparmio", "0.2.6", ("finanze",)),

@@ -287,6 +287,19 @@ Prima che un testo arrivi a un'intelligenza artificiale, ZibaldOne toglie nomi, 
 
 I nomi di persona li riconosce dalle tue voci **Persona** (con i soprannomi): più persone hai scritto, meglio funziona. Nell'app: **Impostazioni → Anonimizzatore**. Come funziona: [anonimizzatore](../tecnica/anonimizzatore.md).
 
+## Foto e file · Mimesis
+Nell'Esame serale c'è **Foto del giorno**, nel Pensiero **Allegati**, nella Persona **Foto e file** e nel Simposio **Foto**: tocca «Aggiungi file» e scegli foto, video, audio o documenti (fino a 100 MB l'uno). Nella pagina della voce le foto si vedono in piccolo e si toccano per aprirle; gli altri file hanno **Apri**. Finiscono nei backup, cifrati se hai attivato la cifratura, e nelle copie fuori.
+
+| Comando | Cosa fa |
+|---|---|
+| `zbone allegati aggiungi 3f2a mare.jpg` | allega uno o più file a una voce |
+| `zbone allegati mostra 3f2a` | gli allegati della voce, numerati |
+| `zbone allegati salva 3f2a --in Scrivania` | li copia in una cartella, con il loro nome |
+| `zbone allegati togli 3f2a 1` | toglie l'allegato 1 |
+| `zbone allegati` | quanti file e quanto spazio |
+
+Come funziona: [gli allegati](../tecnica/allegati.md).
+
 ## Esportare
 - `zbone export markdown`: uno zip con un file per voce, da aprire in Obsidian (le aree della voce sono nelle sue proprietà).
 - `zbone export csv`: uno zip con un foglio per modello, da aprire in Excel (con la colonna dell'area).

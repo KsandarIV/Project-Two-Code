@@ -26,6 +26,13 @@ new device (v0.0.8).
 Before restoring, the current state is saved as a "pre-restore" snapshot, so
 a restore can be undone. Callers must close every `Store` on the folder
 first: see `restore_snapshot`.
+
+**Attached files (0.2.4).** The files in `media/` are kept once each, next to
+the snapshots, as `<file>.zbblob` (sealed like the snapshots once encryption
+is on). A snapshot lists the files it needs in its manifest and, for an
+encrypted one, in its public header too, so pruning can tell without the
+passphrase which copies no snapshot needs any more. A restore puts back the
+files that are missing.
 """
 
 import hashlib
@@ -49,7 +56,8 @@ from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X
 from zibaldone import __version__
 from zibaldone.core import crypto
 from zibaldone.core.crypto import CryptoError
-from zibaldone.storage import keys
+from zibaldone.core.blocks import MEDIA_FILE
+from zibaldone.storage import keys, media
 from zibaldone.storage.database import DATABASE_FILE, MIGRATIONS, database_path
 from zibaldone.storage.keys import KeysError
 from zibaldone.storage.settings import SETTINGS_FILE, SettingsError, load_settings, save_settings, settings_path
@@ -61,6 +69,7 @@ ID_TIME_FORMAT = "%Y%m%dT%H%M%SZ"
 SNAPSHOT_FORMAT = "zibaldone-snapshot"
 SNAPSHOT_FORMAT_VERSION = 1
 MANIFEST_FILE = "manifest.json"
+BLOB_SUFFIX = ".zbblob"
 PUBLIC_FIELDS = ("format", "format_version", "id", "created_at", "app_version", "schema_version", "reason")
 
 REASONS = ("manual", "auto", "pre-restore", "pre-migration")
@@ -183,6 +192,7 @@ class SnapshotInfo:
     entries: Optional[int] = None
     templates: Optional[int] = None
     problem: str = ""
+    media: List[str] = field(default_factory=list)  # attached files it needs (0.2.4)
 
     @property
     def reason_label(self) -> str:
@@ -318,6 +328,7 @@ def _apply_fields(info: SnapshotInfo, fields: Any, private: bool) -> None:
     schema = fields.get("schema_version")
     info.schema_version = schema if isinstance(schema, int) else None
     if private:
+        info.media = media_list(fields.get("media"))
         info.note = str(fields.get("note", ""))
         counts = fields.get("counts") if isinstance(fields.get("counts"), dict) else {}
         info.entries, info.templates = counts.get("entries"), counts.get("templates")
@@ -340,7 +351,9 @@ def _describe(snapshot_id: str, created: datetime, path: Path, private_key: Opti
             if not info.encrypted:
                 _apply_fields(info, _read_manifest(handle), private=True)
             elif private_key is None:
-                _apply_fields(info, crypto.read_sealed_header(handle).get("snapshot"), private=False)
+                header = crypto.read_sealed_header(handle)
+                _apply_fields(info, header.get("snapshot"), private=False)
+                info.media = media_list(header.get("media"))
         if info.encrypted and private_key is not None:
             sealed = crypto.open_sealed(_read_snapshot_bytes(path), private_key)
             _apply_fields(info, _read_manifest(io.BytesIO(sealed.plaintext)), private=True)
@@ -379,6 +392,108 @@ def _read_snapshot_bytes(path: Path) -> bytes:
     if path.stat().st_size > MAX_SNAPSHOT_FILE_SIZE:
         raise BackupError("istantanea troppo grande (massimo 1 GiB)")
     return path.read_bytes()
+
+
+# * — attached files (0.2.4) —
+
+
+def media_list(value: Any) -> List[str]:
+    """The attached files named by a manifest or header; [] for snapshots before 0.2.4."""
+    if not isinstance(value, list):
+        return []
+    return [item for item in value if isinstance(item, str) and MEDIA_FILE.match(item)]
+
+
+def blob_path(folder: Path, file: str) -> Path:
+    return backups_dir(folder) / f"{file}{BLOB_SUFFIX}"
+
+
+def blob_files(folder: Path) -> Dict[str, Path]:
+    """Attached file name -> its copy in the backups."""
+    directory = backups_dir(folder)
+    if not directory.is_dir():
+        return {}
+    found = {}
+    for path in directory.iterdir():
+        if path.name.endswith(BLOB_SUFFIX) and MEDIA_FILE.match(path.name[: -len(BLOB_SUFFIX)]) and path.is_file():
+            found[path.name[: -len(BLOB_SUFFIX)]] = path
+    return found
+
+
+def _is_sealed_file(path: Path) -> bool:
+    with open(path, "rb") as handle:
+        return crypto.is_sealed(handle.read(len(crypto.MAGIC)))
+
+
+def _store_blobs(folder: Path, files: Iterable[str], recipient: Optional[X25519PublicKey]) -> None:
+    """Copy each attached file next to the snapshots once; sealed once encryption is on."""
+    for file in files:
+        path = blob_path(folder, file)
+        if path.exists() and (recipient is None or _is_sealed_file(path)):
+            continue
+        try:
+            data = media.read(folder, file)
+        except media.MediaError as error:
+            raise BackupError(str(error)) from None
+        _atomic_write(path, data if recipient is None else crypto.seal(data, recipient, {"media": file}))
+
+
+def blob_bytes(folder: Path, file: str, private_key: Optional[X25519PrivateKey]) -> bytes:
+    """The attached file kept in the backups, checked against its SHA-256."""
+    path = blob_path(folder, file)
+    try:
+        data = path.read_bytes()
+    except OSError:
+        raise BackupError(f"nei backup manca l'allegato {file[:8]}") from None
+    if crypto.is_sealed(data):
+        if private_key is None:
+            raise KeyRequiredError("gli allegati dei backup sono cifrati: serve la passphrase")
+        sealed = crypto.open_sealed(data, private_key)
+        if sealed.header.get("media") != file:
+            raise BackupError(f"l'allegato {file[:8]} nei backup non corrisponde al suo nome")
+        data = sealed.plaintext
+    if hashlib.sha256(data).hexdigest() != file[:64]:
+        raise BackupError(f"l'allegato {file[:8]} nei backup è rovinato")
+    return data
+
+
+def _media_problems(folder: Path, manifest: Dict[str, Any], header: Optional[Dict[str, Any]], private_key: Optional[X25519PrivateKey]) -> List[str]:
+    files = media_list(manifest.get("media"))
+    problems = []
+    if header is not None and media_list(header.get("media")) != files:
+        problems.append("l'elenco degli allegati nell'intestazione non corrisponde al contenuto cifrato")
+    for file in files:
+        try:
+            blob_bytes(folder, file, private_key)
+        except KeyRequiredError:
+            continue  # a plain snapshot made before encryption: its files are already sealed
+        except (BackupError, CryptoError) as error:
+            problems.append(str(error))
+    return problems
+
+
+def _restore_media(folder: Path, files: Iterable[str], private_key: Optional[X25519PrivateKey]) -> None:
+    for file in files:
+        if not media.path_of(folder, file).exists():
+            media.add_bytes(folder, file, blob_bytes(folder, file, private_key))
+
+
+def _remove_unused_blobs(folder: Path, now: Optional[float] = None) -> List[str]:
+    """Delete the copies of attached files that no snapshot needs any more (older than an hour)."""
+    snapshots = list_snapshots(folder)
+    if any(info.problem for info in snapshots):
+        return []  # a snapshot that cannot be read might need any of them
+    needed = {file for info in snapshots for file in info.media}
+    limit = (now or time.time()) - STALE_TEMP_SECONDS
+    removed = []
+    for file, path in blob_files(folder).items():
+        try:
+            if file not in needed and path.stat().st_mtime < limit:
+                path.unlink()
+                removed.append(file)
+        except OSError:
+            continue
+    return removed
 
 
 # * — creating —
@@ -468,7 +583,11 @@ def _encryption_target(folder: Path) -> Optional[X25519PublicKey]:
 
 def _seal_archive(folder: Path, archive: bytes, manifest: Dict[str, Any], recipient: X25519PublicKey) -> bytes:
     try:
-        fields = {"snapshot": {name: manifest[name] for name in PUBLIC_FIELDS}, "recovery_wrap": keys.recovery_wrap(folder)}
+        fields = {
+            "snapshot": {name: manifest[name] for name in PUBLIC_FIELDS},
+            "recovery_wrap": keys.recovery_wrap(folder),
+            "media": media_list(manifest.get("media")),
+        }
         return crypto.seal(archive, recipient, fields)
     except (KeysError, CryptoError) as error:
         raise BackupError(f"non posso cifrare l'istantanea: {error}") from None
@@ -494,6 +613,8 @@ def create_snapshot(folder: Path, reason: str = "manual", note: str = "", now: O
     snapshot_id = f"{created.strftime(ID_TIME_FORMAT)}-{secrets.token_hex(3)}"
     _remove_stale_temp_files(folder)
     copy = _copy_database(folder, db)
+    files = media.stored_files(folder)
+    _store_blobs(folder, files, recipient)
     manifest = {
         "format": SNAPSHOT_FORMAT,
         "format_version": SNAPSHOT_FORMAT_VERSION,
@@ -505,6 +626,7 @@ def create_snapshot(folder: Path, reason: str = "manual", note: str = "", now: O
         "note": note,
         "database": {"file": DATABASE_FILE, "sha256": hashlib.sha256(copy.data).hexdigest(), "size": len(copy.data)},
         "counts": {"entries": copy.entries, "templates": copy.templates},
+        "media": files,
     }
     settings_file = settings_path(folder)
     archive = _build_archive(manifest, copy.data, settings_file.read_bytes() if settings_file.exists() else None, created)
@@ -525,6 +647,7 @@ def create_snapshot(folder: Path, reason: str = "manual", note: str = "", now: O
         note=note,
         entries=copy.entries,
         templates=copy.templates,
+        media=files,
     )
 
 
@@ -616,7 +739,7 @@ def _inspect_bytes(folder: Path, snapshot_id: str, data: bytes, private_key: Opt
         raise
     except (BackupError, CryptoError) as error:
         return _Inspection(problems=[str(error)])
-    problems = _manifest_problems(manifest, database, snapshot_id, header)
+    problems = _manifest_problems(manifest, database, snapshot_id, header) + _media_problems(folder, manifest, header, private_key)
     temporary = _new_temp_path(folder, ".db")
     try:
         with open(temporary, "wb") as handle:
@@ -691,6 +814,7 @@ def restore_snapshot(folder: Path, reference: str, private_key: Optional[X25519P
         if db.exists():
             _ensure_database_idle(db)
             undo = create_snapshot(folder, "pre-restore")
+        _restore_media(folder, media_list(inspection.manifest.get("media")), private_key)
         try:
             os.replace(inspection.database_path, db)
         except OSError as error:
@@ -778,6 +902,7 @@ def prune(folder: Path, policy: Optional[RetentionPolicy] = None, dry_run: bool 
                 pass
             except OSError as error:
                 plan.failed.append((item.id, str(error)))
+        _remove_unused_blobs(folder)
     return plan
 
 
@@ -861,4 +986,15 @@ def encrypt_existing_snapshots(folder: Path, private_key: X25519PrivateKey) -> E
             continue
         _atomic_write(path, sealed)
         encrypted.append(snapshot_id)
+    for file, path in sorted(blob_files(folder).items()):
+        try:
+            if _is_sealed_file(path):
+                continue
+            data = blob_bytes(folder, file, None)
+            sealed = crypto.seal(data, recipient, {"media": file})
+            if crypto.open_sealed(sealed, private_key).plaintext != data:
+                raise BackupError("la copia cifrata non corrisponde all'originale")
+            _atomic_write(path, sealed)
+        except (OSError, BackupError, CryptoError) as error:
+            failed.append((f"allegato {file[:8]}", str(error)))
     return EncryptionResult(encrypted=encrypted, failed=failed)

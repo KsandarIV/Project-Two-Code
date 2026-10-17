@@ -16,6 +16,7 @@ from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route, section
 from zibaldone.ui.views.common import choose_template, not_found, pick_date
+from zibaldone.ui.views.media_view import attachment_list
 from zibaldone.ui.views.vault import unlock_secrets, vault_of
 
 ALL = "*"
@@ -248,6 +249,8 @@ def _block_view(ctx: AppContext, block: vm.DetailBlock) -> ft.Control:
     kind, value, options = block.type, block.value, block.options
     if kind == "secret":
         return _secret_view(ctx, value)
+    if kind == "media":
+        return attachment_list(ctx, value)
     if kind == "rating":
         return W.stars(value, int(options.get("max", 5)), size=22)
     if kind == "tags":

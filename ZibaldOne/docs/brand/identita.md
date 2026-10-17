@@ -45,6 +45,8 @@ Ogni parte dell'app ha un nome filosofico accanto al nome semplice: l'interfacci
 | progress | Divenire | Eraclito |
 | bookmark | Anamnesi | Platone, Menone |
 | link | Nesso | Hume |
+| secret | Echemythia | il silenzio dei pitagorici |
+| media | Mimesis | Aristotele, Poetica |
 
 ### Pacchetti e modelli pronti
 | Pacchetto | Modelli |
@@ -54,6 +56,7 @@ Ogni parte dell'app ha un nome filosofico accanto al nome semplice: l'interfacci
 | **Delfi · Io** | Conosci te stesso, Arché (la mia filosofia), Confessioni (capitoli di vita, Agostino), Conatus (desideri, Spinoza), Hexis (abitudini, Aristotele) |
 | **Agorà · Persone** | L'Altro (persona, Levinas), Simposio (incontro, Platone) |
 | **Liceo · Aree** | Prosoché (check-in di un'area, l'attenzione a sé degli stoici), Telos (obiettivo, Aristotele), Opere e giorni (cose da fare, Esiodo) |
+| **Adyton · Segreti** | A se stesso (diario segreto, Marco Aurelio), Ippocrate (note mediche) |
 
 ## Le mascotte
 Una per ogni area della vita, più una dell'app (da decidere quale sarà la principale).
