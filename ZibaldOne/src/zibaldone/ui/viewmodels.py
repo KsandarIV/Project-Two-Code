@@ -607,6 +607,11 @@ OPTION_FIELDS: Dict[str, Tuple[OptionField, ...]] = {
     "progress": (OptionField("unit", "Unità", "text", "pagine, episodi"), OptionField("total", "Totale", "int")),
     "bookmark": (OptionField("placeholder", "Esempio da mostrare", "text", "pag. 150"),),
     "link": (OptionField("template", "Solo voci del modello", "template"), OptionField("multiple", "Più collegamenti", "bool")),
+    "secret": (
+        OptionField("level", "Livello", "text", "protetto (PIN o passphrase) o massimo (solo passphrase)"),
+        OptionField("multiline", "Più righe", "bool"),
+        OptionField("placeholder", "Esempio da mostrare", "text"),
+    ),
 }
 
 REQUIRED_OPTIONS: Dict[str, Dict[str, Any]] = {

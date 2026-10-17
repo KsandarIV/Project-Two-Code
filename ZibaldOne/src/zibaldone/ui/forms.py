@@ -8,7 +8,10 @@ Each block type has a *state*, the plain data its control edits:
 - tags: `{"tags": [...], "text": "what is still being typed"}`;
 - checklist: `[{"text": ..., "done": bool}, ...]`;
 - progress: `{"status": key or None, "current": "text", "total": "text"}`;
-- link: a list of entry ids.
+- link: a list of entry ids;
+- secret: `{"text": what is typed, "sealed": the stored value or None,
+  "original": its text once opened, else None}`. While closed, an empty
+  field keeps the stored secret; once opened, the field shows it.
 
 `collect_values` turns the states into values and checks them with the core
 (`BlockType.normalize`, `validate_values`), keeping the core's Italian messages
@@ -40,6 +43,7 @@ HINTS: Dict[str, str] = {
     "progress": "",
     "bookmark": "per esempio pag. 150, S02E05, capitolo 7",
     "link": "scegli tra le voci già scritte",
+    "secret": "cifrato con la tua chiave: resta fuori da ricerca, esportazioni e IA",
 }
 
 
@@ -58,7 +62,7 @@ def field_label(spec: BlockSpec) -> str:
 def field_hint(spec: BlockSpec) -> str:
     if spec.help:
         return spec.help
-    if spec.type in ("text", "bookmark") and spec.options.get("placeholder"):
+    if spec.type in ("text", "bookmark", "secret") and spec.options.get("placeholder"):
         return str(spec.options["placeholder"])
     return HINTS.get(spec.type, "")
 
@@ -105,6 +109,8 @@ def empty_state(spec: BlockSpec) -> Any:
         return {"status": None, "current": "", "total": format_number(spec.options.get("total"))}
     if kind == "link":
         return []
+    if kind == "secret":
+        return {"text": "", "sealed": None, "original": None}
     return None  # rating, scale, choice
 
 
@@ -129,6 +135,8 @@ def value_to_state(spec: BlockSpec, value: Any) -> Any:
         }
     if kind == "link":
         return list(value) if isinstance(value, list) else [value]
+    if kind == "secret":
+        return {"text": "", "sealed": str(value), "original": None}
     return value  # rating, scale, choice
 
 
@@ -174,6 +182,12 @@ def state_to_raw(spec: BlockSpec, state: Any) -> Any:
         return raw
     if kind == "link":
         return list(state) or None
+    if kind == "secret":
+        text = str(state.get("text", "")).replace("\r\n", "\n").strip()
+        sealed, original = state.get("sealed"), state.get("original")
+        if original is not None:  # opened: what the field shows is the secret, empty removes it
+            return sealed if text == original.strip() else (text or None)
+        return text or sealed or None
     return state  # rating, scale, choice
 
 
@@ -222,6 +236,18 @@ def collect_values(template: Template, states: Mapping[str, Any], day: str = "")
         except ValueError as error:
             result.errors[FORM_KEY] = str(error)
     return result
+
+
+# * — secrets —
+
+
+def reveal_secret_state(state: Mapping[str, Any], text: str) -> Dict[str, Any]:
+    """The state once the secret is opened: the field shows its text."""
+    return {**state, "text": text, "original": text}
+
+
+def removed_secret_state() -> Dict[str, Any]:
+    return {"text": "", "sealed": None, "original": None}
 
 
 # * — tags —

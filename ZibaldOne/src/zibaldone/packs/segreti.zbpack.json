@@ -1,0 +1,90 @@
+{
+  "format": 1,
+  "id": "zibaldone.segreti",
+  "name": "Adyton · Segreti",
+  "version": "1.0.0",
+  "author": "ZibaldOne",
+  "license": "CC0-1.0",
+  "description": "L'àdyton era la stanza più interna del tempio greco, dove non entrava nessuno: il diario segreto e le note sulla salute, cifrati con la tua chiave. Si aprono con il PIN o la passphrase e non finiscono mai nella ricerca né nell'IA.",
+  "required_blocks": [
+    "choice",
+    "date",
+    "link",
+    "secret"
+  ],
+  "templates": [
+    {
+      "slug": "diario_segreto",
+      "name": "A se stesso",
+      "description": "Il diario che non legge nessun altro. Marco Aurelio scrisse i suoi pensieri «a se stesso», senza mai pensare di pubblicarli.",
+      "icon": "LOCK_OUTLINE",
+      "color": "#B3F3F6",
+      "category": "segreti",
+      "area": "personale",
+      "blocks": [
+        {
+          "key": "testo",
+          "type": "secret",
+          "label": "Testo",
+          "required": true,
+          "options": {
+            "multiline": true,
+            "level": "protetto",
+            "placeholder": "quello che non diresti a nessuno"
+          }
+        }
+      ]
+    },
+    {
+      "slug": "note_mediche",
+      "name": "Ippocrate",
+      "description": "Visite, esami, terapie e documenti sanitari, cifrati al livello massimo. «Quello che vedrò o udirò lo terrò per me», promette il giuramento di Ippocrate.",
+      "icon": "MEDICAL_SERVICES_OUTLINED",
+      "color": "#74EE15",
+      "category": "segreti",
+      "area": "salute",
+      "blocks": [
+        {
+          "key": "tipo",
+          "type": "choice",
+          "label": "Che cosa",
+          "options": {
+            "choices": [
+              "Visita",
+              "Esame",
+              "Terapia",
+              "Vaccino",
+              "Documento",
+              "Altro"
+            ]
+          }
+        },
+        {
+          "key": "medico",
+          "type": "link",
+          "label": "Medico",
+          "options": {
+            "template": "persona",
+            "multiple": false
+          }
+        },
+        {
+          "key": "dettagli",
+          "type": "secret",
+          "label": "Dettagli",
+          "required": true,
+          "options": {
+            "multiline": true,
+            "level": "massimo",
+            "placeholder": "esito, terapia, dosi, numeri dei documenti"
+          }
+        },
+        {
+          "key": "prossimo",
+          "type": "date",
+          "label": "Prossimo controllo"
+        }
+      ]
+    }
+  ]
+}

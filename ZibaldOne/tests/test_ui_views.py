@@ -474,7 +474,7 @@ def test_the_areas_from_oggi_with_to_dos_and_coming_soon(ready: Path) -> None:
     assert shell.current.path == "/aree/salute" and shell.section_key == "oggi"
     shown = texts(shell.body.content)
     assert "Correre 10 km" in shown and "5 km" in shown and "Da fare (1)" in shown
-    assert "IN ARRIVO PER SALUTE" in shown and "Note mediche protette" in shown and "In arrivo · versione 0.2.3" in shown
+    assert "IN ARRIVO PER SALUTE" in shown and "Abitudini" in shown and "In arrivo · versione 0.2.7" in shown
     field = find(shell.body.content, ft.TextField, hint_text="Che cosa c'è da fare?")
     field.value = "prenotare il dentista"
     click(button(shell.body.content, "Aggiungi"))
@@ -595,3 +595,63 @@ def test_family_tree_and_network_from_a_person(ready: Path) -> None:
     with Store.open(ready) as store:
         view = vm.network_view(store, "", date(2026, 10, 17))
     assert {node.label for node in view.graph.nodes} == {"Anna", "Giulia"} and view.strongest[0].name == "Giulia"
+
+
+def test_secrets_in_the_app_write_freely_and_open_with_the_pin(ready: Path, monkeypatch) -> None:
+    from zibaldone.core import secrets
+    from zibaldone.core.crypto import ScryptParams
+    from zibaldone.storage import keys
+
+    monkeypatch.setattr(keys, "DEFAULT_SCRYPT_PARAMS", ScryptParams(n=2**10))
+    monkeypatch.setattr(keys, "PIN_SCRYPT_PARAMS", ScryptParams(n=2**10))
+    passphrase = "cavallo batteria graffetta"
+    with Store.open(ready) as store:
+        apply_install(plan_install(find_builtin_pack("segreti"), store), store)
+    keys.setup_keys(ready, passphrase)
+    page = FakePage()
+    shell = Shell(page, ready)
+    shell.start("/scrivi/diario_segreto")
+    form = shell.body.content
+    field = next(item for item in walk(form) if isinstance(item, ft.TextField) and item.multiline)
+    field.value = "caro diario, oggi"
+    field.on_change(SimpleNamespace(control=field))
+    click(button(form, "Salva"))
+    assert shell.current.screen == "voce", texts(form)
+    entry_id = shell.current.arg
+    shown = texts(shell.body.content)
+    assert "caro diario, oggi" not in shown and "cifrato · protetto" in shown
+    # the PIN, chosen in Mnemosyne
+    shell.navigate("/organon/mnemosyne")
+    click(button(shell.body.content, "Scegli il PIN"))
+    dialog = page.dialogs[-1]
+    fields = [item for item in walk(dialog) if isinstance(item, ft.TextField)]
+    for item, value in zip(fields, (passphrase, "246810", "246810")):
+        item.value = value
+    click(button(dialog, "Scegli il PIN"))
+    assert keys.has_pin(ready) and any("PIN scelto" in toast for toast in shell.ctx.toasts)
+    # opening the entry asks the PIN, then shows the text
+    shell.navigate(f"/voci/{entry_id}")
+    click(button(shell.body.content, "Apri"))
+    dialog = page.dialogs[-1]
+    assert "Il PIN apre i segreti protetti di questo dispositivo." in texts(dialog)
+    pin = next(item for item in walk(dialog) if isinstance(item, ft.TextField))
+    pin.value = "000000"
+    click(button(dialog, "Apri"))
+    assert "PIN sbagliato: ancora 4 tentativi" in texts(dialog)
+    pin.value = "246810"
+    click(button(dialog, "Apri"))
+    assert "caro diario, oggi" in texts(shell.body.content)
+    # editing shows it while open; saving another block keeps the same sealed value
+    click(button(shell.body.content, "Modifica"))
+    form = shell.body.content
+    assert any(isinstance(item, ft.TextField) and item.value == "caro diario, oggi" for item in walk(form))
+    with Store.open(ready) as store:
+        before = store.get_entry(entry_id).values["testo"]
+    click(button(form, "Salva le modifiche"))
+    with Store.open(ready) as store:
+        assert store.get_entry(entry_id).values["testo"] == before
+    shell.ctx.memory["vault"].lock()
+    shell.navigate(f"/voci/{entry_id}")
+    assert "caro diario, oggi" not in texts(shell.body.content)
+    with Store.open(ready) as store:
+        assert vm.entry_detail(store, entry_id, date(2026, 10, 17)).blocks[0].text == secrets.LOCKED_TEXT

@@ -284,3 +284,16 @@ def test_italian_dates() -> None:
     assert vm.short_date("2026-10-18", today) == "domani"
     assert vm.short_date("2026-10-01", today) == "1 ott"
     assert vm.short_date("2025-10-01", today) == "1 ott 2025"
+
+
+def test_a_secret_field_keeps_the_sealed_value_until_changed() -> None:
+    spec = BlockSpec.from_dict({"key": "s", "type": "secret", "label": "S", "options": {"multiline": True}})
+    sealed = "zbs1:SIGILLATO"
+    closed = forms.value_to_state(spec, sealed)
+    assert forms.state_to_raw(spec, closed) == sealed  # closed and left empty: unchanged
+    assert forms.state_to_raw(spec, {**closed, "text": " nuovo\r\ntesto "}) == "nuovo\ntesto"
+    opened = forms.reveal_secret_state(closed, "vecchio")
+    assert forms.state_to_raw(spec, opened) == sealed  # opened but not changed: not sealed again
+    assert forms.state_to_raw(spec, {**opened, "text": ""}) is None  # opened and emptied: removed
+    assert forms.state_to_raw(spec, forms.removed_secret_state()) is None
+    assert forms.state_to_raw(spec, forms.empty_state(spec)) is None

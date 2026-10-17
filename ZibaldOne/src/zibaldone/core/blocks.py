@@ -538,6 +538,51 @@ class LinkBlock(BlockType):
         return ", ".join(item[:8] for item in value)
 
 
+# — 0.2.3: secrets —
+
+
+def _level_option(value: Any, name: str) -> str:
+    from zibaldone.core.secrets import LEVELS
+
+    if value not in LEVELS:
+        raise ValueError(f"l'opzione '{name}' è uno tra: {', '.join(LEVELS)}")
+    return value
+
+
+class SecretBlock(BlockType):
+    """Text sealed with the user's key (`core/secrets.py`): the Store seals it before saving."""
+
+    name = "secret"
+    label = "Segreto"
+    description = "testo cifrato con la tua chiave: documenti, indirizzi, note mediche, il diario segreto"
+    nickname = "Echemythia"
+    nickname_source = "il silenzio dei pitagorici: quello che si impara nella scuola non esce dalla scuola"
+    options = {"level": _level_option, "multiline": _bool_option, "placeholder": _str_option}
+
+    def normalize(self, value: Any, options: Dict[str, Any]) -> str:
+        """A sealed secret stays as it is; a text written in clear is checked, and the Store seals it."""
+        from zibaldone.core.secrets import MAX_SECRET_CHARS, SECRET_PREFIX, is_sealed_value
+
+        if not isinstance(value, str):
+            raise ValueError("un segreto è un testo")
+        if value.startswith(SECRET_PREFIX):
+            if not is_sealed_value(value):
+                raise ValueError("testo cifrato rovinato")
+            return value
+        text = value.replace("\r\n", "\n").strip() if options.get("multiline") else " ".join(value.split())
+        if len(text) > MAX_SECRET_CHARS:
+            raise ValueError(f"testo troppo lungo (massimo {MAX_SECRET_CHARS} caratteri)")
+        return text
+
+    def parse(self, raw: str, options: Dict[str, Any]) -> str:
+        return self.normalize(raw.replace("\\n", "\n") if options.get("multiline") else raw, options)
+
+    def to_text(self, value: Any, options: Dict[str, Any]) -> str:
+        from zibaldone.core.secrets import LOCKED_TEXT
+
+        return LOCKED_TEXT
+
+
 BLOCK_TYPES: Dict[str, BlockType] = {
     block.name: block
     for block in (
@@ -553,6 +598,7 @@ BLOCK_TYPES: Dict[str, BlockType] = {
         ProgressBlock(),
         BookmarkBlock(),
         LinkBlock(),
+        SecretBlock(),
     )
 }
 

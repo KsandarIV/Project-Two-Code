@@ -13,7 +13,7 @@ Cinque sezioni, nel menu a sinistra sul PC e in basso sul telefono:
 | **Voci** · Pensieri | tutte le voci, con filtri per titolo, modello e date; apri, modifica, cancella |
 | **Collezioni** · Museion | libri, film, giochi, viaggi…: le voci dei modelli da collezione, con il loro stato |
 | **Modelli** · Forme | i tuoi modelli, l'editor dei blocchi e le **Scuole**, cioè i pacchetti pronti da installare |
-| **Impostazioni** · Organon | Parresia (privacy e dati), Daimon (promemoria), Mnemosyne (backup e cifratura), Le Nuvole (account e cloud), Informazioni |
+| **Impostazioni** · Organon | Parresia (privacy e dati), Daimon (promemoria), Mnemosyne (backup, cifratura e PIN dei segreti), Le Nuvole (account e cloud), Informazioni |
 
 Al primo avvio l'app ti mostra l'avviso sulla privacy, ti fa entrare con Google (se l'app ha un client Google), ti chiede dove tenere i backup e ti propone il pacchetto Stoa · Diario. Dopo ogni salvataggio fa da sola il backup del giorno e la copia fuori, se l'hai scelta. Mentre l'app è aperta, i promemoria compaiono come avviso in alto.
 
@@ -148,15 +148,16 @@ Nella voce di una persona scrivi anche i suoi **Genitori**, **Fratelli e sorelle
 "Da sentire" vuol dire solo che è passato il tempo che hai scelto: nessuna notifica, nessun rimprovero. Come funziona: [le persone](../tecnica/persone.md).
 
 ## Modelli pronti
-ZibaldOne ha cinque **pacchetti** di modelli già pronti, ognuno con il nome di una scuola filosofica. Installarli non tocca le tue voci e puoi modificarli come i tuoi.
+ZibaldOne ha sei **pacchetti** di modelli già pronti, ognuno con il nome di una scuola filosofica. Installarli non tocca le tue voci e puoi modificarli come i tuoi.
 
 | Pacchetto | Cosa contiene |
 |---|---|
 | `diario` · Stoa | mattina, metà giornata e sera; il check-in delle 8 aree della vita; pensieri liberi; revisioni di settimana, mese e anno |
 | `collezioni` · Museion | libri, film, serie, anime, videogiochi, giochi da tavolo, sport, musica, guardaroba |
 | `io` · Delfi | identità, filosofia personale, capitoli di vita, desideri, abitudini |
-| `persone` · Agorà | le persone della tua vita, con ruoli, contatti e legami, e gli incontri con loro |
+| `persone` · Agorà | le persone della tua vita, con ruoli, contatti e legami (indirizzo e documenti cifrati), e gli incontri con loro |
 | `aree` · Liceo | il check-in di una sola area, gli obiettivi e le cose da fare di ogni area |
+| `segreti` · Adyton | il diario segreto e le note mediche, cifrati |
 
 | Comando | Cosa fa |
 |---|---|
@@ -215,6 +216,23 @@ Scegli una passphrase (almeno 10 caratteri) e scrivi su carta il **codice di rec
 - `zbone backup recover`: hai dimenticato la passphrase? Ne scegli una nuova con il codice di recupero.
 
 Senza passphrase e senza codice di recupero nessuno può aprire i backup, nemmeno chi ha creato l'app.
+
+### I segreti · Arcana
+Con la cifratura attiva puoi scrivere **segreti**: il diario segreto (*A se stesso*), le note mediche (*Ippocrate*), l'indirizzo e i documenti di una persona. Si cifrano prima di essere salvati e non entrano mai nella ricerca, nelle esportazioni o nell'IA. Scriverli non chiede nulla; per rileggerli tocca **Apri** nella pagina della voce.
+
+- **Protetto** (il diario, gli indirizzi): si apre con il **PIN** o con la passphrase.
+- **Massimo** (documenti, salute): solo con la passphrase.
+
+Il PIN (da 6 a 12 cifre) si sceglie in **Impostazioni · Mnemosyne** o con `zbone segreti pin`; dopo 5 errori di fila si toglie da solo. I segreti si richiudono dopo 5 minuti senza usarli.
+
+| Comando | Cosa fa |
+|---|---|
+| `zbone pack install segreti` | il diario segreto e le note mediche |
+| `zbone entry add diario_segreto` | scrivi senza che il testo si veda |
+| `zbone segreti` | quante voci hanno segreti e se il PIN c'è |
+| `zbone segreti apri 3f2a` | mostra la voce con i segreti in chiaro, solo sullo schermo |
+
+Come funziona: [i segreti](../tecnica/segreti.md).
 
 ## Account e copie fuori · Le Nuvole
 Al primo avvio ZibaldOne ti chiede di entrare con il tuo **account Google**: si apre il browser, scegli l'account e lasci spuntato Drive. Serve a sapere chi sei su questo dispositivo; il diario resta qui. Poi scegli dove tenere i backup:

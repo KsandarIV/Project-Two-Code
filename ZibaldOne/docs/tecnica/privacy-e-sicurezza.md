@@ -36,6 +36,11 @@
 - Prima di qualsiasi funzione di IA i testi passano dall'anonimizzatore locale ([anonimizzatore](anonimizzatore.md), [ADR-0009](../decisioni/ADR-0009-anonimizzatore.md)). Oggi si può solo provare: nessun testo va a un modello.
 - La tabella dei pseudonimi resta in memoria e non si salva. Un testo con pseudonimi è ancora un dato personale (GDPR, considerando 26).
 
+## Blocchi segreti (dalla 0.2.3)
+- Documenti, indirizzi, note mediche e il diario segreto vanno in **blocchi segreti**, cifrati sul dispositivo con la chiave dei backup prima di essere salvati ([i segreti](segreti.md), [ADR-0012](../decisioni/ADR-0012-blocchi-segreti.md)). Sono le categorie particolari dell'art. 9 GDPR, spesso di altre persone: per questo non entrano mai nella ricerca, nelle esportazioni, nell'anonimizzatore o nell'IA.
+- Il **PIN** apre solo il livello protetto ed è una comodità: chi copia `keys.json` può provare tutti i PIN fuori dall'app. Quello che conta va al livello massimo, che si apre solo con la passphrase.
+- Il resto del database resta in chiaro. L'avviso privacy non cambia: nessun dato nuovo lascia il dispositivo.
+
 ## Sicurezza tecnica
 - **Backup cifrati con storia** ([ADR-0006](../decisioni/ADR-0006-storia-e-backup-cifrati.md)): istantanee che durano un tempo scelto, cifrate sul dispositivo e copiabili fuori; nessuno tranne l'utente può aprirle. Una voce cancellata resta nei backup fino alla loro scadenza, e l'avviso lo deve dire.
 - **Cifratura opzionale** dei dati con una passphrase (un diario può contenere salute, opinioni e convinzioni: dati delicati). Se l'utente dimentica la passphrase, i dati non sono recuperabili: va detto chiaramente.

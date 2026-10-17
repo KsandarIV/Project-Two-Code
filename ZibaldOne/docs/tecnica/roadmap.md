@@ -35,7 +35,7 @@ Le richieste della vecchia Journal App: [requisiti della fase 0.2](requisiti-v0.
 | v0.2.0 | **Le 8 aree della vita** come concetto dell'app: area di modelli e voci, punteggio nel tempo, cose da fare, obiettivi, check-in e note per area ([le 8 aree](aree.md), [ADR-0011](../decisioni/ADR-0011-aree-della-vita.md)); registro dei temi | ✅ |
 | v0.2.1 | **Persone complete**: più aree, ruoli, contatti, incontri, ultimo contatto ([le persone](persone.md)) | ✅ |
 | v0.2.2 | **Albero genealogico e rete sociale**: legami tra persone, albero di famiglia, rete, contatti in comune, forza del legame ([le persone](persone.md#legami-albero-e-rete-dalla-022)) | ✅ |
-| v0.2.3 | **Dati sensibili cifrati e diario segreto** | |
+| v0.2.3 | **Dati sensibili cifrati e diario segreto**: blocchi segreti in due livelli, PIN, fuori da ricerca e IA ([i segreti](segreti.md), [ADR-0012](../decisioni/ADR-0012-blocchi-segreti.md)) | ✅ |
 | v0.2.4 | **Media**: foto, video, audio e documenti | |
 | v0.2.5 | **Svago avanzato** e import da Goodreads, Letterboxd, MyAnimeList, Steam | |
 | v0.2.6 | **Finanze** cifrate | |

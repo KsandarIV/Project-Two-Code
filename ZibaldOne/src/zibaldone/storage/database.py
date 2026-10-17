@@ -22,6 +22,7 @@ from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tupl
 
 from zibaldone.core.areas import entry_areas
 from zibaldone.core.templates import Entry, Template, check_area, now_iso, validate_values
+from zibaldone.core import secrets
 from zibaldone.core.blocks import parse_day
 from zibaldone.core.links import (
     KIND_BLOCK,
@@ -335,7 +336,8 @@ class Store:
     def add_entry(self, template_slug: str, values: Dict[str, Any], day: Optional[str] = None, area: Optional[str] = None) -> Entry:
         """Add an entry. `area` is the entry's own life area (default: the template's)."""
         template = self.get_template(template_slug)
-        entry = Entry.new(template, values, day, area=area)
+        entry = Entry.new(template, self._seal_secrets(template, values), day, area=area)
+        secrets.check_sealed(template, entry.values)
         with self.transaction() as cursor:
             cursor.execute(
                 "INSERT INTO entries (id, template, day, data, created_at, updated_at, area) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -401,7 +403,8 @@ class Store:
                 new_values.pop(key, None)
             else:
                 new_values[key] = value
-        entry.values = validate_values(template, new_values)
+        entry.values = validate_values(template, self._seal_secrets(template, new_values))
+        secrets.check_sealed(template, entry.values)
         if day:
             entry.day = parse_day(day)
         if area is not None:
@@ -423,6 +426,27 @@ class Store:
         return entry
 
     # — hooks: keep the indexes in sync, inside the entry's transaction —
+
+    def _seal_secrets(self, template: Template, values: Dict[str, Any]) -> Dict[str, Any]:
+        """0.2.3: secret blocks written in clear are sealed here, before anything is saved."""
+        if not secrets.has_plain_secrets(template, values):
+            return values
+        values = validate_values(template, values)  # the text is checked and tidied before it is sealed
+        from zibaldone.storage import keys
+
+        try:
+            public = keys.secret_public_keys(self.path.parent)
+        except keys.KeysError:
+            raise StoreError(
+                "i blocchi segreti si cifrano con la tua chiave: attiva prima la cifratura dei backup (Impostazioni → Mnemosyne, o `zbone backup setup`)"
+            ) from None
+
+        def key_for(level: str) -> Any:
+            if level not in public:
+                raise StoreError("apri i segreti una volta con la passphrase (`zbone segreti apri`, o nell'app): poi i segreti protetti si scrivono senza chiedere nulla")
+            return public[level]
+
+        return secrets.seal_entry_values(template, values, key_for)
 
     def after_entry_saved(self, entry: Entry, template: Template) -> None:
         """Keep secondary indexes in sync. Extended from 0.1.2."""

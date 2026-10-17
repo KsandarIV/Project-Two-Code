@@ -5,6 +5,7 @@ from typing import Any, List
 
 import flet as ft
 
+from zibaldone.core import secrets
 from zibaldone.core.brand import mascot_for
 from zibaldone.core.links import is_person_template
 from zibaldone.storage.database import StoreError
@@ -15,6 +16,7 @@ from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route, section
 from zibaldone.ui.views.common import choose_template, not_found, pick_date
+from zibaldone.ui.views.vault import unlock_secrets, vault_of
 
 ALL = "*"
 SEARCH_NOTE = "Cerca in tutti i blocchi. Più parole: le voci che le hanno tutte; «\"frase esatta\"», parol* per l'inizio, -parola per escluderla."
@@ -214,8 +216,38 @@ def _related_panels(ctx: AppContext, detail: vm.EntryDetail) -> List[ft.Control]
     return panels
 
 
+def _secret_view(ctx: AppContext, value: str) -> ft.Control:
+    """A secret: closed, with «Apri»; opened, its text until the vault closes again."""
+    vault, now = vault_of(ctx), ctx.now()
+    try:
+        level = secrets.value_level(value)
+        text = vault.reveal(value, now) if vault.can_open(value, now) else None
+    except secrets.SecretsError as error:
+        return W.caption(f"{secrets.LOCKED_TEXT} · {error}", color=T.ERROR)
+    if text is not None:
+        def close(_: Any) -> None:
+            vault.lock()
+            ctx.refresh()
+
+        return ft.Column(
+            [
+                W.body(text, selectable=True),
+                ft.Row([W.caption(f"aperto: si richiude da solo dopo {secrets.VAULT_MINUTES} minuti"), W.text_button("Richiudi", close, icon="LOCK", color=T.TEXT_DIM)], wrap=True, spacing=8),
+            ],
+            spacing=4,
+        )
+    return ft.Row(
+        [W.pill(f"cifrato · {level}", T.ACCENT_2, icon="LOCK_OUTLINE"), W.text_button("Apri", lambda _: unlock_secrets(ctx, [value], ctx.refresh), icon="LOCK_OPEN")],
+        wrap=True,
+        spacing=8,
+        vertical_alignment=ft.CrossAxisAlignment.CENTER,
+    )
+
+
 def _block_view(ctx: AppContext, block: vm.DetailBlock) -> ft.Control:
     kind, value, options = block.type, block.value, block.options
+    if kind == "secret":
+        return _secret_view(ctx, value)
     if kind == "rating":
         return W.stars(value, int(options.get("max", 5)), size=22)
     if kind == "tags":
