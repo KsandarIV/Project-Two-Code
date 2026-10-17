@@ -1,7 +1,8 @@
 """Privacy notice shown at first start and by `zbone privacy`.
 
 Changing the text in a way that matters to the user means raising
-NOTICE_VERSION, so everyone is asked again.
+NOTICE_VERSION, so everyone is asked again. A change that only lowers a
+risk (like 0.0.7 saying that backups can now be encrypted) keeps it.
 """
 
 from pathlib import Path
@@ -11,7 +12,8 @@ NOTICE_VERSION = 2
 
 RISKS: List[str] = [
     "Se perdi o rompi il dispositivo senza un backup, perdi i dati.",
-    "Chi usa questo dispositivo con il tuo account può leggere i file: per ora non sono cifrati.",
+    "Chi usa questo dispositivo con il tuo account può leggere il database, che resta in chiaro. "
+    "Le istantanee (backup) sono cifrate dopo `zbone backup setup`.",
     "Se metti la cartella dentro Google Drive, i dati stanno anche sui server di Google, "
     "alle condizioni del tuo account Google.",
     "Le istantanee (backup) conservano anche le voci che cancelli finché non scadono: "

@@ -22,7 +22,9 @@ for group, name in ((privacy_app, "privacy"), (template_app, "template"), (entry
     app.add_typer(group, name=name)
 
 runner = CliRunner()
+PASSPHRASE = "cavallo batteria graffetta"
 RECOVERY_CODE = crypto.recovery_code_from_bytes(bytes(range(15)))
+LAST_GROUP = RECOVERY_CODE.split("-")[-1]
 SNAPSHOT_ID = re.compile(r"\d{8}T\d{6}Z-[0-9a-f]{6}")
 
 
@@ -43,9 +45,19 @@ def start_with_books(*titles: str) -> None:
         assert invoke("entry", "add", "libro", "--set", f"titolo={title}").exit_code == 0
 
 
+def forget_automatic_snapshots(folder) -> None:
+    """Adding the first book starts the daily snapshot; some tests count snapshots from zero."""
+    for snapshot in backups.list_snapshots(folder):
+        snapshot.path.unlink()
+
+
 def created_id(result) -> str:
     assert result.exit_code == 0, result.output
     return SNAPSHOT_ID.search(result.output).group(0)
+
+
+def setup_encryption():
+    return invoke("backup", "setup", input=f"{PASSPHRASE}\n{PASSPHRASE}\n{LAST_GROUP}\n")
 
 
 def no_traceback(result) -> None:
@@ -63,7 +75,7 @@ def test_create_list_verify_restore_and_undo() -> None:
 
     listed = invoke("backup", "list")
     assert first in listed.output and "manuale" in listed.output and "«prima di Emma»" in listed.output
-    assert "in chiaro" in listed.output and "Cifratura:    non ancora disponibile" in listed.output
+    assert "in chiaro" in listed.output and "Cifratura:    non attiva" in listed.output
     assert "7 giornaliere, 4 settimanali, 12 mensili" in listed.output
 
     verified = invoke("backup", "verify")
@@ -101,6 +113,7 @@ def test_errors_are_short_messages() -> None:
     no_traceback(empty)
     missing = invoke("backup", "restore", "20260101")
     assert missing.exit_code == 1 and "nessuna istantanea" in missing.output
+    assert invoke("backup", "passphrase").exit_code == 1
 
 
 def test_backup_commands_ask_for_consent_first(isolated_data_dir) -> None:
@@ -119,8 +132,7 @@ def test_config_and_prune(isolated_data_dir) -> None:
     settings = backups.load_backup_settings(isolated_data_dir)
     assert (settings.auto, settings.auto_interval_hours, settings.retention.daily) == (False, 12, 2)
 
-    for automatic in backups.list_snapshots(isolated_data_dir):  # taken after adding the book
-        automatic.path.unlink()
+    forget_automatic_snapshots(isolated_data_dir)
     noon = datetime.now(timezone.utc).replace(hour=12)
     for back in range(5):
         backups.create_snapshot(isolated_data_dir, now=noon - timedelta(days=back))
@@ -130,6 +142,80 @@ def test_config_and_prune(isolated_data_dir) -> None:
     done = invoke("backup", "prune")
     assert done.exit_code == 0 and "Istantanee cancellate" in done.output and "Restano 2" in done.output
     assert "Niente da cancellare" in invoke("backup", "prune").output
+
+
+# * — encryption —
+
+
+def test_setup_encrypts_existing_snapshots_and_restore_asks_passphrase(isolated_data_dir) -> None:
+    start_with_books("Dune")
+    forget_automatic_snapshots(isolated_data_dir)
+    plain = created_id(invoke("backup", "create", "--note", "in chiaro"))
+
+    result = invoke("backup", "setup", input=f"{PASSPHRASE}\n{PASSPHRASE}\nZZZZ\n{LAST_GROUP.lower()}\n")
+    assert result.exit_code == 0, result.output
+    assert RECOVERY_CODE in result.output
+    assert "Non corrisponde" in result.output and "Cifratura attiva" in result.output
+    assert "ora cifrate: 1" in result.output
+    assert crypto.is_sealed((isolated_data_dir / "backups" / f"{plain}.zbsnap").read_bytes())
+    assert PASSPHRASE not in (isolated_data_dir / "keys.json").read_text(encoding="utf-8")
+
+    encrypted = created_id(invoke("backup", "create"))
+    listed = invoke("backup", "list")
+    assert "cifrata" in listed.output and "«in chiaro»" not in listed.output and "Cifratura:    attiva" in listed.output
+    detailed = invoke("backup", "list", "--details", input=f"{PASSPHRASE}\n")
+    assert "«in chiaro»" in detailed.output
+
+    invoke("entry", "add", "libro", "--set", "titolo=Emma")
+    wrong = invoke("backup", "restore", encrypted, "--yes", input="non è questa\n")
+    assert wrong.exit_code == 1 and "passphrase sbagliata" in wrong.output
+    no_traceback(wrong)
+    assert "Emma" in invoke("entry", "list").output
+
+    right = invoke("backup", "restore", encrypted, "--yes", input=f"{PASSPHRASE}\n")
+    assert right.exit_code == 0, right.output
+    assert "Emma" not in invoke("entry", "list").output
+
+    verified = invoke("backup", "verify", "--all", input=f"{PASSPHRASE}\n")
+    assert verified.exit_code == 0, verified.output
+    assert "Tutte le 3 istantanee sono integre" in verified.output
+
+
+def test_setup_needs_the_last_group_and_matching_passphrases(isolated_data_dir) -> None:
+    start_with_books("Dune")
+    cancelled = invoke("backup", "setup", input=f"{PASSPHRASE}\n{PASSPHRASE}\nAAAA\nBBBB\nCCCC\n")
+    assert cancelled.exit_code == 1 and "non ho salvato nulla" in cancelled.output
+    assert not (isolated_data_dir / "keys.json").exists()
+    mismatch = invoke("backup", "setup", input=f"{PASSPHRASE}\naltra passphrase\n")
+    assert mismatch.exit_code == 1 and "non coincidono" in mismatch.output
+    weak = invoke("backup", "setup", input="corta\n")
+    assert weak.exit_code == 1 and "almeno 10 caratteri" in weak.output
+    assert not (isolated_data_dir / "keys.json").exists()
+    assert setup_encryption().exit_code == 0
+    again = setup_encryption()
+    assert again.exit_code == 1 and "già attiva" in again.output
+
+
+def test_change_passphrase_and_recover(isolated_data_dir) -> None:
+    start_with_books("Dune")
+    assert setup_encryption().exit_code == 0
+
+    wrong = invoke("backup", "passphrase", input="sbagliata sbagliata\n")
+    assert wrong.exit_code == 1 and "passphrase sbagliata" in wrong.output
+    changed = invoke("backup", "passphrase", input=f"{PASSPHRASE}\nnuova passphrase lunga\nnuova passphrase lunga\n")
+    assert changed.exit_code == 0 and "Passphrase cambiata" in changed.output
+    keys.unlock_with_passphrase(isolated_data_dir, "nuova passphrase lunga")
+
+    typo = RECOVERY_CODE[:-1] + ("A" if RECOVERY_CODE[-1] != "A" else "B")
+    recovered = invoke("backup", "recover", input=f"{typo}\n{RECOVERY_CODE}\npassphrase ritrovata\npassphrase ritrovata\n")
+    assert recovered.exit_code == 0, recovered.output
+    assert "errore di battitura" in recovered.output and "Nuova passphrase salvata" in recovered.output
+    keys.unlock_with_passphrase(isolated_data_dir, "passphrase ritrovata")
+
+    other = crypto.recovery_code_from_bytes(bytes(15))
+    refused = invoke("backup", "recover", input=f"{other}\n")
+    assert refused.exit_code == 1 and "codice di recupero sbagliato" in refused.output
+    no_traceback(refused)
 
 
 # * — automatic backups —

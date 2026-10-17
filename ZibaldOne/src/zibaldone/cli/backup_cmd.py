@@ -1,4 +1,4 @@
-"""`zbone backup …`: snapshots like commits, restore and retention.
+"""`zbone backup …`: snapshots like commits, restore, retention and encryption.
 
 Secrets are asked with hidden input and never taken from flags or
 environment variables, so they do not end up in the shell history or in
@@ -14,16 +14,25 @@ import typer
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 
 from zibaldone.cli.common import ask_yes_no, ensure_consent, fail, run_auto_backup  # noqa: F401 (re-exported)
-from zibaldone.core.crypto import CryptoError
+from zibaldone.core.crypto import RECOVERY_LOOKALIKES, CryptoError, RecoveryCodeError, recovery_code_last_group
 from zibaldone.storage import backups, keys
 from zibaldone.storage.backups import BackupError, BackupSettings, SnapshotInfo
 from zibaldone.storage.keys import KeysError
 from zibaldone.storage.paths import data_dir, human_size
 from zibaldone.storage.settings import SettingsError
 
-backup_app = typer.Typer(help="Mnemosyne · Storia e backup: istantanee dei tuoi dati, ripristino e durata.", no_args_is_help=True)
+backup_app = typer.Typer(help="Mnemosyne · Storia e backup: istantanee dei tuoi dati, ripristino, durata e cifratura.", no_args_is_help=True)
 
 KNOWN_ERRORS = (BackupError, KeysError, CryptoError, SettingsError)
+CONFIRM_ATTEMPTS = 3
+
+SETUP_INTRO = """Da ora ogni istantanea sarà cifrata su questo dispositivo (AES-256-GCM).
+I backup automatici non ti chiedono nulla: la passphrase serve solo per verificarli o ripristinarli.
+Riceverai anche un codice di recupero da scrivere su carta: serve se dimentichi la passphrase.
+Senza passphrase e senza codice di recupero i backup non si possono aprire, da nessuno:
+nemmeno da chi ha creato l'app.
+Il database su questo dispositivo resta in chiaro: la cifratura riguarda le istantanee.
+"""
 
 
 @contextmanager
@@ -64,10 +73,18 @@ def print_status(folder: Path, settings: BackupSettings) -> None:
     if keys.is_configured(folder):
         typer.echo(f"Cifratura:    attiva (chiave {keys.format_key_id(keys.key_id(folder))})")
     else:
-        typer.echo("Cifratura:    non ancora disponibile (arriva nella 0.0.7)")
+        typer.echo("Cifratura:    non attiva. Attivala con: zbone backup setup")
 
 
 # * — secrets —
+
+
+def ask_new_passphrase(label: str = "Nuova passphrase") -> str:
+    first = typer.prompt(label, hide_input=True)
+    keys.check_passphrase(first)
+    if typer.prompt("Ripetila", hide_input=True) != first:
+        fail("le due passphrase non coincidono: non ho cambiato nulla")
+    return first
 
 
 def unlock_for(folder: Path, snapshots: List[SnapshotInfo]) -> Optional[X25519PrivateKey]:
@@ -85,6 +102,11 @@ def unlock_for(folder: Path, snapshots: List[SnapshotInfo]) -> Optional[X25519Pr
     return backups.unlock_snapshot_with_recovery_code(folder, encrypted[0].id, code)
 
 
+def require_encryption(folder: Path) -> None:
+    if not keys.is_configured(folder):
+        fail("la cifratura dei backup non è attiva: attivala con `zbone backup setup`")
+
+
 # * — commands —
 
 
@@ -97,7 +119,7 @@ def create_backup(note: str = typer.Option("", "--note", "-n", help="una nota br
     typer.echo(f"Istantanea creata: {snapshot.id}")
     typer.echo(f"  {describe(snapshot)}")
     if not snapshot.encrypted:
-        typer.echo("  Non è ancora cifrata: la cifratura arriva nella 0.0.7.")
+        typer.echo("  Non è cifrata: attiva la cifratura con `zbone backup setup`.")
 
 
 @backup_app.command("list")
@@ -226,3 +248,68 @@ def configure_backups(
     if changed:
         typer.echo("La nuova durata vale dalla prossima pulizia: zbone backup prune --dry-run per vedere cosa cambierebbe.")
 
+
+@backup_app.command("setup")
+def setup_encryption() -> None:
+    """Attiva la cifratura dei backup: passphrase e codice di recupero."""
+    ensure_consent()
+    folder = data_dir()
+    if keys.is_configured(folder):
+        fail("la cifratura è già attiva. Per cambiare passphrase: zbone backup passphrase")
+    typer.echo(SETUP_INTRO)
+    with backup_errors():
+        new_keys = keys.create_keys(ask_new_passphrase("Scegli la passphrase dei backup"))
+    typer.echo("\nCODICE DI RECUPERO (te lo mostro solo adesso):\n")
+    typer.echo(f"    {new_keys.recovery_code}\n")
+    typer.echo("Scrivilo su carta e conservalo lontano da questo dispositivo. Non salvarlo qui e non fotografarlo.")
+    last_group = recovery_code_last_group(new_keys.recovery_code)
+    for _ in range(CONFIRM_ATTEMPTS):
+        answer = typer.prompt("Per conferma, scrivi l'ultimo gruppo del codice").strip().upper().translate(RECOVERY_LOOKALIKES)
+        if answer == last_group:
+            break
+        typer.echo("Non corrisponde: ricontrolla quello che hai scritto.")
+    else:
+        fail("configurazione annullata: non ho salvato nulla. Riprova con `zbone backup setup`")
+    with backup_errors():
+        keys.save_new_keys(folder, new_keys)
+        result = backups.encrypt_existing_snapshots(folder, new_keys.private_key)
+    typer.echo(f"Cifratura attiva (chiave {keys.format_key_id(new_keys.key_id)}).")
+    if result.encrypted:
+        typer.echo(f"Istantanee che c'erano già, ora cifrate: {len(result.encrypted)}. Le copie in chiaro non ci sono più.")
+    for snapshot_id, problem in result.failed:
+        typer.secho(f"  restata in chiaro {snapshot_id}: {problem}", fg=typer.colors.YELLOW, err=True)
+    if result.failed:
+        typer.echo("Le istantanee rimaste in chiaro sono rovinate: controllale con `zbone backup verify --all`.")
+
+
+@backup_app.command("passphrase")
+def change_passphrase() -> None:
+    """Cambia la passphrase dei backup (serve quella attuale)."""
+    ensure_consent()
+    folder = data_dir()
+    require_encryption(folder)
+    with backup_errors():
+        current = typer.prompt("Passphrase attuale", hide_input=True)
+        keys.unlock_with_passphrase(folder, current)
+        keys.change_passphrase(folder, current, ask_new_passphrase())
+    typer.echo("Passphrase cambiata. Il codice di recupero resta lo stesso.")
+
+
+@backup_app.command("recover")
+def recover_passphrase() -> None:
+    """Imposta una nuova passphrase con il codice di recupero."""
+    ensure_consent()
+    folder = data_dir()
+    require_encryption(folder)
+    with backup_errors():
+        for _ in range(CONFIRM_ATTEMPTS):
+            code = typer.prompt("Codice di recupero", hide_input=True)
+            try:
+                keys.unlock_with_recovery_code(folder, code)
+                break
+            except RecoveryCodeError as error:
+                typer.echo(f"  {error}")
+        else:
+            fail("codice di recupero non valido: non ho cambiato nulla")
+        keys.reset_passphrase(folder, code, ask_new_passphrase())
+    typer.echo("Nuova passphrase salvata. Il codice di recupero resta lo stesso: tienilo al sicuro.")
