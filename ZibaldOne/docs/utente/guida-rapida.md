@@ -1,8 +1,25 @@
 # Guida rapida
 
-ZibaldOne si usa dal terminale con il comando `zibaldone` oppure, più corto, `zbone`.
+ZibaldOne si usa in due modi, sugli stessi dati:
+- **l'app**, con `zbone app` (una finestra) o `zbone app --web` (nel browser); su Android è l'app installata;
+- **il terminale**, con il comando `zibaldone` oppure, più corto, `zbone`.
 
-## Comandi di base
+## L'app
+Cinque sezioni, nel menu a sinistra sul PC e in basso sul telefono:
+
+| Sezione | Cosa trovi |
+|---|---|
+| **Oggi** · Hic et nunc | il pensiero del giorno, i 3 momenti (mattina, metà giornata, sera) da scrivere o riaprire, il check-in delle 8 aree, le voci di oggi, la serie di giorni |
+| **Voci** · Pensieri | tutte le voci, con filtri per titolo, modello e date; apri, modifica, cancella |
+| **Collezioni** · Museion | libri, film, giochi, viaggi…: le voci dei modelli da collezione, con il loro stato |
+| **Modelli** · Forme | i tuoi modelli, l'editor dei blocchi e le **Scuole**, cioè i pacchetti pronti da installare |
+| **Impostazioni** · Organon | Parresia (privacy e dati), Daimon (promemoria), Mnemosyne (backup e cifratura), Le Nuvole (account e cloud), Informazioni |
+
+Al primo avvio l'app ti mostra l'avviso sulla privacy, ti fa entrare con Google (se l'app ha un client Google), ti chiede dove tenere i backup e ti propone il pacchetto Stoa · Diario. Dopo ogni salvataggio fa da sola il backup del giorno e la copia fuori, se l'hai scelta. Mentre l'app è aperta, i promemoria compaiono come avviso in alto.
+
+Le pagine si possono aprire direttamente: `zbone app --route /scrivi/sera`.
+
+## Il terminale: comandi di base
 | Comando | Cosa fa |
 |---|---|
 | `zbone help` | mostra tutti i comandi disponibili |

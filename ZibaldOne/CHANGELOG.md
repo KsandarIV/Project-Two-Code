@@ -4,6 +4,19 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.1.0] — 2026-10-17
+### Aggiunto
+- **Interfaccia grafica** con Flet 1.0.4 e tema scuro neon, la stessa per Windows e Android: si apre con `zbone app` (finestra) o `zbone app --web` (browser).
+- Cinque sezioni: Oggi (Hic et nunc), Voci (Pensieri), Collezioni (Museion), Modelli (Forme) con le Scuole, Impostazioni (Organon). Menu laterale sul PC e barra in basso sul telefono, che cambia da sola con la larghezza.
+- Oggi: pensiero del giorno, i 3 momenti da scrivere o riaprire, check-in delle 8 aree, voci di oggi, serie di giorni.
+- Moduli per ogni tipo di blocco, editor dei modelli, installazione dei pacchetti con il piano dei cambiamenti.
+- Primo avvio guidato: avviso privacy, accesso con Google, dove tenere i backup, pacchetto Stoa · Diario.
+- Organon: privacy e dati, promemoria, backup e cifratura (con codice di recupero), account e cloud, recupero da Drive o da una cartella.
+- Backup del giorno e copia fuori dopo ogni salvataggio; promemoria come avviso in app mentre è aperta.
+- Pacchetti facoltativi `zibaldone[ui]` e `zibaldone[web]`, con Flet fissato alla 1.0.4.
+### Documentazione
+- [Interfaccia grafica](docs/tecnica/interfaccia.md): struttura, regole, come aggiungere una schermata; guida rapida con l'app; immagini nel README.
+
 ## [0.0.9] — 2026-10-17
 ### Aggiunto
 - **Promemoria** (Daimon) per i 3 momenti della giornata: mattina 08:30, metà giornata 13:30, sera 21:30, con giorni della settimana e ore di silenzio (22:30–08:00).

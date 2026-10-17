@@ -16,6 +16,13 @@ dev = [
 notifiche = [
   "desktop-notifier>=6.1,<7",
 ]
+# Flet is pinned: with a different flet-desktop, Flet 1.0.4 would pip-install it by itself at start.
+ui = [
+  "flet[desktop]==1.0.4",
+]
+web = [
+  "flet[web]==1.0.4",
+]
 
 [project.scripts]
 zibaldone = "zibaldone.cli.app:main"
