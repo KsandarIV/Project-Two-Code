@@ -12,7 +12,8 @@ Each block type has a *state*, the plain data its control edits:
 - secret: `{"text": what is typed, "sealed": the stored value or None,
   "original": its text once opened, else None}`. While closed, an empty
   field keeps the stored secret; once opened, the field shows it;
-- media: the attached files as stored (`[{"file", "name", "size"}]`).
+- media: the attached files as stored (`[{"file", "name", "size"}]`);
+- favorite: True or None.
 
 `collect_values` turns the states into values and checks them with the core
 (`BlockType.normalize`, `validate_values`), keeping the core's Italian messages
@@ -46,6 +47,7 @@ HINTS: Dict[str, str] = {
     "link": "scegli tra le voci già scritte",
     "secret": "cifrato con la tua chiave: resta fuori da ricerca, esportazioni e IA",
     "media": "foto, video, audio o documenti, fino a 100 MB l'uno",
+    "favorite": "tocca il cuore per segnarlo tra i preferiti",
 }
 
 
@@ -186,6 +188,8 @@ def state_to_raw(spec: BlockSpec, state: Any) -> Any:
         return raw
     if kind in ("link", "media"):
         return list(state) or None
+    if kind == "favorite":
+        return True if state else None
     if kind == "secret":
         text = str(state.get("text", "")).replace("\r\n", "\n").strip()
         sealed, original = state.get("sealed"), state.get("original")
@@ -324,9 +328,16 @@ def rating_max(spec: BlockSpec) -> int:
     return int(spec.options.get("max", 5))
 
 
-def toggle_rating(current: Optional[int], clicked: int) -> Optional[int]:
-    """Tap a star to set the vote; tap the same star again to clear it."""
-    return None if current == clicked else clicked
+def toggle_rating(current: Optional[float], clicked: int, half: bool = False) -> Optional[float]:
+    """Tap a star to set the vote; tap the same star again to clear it.
+
+    With half points the same star goes whole → half → cleared (4 → 3,5 → none).
+    """
+    if current == clicked:
+        return clicked - 0.5 if half else None
+    if half and current == clicked - 0.5:
+        return None
+    return clicked
 
 
 def scale_bounds(spec: BlockSpec) -> Tuple[int, int]:

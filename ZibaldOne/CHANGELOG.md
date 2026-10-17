@@ -4,6 +4,22 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.2.5] — 2026-10-17
+### Aggiunto
+- **Voto a mezzi punti**: l'opzione `half` del voto a stelle (`4,5`); nel modulo la stella si tocca intera, poi mezza, poi si toglie.
+- **Recensione con spoiler**: l'opzione `spoiler` del testo lungo nasconde il testo nella pagina della voce finché non lo apri.
+- **Blocco Preferito** (*Philia*): un cuore per le cose a cui tieni di più.
+- **Inizio e fine** dell'avanzamento: si scrivono da soli quando lo stato cambia, e si leggono nella pagina della voce.
+- **Collezioni**: i riquadri *Preferiti*, *Lista dei desideri* e *Tempo speso* (somma dei blocchi in ore o minuti per raccolta).
+- **Importa da un file** (Collezioni, o `zbone importa FONTE FILE [--prova]`): libri da Goodreads, film da Letterboxd, anime da MyAnimeList, videogiochi da Steam, con anteprima, date del file e senza doppioni.
+### Cambiato
+- Museion · Collezioni 1.2.0: mezzi punti nel voto, *Preferito*, *Recensione con spoiler* e le ore (*Ore di lettura*, *Ore di visione*, *Ore di gioco*) dove servono. Le voci di prima restano valide.
+- `Store.add_entry` ha `stamp=False` per chi porta voci con date proprie.
+### Corretto
+- Un test dei backup con gli allegati dipendeva dall'ordine di due istantanee fatte nello stesso secondo.
+### Documentazione
+- [Svago avanzato](docs/tecnica/svago.md); blocchi, guida rapida, identità, aree, interfaccia, roadmap e requisiti aggiornati.
+
 ## [0.2.4] — 2026-10-17
 ### Aggiunto
 - **Blocco Allegati** (*Mimesis*): foto, video, audio e documenti di una voce, scelti con la finestra del sistema. Nella pagina della voce le foto in miniatura, gli altri file con **Apri** (sul telefono dal menu Condividi).

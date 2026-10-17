@@ -52,7 +52,12 @@ class FakePage:
         if handler.__name__ in ("reminder_loop", "update_check"):  # long-running or online: tested on their own
             coroutine.close()
             return None
-        asyncio.run(coroutine)
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            asyncio.run(coroutine)
+        else:  # started from inside a background job (the daily backup after an import): tested on its own
+            coroutine.close()
 
 
 def walk(control: Any) -> Iterator[Any]:
@@ -676,3 +681,69 @@ def test_attaching_a_photo_and_a_document_to_the_evening(ready: Path, tmp_path: 
     click(button(detail, "Apri"))
     assert [path.name.rsplit(".", 1)[-1] for path in shell.ctx.opened] == ["jpg", "pdf"]
     assert all(path.read_bytes() in (photo.read_bytes(), document.read_bytes()) for path in shell.ctx.opened)
+
+
+def test_half_stars_favorite_spoiler_and_dates_in_the_book(ready: Path) -> None:
+    with Store.open(ready) as store:
+        dune = store.add_entry(
+            "libro",
+            {"titolo": "Dune", "voto": 4.5, "preferito": True, "recensione_spoiler": "Il finale svela tutto", "stato": {"status": "completed", "total": 600, "started": "2026-09-01", "finished": "2026-10-03"}},
+        )
+    shell = Shell(FakePage(), ready)
+    shell.start(f"/voci/{dune.id}")
+    detail = shell.body.content
+    shown = texts(detail)
+    assert "contiene spoiler" in shown and "Il finale svela tutto" not in shown and "sì" in shown
+    assert any(item.startswith("iniziato") and "1 settembre 2026" in item and "finito" in item and "3 ottobre 2026" in item for item in shown)
+    assert any(isinstance(item, ft.Icon) and item.icon == ft.Icons.STAR_HALF for item in walk(detail))
+    click(button(detail, "Mostra"))
+    assert "Il finale svela tutto" in texts(detail)
+    click(button(detail, "Nascondi"))
+    assert "Il finale svela tutto" not in texts(detail)
+    # the form: a star twice makes it half, a third tap clears it; the heart switches on
+    click(button(detail, "Modifica"))
+    form = shell.body.content
+    star = next(item for item in walk(form) if isinstance(item, ft.IconButton) and item.tooltip == "3 su 5")
+    click(star)
+    click(star)
+    assert "2,5 su 5" in texts(form)
+    heart = next(item for item in walk(form) if isinstance(item, ft.IconButton) and item.tooltip == "Preferito")
+    click(heart)
+    assert "non è tra i preferiti" in texts(form)
+    click(button(form, "Salva le modifiche"))
+    with Store.open(ready) as store:
+        saved = store.get_entry(dune.id).values
+    assert saved["voto"] == 2.5 and "preferito" not in saved
+    assert saved["stato"]["started"] == "2026-09-01" and saved["stato"]["finished"] == "2026-10-03"  # the dates survive a save from the form
+
+
+def test_collections_show_favorites_wishes_time_and_import_from_a_file(ready: Path, tmp_path: Path) -> None:
+    with Store.open(ready) as store:
+        store.add_entry("libro", {"titolo": "Dune", "preferito": True})
+        store.add_entry("libro", {"titolo": "Ubik", "stato": {"status": "wishlist"}})
+        store.add_entry("videogioco", {"titolo": "Hades", "ore": 12.5})
+    shell = Shell(FakePage(), ready)
+    shell.start("/collezioni")
+    shown = texts(shell.body.content)
+    assert {"PREFERITI", "LISTA DEI DESIDERI", "TEMPO SPESO", "12,5 ore"} <= set(shown) and "Ubik · Biblioteca di Babele" in shown
+    # import: pick the service, the file, see the count, confirm
+    export = tmp_path / "goodreads_library_export.csv"
+    export.write_text(
+        "Title,Author,My Rating,Exclusive Shelf,Date Read\nLa strada,Cormac McCarthy,4,read,2024/05/12\nDune,Frank Herbert,0,read,\n", encoding="utf-8"
+    )
+    shell.ctx.pick_files = lambda on_picked, multiple=True: on_picked([SimpleNamespace(name=export.name, path=str(export), bytes=None)])
+    click(button(shell.body.content, "Importa da un file"))
+    dialog = shell.ctx.page.dialogs[-1]
+    source = next(item for item in walk(dialog) if isinstance(item, ft.Container) and "Goodreads · libri" in texts(item) and item.on_click)
+    click(source)
+    dialog = shell.ctx.page.dialogs[-1]
+    assert "Dal file di Goodreads: Da aggiungere: 1 libro. 1 già presenti, lasciati come sono." in texts(dialog)
+    click(button(dialog, "Importa"))
+    assert any("Aggiunti: 1 libro" in toast for toast in shell.ctx.toasts)
+    with Store.open(ready) as store:
+        assert sorted(entry.values["titolo"] for entry in store.list_entries(template="libro")) == ["Dune", "Ficciones", "La strada", "Ubik"]
+    # a file that is not from the chosen service says so and writes nothing
+    export.write_text("Name,Year\nHeat,1995\n", encoding="utf-8")
+    click(button(shell.body.content, "Importa da un file"))
+    click(next(item for item in walk(shell.ctx.page.dialogs[-1]) if isinstance(item, ft.Container) and "Goodreads · libri" in texts(item) and item.on_click))
+    assert any("mancano le colonne Title" in toast for toast in shell.ctx.toasts)

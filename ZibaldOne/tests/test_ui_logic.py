@@ -306,3 +306,14 @@ def test_a_media_field_keeps_the_attached_files() -> None:
     state = forms.value_to_state(spec, [item])
     assert state == [item] and state[0] is not item  # a copy: the form never edits the entry
     assert forms.state_to_raw(spec, state) == [item]
+
+
+def test_half_point_stars_and_the_favorite_heart_in_the_form() -> None:
+    assert forms.toggle_rating(None, 4, half=True) == 4
+    assert forms.toggle_rating(4, 4, half=True) == 3.5
+    assert forms.toggle_rating(3.5, 4, half=True) is None
+    assert forms.toggle_rating(2, 4, half=True) == 4
+    assert forms.toggle_rating(4, 4) is None  # without half points nothing changes
+    spec = BlockSpec.from_dict({"key": "p", "type": "favorite", "label": "P"})
+    assert forms.empty_state(spec) is None and forms.value_to_state(spec, True) is True
+    assert forms.state_to_raw(spec, True) is True and forms.state_to_raw(spec, None) is None and forms.state_to_raw(spec, False) is None

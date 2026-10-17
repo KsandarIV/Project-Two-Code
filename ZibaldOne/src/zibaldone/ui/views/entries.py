@@ -245,12 +245,42 @@ def _secret_view(ctx: AppContext, value: str) -> ft.Control:
     )
 
 
+def _spoiler_view(ctx: AppContext, text: str) -> ft.Control:
+    """0.2.5: a review with spoilers stays hidden until the reader opens it."""
+    holder = ft.Column(spacing=6)
+
+    def show(_: Any) -> None:
+        holder.controls = [W.body(text, selectable=True), W.text_button("Nascondi", hide, icon="VISIBILITY_OFF", color=T.TEXT_DIM)]
+        ctx.update(holder)
+
+    def hide(_: Any) -> None:
+        holder.controls = [closed]
+        ctx.update(holder)
+
+    closed = ft.Row([W.pill("contiene spoiler", T.ACCENT_2, icon="WARNING_AMBER"), W.text_button("Mostra", show, icon="VISIBILITY")], wrap=True, spacing=8, vertical_alignment=ft.CrossAxisAlignment.CENTER)
+    holder.controls = [closed]
+    return holder
+
+
+def _dates_line(value: Any) -> str:
+    """'iniziato 3 ottobre 2026 · finito 17 ottobre 2026', from the dates the Store wrote."""
+    parts = []
+    for key, word in (("started", "iniziato"), ("finished", "finito")):
+        if value.get(key):
+            parts.append(f"{word} {vm.italian_date(date.fromisoformat(value[key]), weekday=False)}")
+    return " · ".join(parts)
+
+
 def _block_view(ctx: AppContext, block: vm.DetailBlock) -> ft.Control:
     kind, value, options = block.type, block.value, block.options
     if kind == "secret":
         return _secret_view(ctx, value)
     if kind == "media":
         return attachment_list(ctx, value)
+    if kind == "favorite":
+        return ft.Row([W.pill("sì", T.ACCENT_2, icon="FAVORITE")])
+    if kind == "longtext" and options.get("spoiler"):
+        return _spoiler_view(ctx, block.text)
     if kind == "rating":
         return W.stars(value, int(options.get("max", 5)), size=22)
     if kind == "tags":
@@ -303,7 +333,9 @@ def _block_view(ctx: AppContext, block: vm.DetailBlock) -> ft.Control:
                 counter += f"/{forms.format_number(value['total'])}"
             if options.get("unit"):
                 counter += f" {options['unit']}"
-        return W.labelled_meter(status, fraction, counter)
+        meter = W.labelled_meter(status, fraction, counter)
+        dates = _dates_line(value)
+        return ft.Column([meter, W.caption(dates)], spacing=6) if dates else meter
     if kind == "link":
         return ft.Column(
             [W.text_button(title, lambda _, linked=linked_id: ctx.go(f"/voci/{linked}"), icon="LINK") for linked_id, title in block.links],

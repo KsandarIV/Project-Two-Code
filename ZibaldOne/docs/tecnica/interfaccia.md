@@ -57,4 +57,5 @@ Le parti senza Flet (`navigation`, `forms`, `viewmodels`, `cloud_model`, `theme`
 - 0.2.2 ✅: l'**albero di famiglia** (`/albero`) e la **rete** delle persone (`/rete`, `/rete/<area>`), dalla pagina di una persona e dal riquadro Persone delle aree; la rete riusa il disegno del grafo (`canvas_shapes` in `ui/views/graph.py`).
 - 0.2.3 ✅: i **segreti** (`ui/views/vault.py`): **Apri** nella pagina di una voce chiede il PIN o la passphrase, il modulo ha `SecretEditor`, Mnemosyne il riquadro del PIN. Le chiavi aperte stanno in `ctx.memory["vault"]` ([i segreti](segreti.md)).
 - 0.2.4 ✅: gli **allegati** (`ui/views/media_view.py`): «Aggiungi file» nel modulo (`ctx.pick_files`, il `FilePicker` di Flet), miniature e **Apri** nella pagina della voce (`ctx.open_file`: programma predefinito sul PC, menu Condividi sul telefono) ([gli allegati](allegati.md)).
-- 0.2.5–0.2.9: il resto dello sprint delle 8 aree ([requisiti](requisiti-v0.2.md)).
+- 0.2.5 ✅: **Collezioni** con i riquadri Preferiti, Lista dei desideri e Tempo speso, la finestra **Importa da un file** (`ui/views/import_dialog.py`), le stelle a metà, il cuore del preferito (`FavoriteEditor`) e la recensione con spoiler nascosta nella pagina della voce ([svago avanzato](svago.md)).
+- 0.2.6–0.2.9: il resto dello sprint delle 8 aree ([requisiti](requisiti-v0.2.md)).

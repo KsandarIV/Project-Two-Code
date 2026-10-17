@@ -13,7 +13,8 @@ from zibaldone.storage.database import Store, StoreError
 entry_app = typer.Typer(help="Voci: i modelli compilati, il cuore del tuo zibaldone.", no_args_is_help=True)
 
 HINTS = {
-    "rating": "numero di stelle",
+    "rating": "numero di stelle (con i mezzi punti anche 8,5)",
+    "favorite": "sì o no",
     "tags": "separate da virgola",
     "date": "AAAA-MM-GG, GG/MM/AAAA, oggi o ieri",
     "checklist": "voci separate da ; e [x] per quelle fatte",

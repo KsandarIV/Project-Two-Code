@@ -443,9 +443,11 @@ class CollectionItem:
     status_label: str
     fraction: Optional[float]
     counter: str
-    rating: Optional[int]
+    rating: Optional[float]
     rating_max: int
     bookmark: str
+    favorite: bool = False  # 0.2.5
+    hours: float = 0.0  # time spent, from the «ore» blocks (0.2.5)
 
 
 @dataclass(frozen=True)
@@ -461,6 +463,38 @@ class CollectionGroup:
     def count_label(self) -> str:
         count = len(self.items)
         return "nessuna voce" if count == 0 else ("1 voce" if count == 1 else f"{count} voci")
+
+    @property
+    def hours(self) -> float:
+        return sum(item.hours for item in self.items)
+
+
+HOUR_UNITS, MINUTE_UNITS = ("ore", "ora", "h"), ("min", "minuti")
+
+
+def hours_of(template: Template, values: Mapping[str, Any]) -> float:
+    """The time an entry took, from its number blocks measured in hours (or minutes)."""
+    total = 0.0
+    for spec in template.blocks:
+        value = values.get(spec.key)
+        unit = str(spec.options.get("unit", "")).lower()
+        if spec.type == "number" and is_number(value):
+            total += value if unit in HOUR_UNITS else (value / 60 if unit in MINUTE_UNITS else 0)
+    return total
+
+
+def hours_label(hours: float) -> str:
+    """'1 ora', '5,5 ore', '120 ore'."""
+    rounded = round(hours, 1)
+    return "1 ora" if rounded == 1 else f"{forms.format_number(rounded)} ore"
+
+
+def favorites_of(groups: Sequence[CollectionGroup]) -> List[Tuple[CollectionGroup, CollectionItem]]:
+    return [(group, item) for group in groups for item in group.items if item.favorite]
+
+
+def wishlist_of(groups: Sequence[CollectionGroup]) -> List[Tuple[CollectionGroup, CollectionItem]]:
+    return [(group, item) for group in groups for item in group.items if item.status == "wishlist"]
 
 
 def _first(template: Template, kind: str) -> Optional[BlockSpec]:
@@ -499,6 +533,8 @@ def collection_item(entry: Entry, template: Template) -> CollectionItem:
         rating=entry.values.get(rating_spec.key) if rating_spec else None,
         rating_max=forms.rating_max(rating_spec) if rating_spec else 5,
         bookmark=str(entry.values.get(bookmark_spec.key, "")) if bookmark_spec else "",
+        favorite=any(spec.type == "favorite" and entry.values.get(spec.key) for spec in template.blocks),
+        hours=hours_of(template, entry.values),
     )
 
 
@@ -583,14 +619,18 @@ class OptionField:
 
 OPTION_FIELDS: Dict[str, Tuple[OptionField, ...]] = {
     "text": (OptionField("placeholder", "Esempio da mostrare", "text"), OptionField("max_length", "Lunghezza massima", "int", "300 di base")),
-    "longtext": (OptionField("placeholder", "Esempio da mostrare", "text"), OptionField("max_length", "Lunghezza massima", "int", "50000 di base")),
+    "longtext": (
+        OptionField("placeholder", "Esempio da mostrare", "text"),
+        OptionField("max_length", "Lunghezza massima", "int", "50000 di base"),
+        OptionField("spoiler", "Nascondi finché non la apri", "bool", "per le recensioni con spoiler"),
+    ),
     "number": (
         OptionField("unit", "Unità", "text", "pagine, ore, euro"),
         OptionField("min", "Minimo", "number"),
         OptionField("max", "Massimo", "number"),
         OptionField("integer", "Solo numeri interi", "bool"),
     ),
-    "rating": (OptionField("max", "Stelle", "int", "da 3 a 10, 5 di base"),),
+    "rating": (OptionField("max", "Stelle", "int", "da 3 a 10, 5 di base"), OptionField("half", "Anche mezzi punti", "bool", "per esempio 8,5 su 10")),
     "tags": (OptionField("suggestions", "Suggerimenti", "list", "separati da virgola"),),
     "date": (),
     "checklist": (OptionField("max_items", "Voci al massimo", "int", "100 di base"),),
@@ -613,6 +653,7 @@ OPTION_FIELDS: Dict[str, Tuple[OptionField, ...]] = {
         OptionField("placeholder", "Esempio da mostrare", "text"),
     ),
     "media": (OptionField("max_items", "File al massimo", "int", "50 di base"),),
+    "favorite": (),
 }
 
 REQUIRED_OPTIONS: Dict[str, Dict[str, Any]] = {

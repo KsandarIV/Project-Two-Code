@@ -37,7 +37,7 @@ Le richieste della vecchia Journal App: [requisiti della fase 0.2](requisiti-v0.
 | v0.2.2 | **Albero genealogico e rete sociale**: legami tra persone, albero di famiglia, rete, contatti in comune, forza del legame ([le persone](persone.md#legami-albero-e-rete-dalla-022)) | ✅ |
 | v0.2.3 | **Dati sensibili cifrati e diario segreto**: blocchi segreti in due livelli, PIN, fuori da ricerca e IA ([i segreti](segreti.md), [ADR-0012](../decisioni/ADR-0012-blocchi-segreti.md)) | ✅ |
 | v0.2.4 | **Media**: foto, video, audio e documenti allegati, nei backup cifrati e nelle Nuvole ([gli allegati](allegati.md)) | ✅ |
-| v0.2.5 | **Svago avanzato** e import da Goodreads, Letterboxd, MyAnimeList, Steam | |
+| v0.2.5 | **Svago avanzato** e import da Goodreads, Letterboxd, MyAnimeList, Steam ([svago avanzato](svago.md)) | ✅ |
 | v0.2.6 | **Finanze** cifrate | |
 | v0.2.7 | **Abitudini e obiettivi** con avanzamento | |
 | v0.2.8 | **Viste componibili** e home su misura | |
