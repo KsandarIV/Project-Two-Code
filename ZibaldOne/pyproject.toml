@@ -27,6 +27,9 @@ version = { attr = "zibaldone.__version__" }
 [tool.setuptools.packages.find]
 where = ["src"]
 
+[tool.setuptools.package-data]
+zibaldone = ["packs/*.zbpack.json"]
+
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]

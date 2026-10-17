@@ -6,4 +6,5 @@
 | [tecnica/](tecnica/) | chi sviluppa | architettura, roadmap, concetti |
 | [decisioni/](decisioni/) | chi sviluppa | ADR: perché si è scelto qualcosa |
 | [versioni/](versioni/) | tutti | cosa contiene ogni versione, come provarla |
+| [brand/](brand/) | tutti | nome, tono, nomi filosofici, mascotte |
 | [sviluppo/](sviluppo/) | chi sviluppa | setup, test, comandi, rilascio |

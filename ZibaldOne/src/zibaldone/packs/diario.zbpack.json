@@ -1,0 +1,473 @@
+{
+  "format": 1,
+  "id": "zibaldone.diario",
+  "name": "Stoa · Diario",
+  "version": "1.0.0",
+  "author": "ZibaldOne",
+  "license": "CC0-1.0",
+  "description": "Il diario come esercizio quotidiano, alla maniera degli stoici: i 3 momenti della giornata, il check-in delle 8 aree della vita, le revisioni di settimana, mese e anno, i pensieri liberi.",
+  "required_blocks": [
+    "checklist",
+    "choice",
+    "longtext",
+    "scale",
+    "tags",
+    "text"
+  ],
+  "templates": [
+    {
+      "slug": "mattina",
+      "name": "Meditazione del mattino",
+      "blocks": [
+        {
+          "key": "umore",
+          "type": "choice",
+          "label": "Umore",
+          "options": {
+            "choices": [
+              "😄 Ottimo",
+              "🙂 Buono",
+              "😐 Così così",
+              "🙁 Giù",
+              "😣 Pessimo"
+            ],
+            "values": [
+              5,
+              4,
+              3,
+              2,
+              1
+            ]
+          }
+        },
+        {
+          "key": "energia",
+          "type": "scale",
+          "label": "Energia",
+          "options": {
+            "min": 0,
+            "max": 10,
+            "low_label": "a terra",
+            "high_label": "al massimo"
+          }
+        },
+        {
+          "key": "intenzione",
+          "type": "text",
+          "label": "La mia intenzione per oggi"
+        },
+        {
+          "key": "priorita",
+          "type": "checklist",
+          "label": "Le cose importanti di oggi",
+          "options": {
+            "max_items": 10
+          }
+        },
+        {
+          "key": "gratitudine",
+          "type": "text",
+          "label": "Una cosa per cui sono grato"
+        }
+      ],
+      "description": "Inizio giornata: cosa voglio fare oggi? Come Marco Aurelio, Meditazioni II, 1.",
+      "icon": "WB_SUNNY",
+      "color": "#FFFF00",
+      "category": "diario"
+    },
+    {
+      "slug": "meta_giornata",
+      "name": "Meriggio",
+      "blocks": [
+        {
+          "key": "umore",
+          "type": "choice",
+          "label": "Umore",
+          "options": {
+            "choices": [
+              "😄 Ottimo",
+              "🙂 Buono",
+              "😐 Così così",
+              "🙁 Giù",
+              "😣 Pessimo"
+            ],
+            "values": [
+              5,
+              4,
+              3,
+              2,
+              1
+            ]
+          }
+        },
+        {
+          "key": "avanzamento",
+          "type": "scale",
+          "label": "Quanto ho fatto finora",
+          "options": {
+            "min": 0,
+            "max": 10,
+            "low_label": "niente",
+            "high_label": "tutto"
+          }
+        },
+        {
+          "key": "priorita",
+          "type": "checklist",
+          "label": "Le cose importanti di oggi",
+          "options": {
+            "max_items": 10
+          }
+        },
+        {
+          "key": "nota",
+          "type": "longtext",
+          "label": "Come sta andando?"
+        }
+      ],
+      "description": "Metà giornata: a che punto sono? Il grande meriggio di Nietzsche, Così parlò Zarathustra.",
+      "icon": "WB_TWILIGHT",
+      "color": "#FF5500",
+      "category": "diario"
+    },
+    {
+      "slug": "sera",
+      "name": "Esame serale",
+      "blocks": [
+        {
+          "key": "umore",
+          "type": "choice",
+          "label": "Umore",
+          "options": {
+            "choices": [
+              "😄 Ottimo",
+              "🙂 Buono",
+              "😐 Così così",
+              "🙁 Giù",
+              "😣 Pessimo"
+            ],
+            "values": [
+              5,
+              4,
+              3,
+              2,
+              1
+            ]
+          }
+        },
+        {
+          "key": "fatto",
+          "type": "longtext",
+          "label": "Cosa ho fatto"
+        },
+        {
+          "key": "imparato",
+          "type": "longtext",
+          "label": "Cosa ho imparato"
+        },
+        {
+          "key": "domani",
+          "type": "checklist",
+          "label": "Da fare domani"
+        },
+        {
+          "key": "voto",
+          "type": "scale",
+          "label": "Voto alla giornata",
+          "options": {
+            "min": 0,
+            "max": 10,
+            "low_label": "da dimenticare",
+            "high_label": "perfetta"
+          }
+        }
+      ],
+      "description": "Fine giornata: cosa ho fatto, cosa ho imparato, cosa farò domani. Seneca, De ira III, 36.",
+      "icon": "NIGHTLIGHT",
+      "color": "#00E5FF",
+      "category": "diario"
+    },
+    {
+      "slug": "aree",
+      "name": "Eudaimonia",
+      "blocks": [
+        {
+          "key": "personale",
+          "type": "scale",
+          "label": "Personale",
+          "options": {
+            "min": 0,
+            "max": 10
+          }
+        },
+        {
+          "key": "salute",
+          "type": "scale",
+          "label": "Salute",
+          "options": {
+            "min": 0,
+            "max": 10
+          }
+        },
+        {
+          "key": "finanze",
+          "type": "scale",
+          "label": "Finanze",
+          "options": {
+            "min": 0,
+            "max": 10
+          }
+        },
+        {
+          "key": "famiglia",
+          "type": "scale",
+          "label": "Famiglia",
+          "options": {
+            "min": 0,
+            "max": 10
+          }
+        },
+        {
+          "key": "sociale",
+          "type": "scale",
+          "label": "Sociale",
+          "options": {
+            "min": 0,
+            "max": 10
+          }
+        },
+        {
+          "key": "lavoro",
+          "type": "scale",
+          "label": "Lavoro",
+          "options": {
+            "min": 0,
+            "max": 10
+          }
+        },
+        {
+          "key": "studio",
+          "type": "scale",
+          "label": "Studio",
+          "options": {
+            "min": 0,
+            "max": 10
+          }
+        },
+        {
+          "key": "svago",
+          "type": "scale",
+          "label": "Svago",
+          "options": {
+            "min": 0,
+            "max": 10
+          }
+        },
+        {
+          "key": "nota",
+          "type": "longtext",
+          "label": "Nota"
+        }
+      ],
+      "description": "Check-in delle 8 aree della vita, da 0 a 10. Aristotele, Etica Nicomachea: la vita che fiorisce.",
+      "icon": "DONUT_LARGE",
+      "color": "#74EE15",
+      "category": "diario"
+    },
+    {
+      "slug": "riflessione",
+      "name": "Pensiero",
+      "blocks": [
+        {
+          "key": "titolo",
+          "type": "text",
+          "label": "Titolo",
+          "required": true
+        },
+        {
+          "key": "testo",
+          "type": "longtext",
+          "label": "Testo",
+          "required": true,
+          "help": "puoi citare altre voci con [[Titolo]]"
+        },
+        {
+          "key": "etichette",
+          "type": "tags",
+          "label": "Etichette"
+        },
+        {
+          "key": "umore",
+          "type": "choice",
+          "label": "Umore",
+          "options": {
+            "choices": [
+              "😄 Ottimo",
+              "🙂 Buono",
+              "😐 Così così",
+              "🙁 Giù",
+              "😣 Pessimo"
+            ],
+            "values": [
+              5,
+              4,
+              3,
+              2,
+              1
+            ]
+          }
+        }
+      ],
+      "description": "Scrittura libera: pensieri, idee, domande. Leopardi, Zibaldone di pensieri.",
+      "icon": "PSYCHOLOGY",
+      "color": "#FF007F",
+      "category": "diario"
+    },
+    {
+      "slug": "settimana",
+      "name": "Hypomnemata",
+      "blocks": [
+        {
+          "key": "voto",
+          "type": "scale",
+          "label": "Voto al settimana",
+          "options": {
+            "min": 0,
+            "max": 10,
+            "low_label": "pessimo",
+            "high_label": "splendido"
+          }
+        },
+        {
+          "key": "momenti_belli",
+          "type": "longtext",
+          "label": "Momenti belli"
+        },
+        {
+          "key": "difficolta",
+          "type": "longtext",
+          "label": "Difficoltà"
+        },
+        {
+          "key": "imparato",
+          "type": "longtext",
+          "label": "Cosa ho imparato"
+        },
+        {
+          "key": "area_focus",
+          "type": "choice",
+          "label": "Area su cui concentrarmi",
+          "options": {
+            "choices": [
+              "Personale",
+              "Salute",
+              "Finanze",
+              "Famiglia",
+              "Sociale",
+              "Lavoro",
+              "Studio",
+              "Svago"
+            ]
+          }
+        },
+        {
+          "key": "obiettivi",
+          "type": "checklist",
+          "label": "Obiettivi per il prossimo settimana"
+        }
+      ],
+      "description": "Revisione della settimana. I quaderni di appunti dei Greci, riletti da Foucault in La scrittura di sé (1983).",
+      "icon": "VIEW_WEEK",
+      "color": "#8A2BE2",
+      "category": "diario"
+    },
+    {
+      "slug": "mese",
+      "name": "Lettera a Lucilio",
+      "blocks": [
+        {
+          "key": "voto",
+          "type": "scale",
+          "label": "Voto al mese",
+          "options": {
+            "min": 0,
+            "max": 10,
+            "low_label": "pessimo",
+            "high_label": "splendido"
+          }
+        },
+        {
+          "key": "momenti_belli",
+          "type": "longtext",
+          "label": "Momenti belli"
+        },
+        {
+          "key": "difficolta",
+          "type": "longtext",
+          "label": "Difficoltà"
+        },
+        {
+          "key": "imparato",
+          "type": "longtext",
+          "label": "Cosa ho imparato"
+        },
+        {
+          "key": "area_focus",
+          "type": "choice",
+          "label": "Area su cui concentrarmi",
+          "options": {
+            "choices": [
+              "Personale",
+              "Salute",
+              "Finanze",
+              "Famiglia",
+              "Sociale",
+              "Lavoro",
+              "Studio",
+              "Svago"
+            ]
+          }
+        },
+        {
+          "key": "obiettivi",
+          "type": "checklist",
+          "label": "Obiettivi per il prossimo mese"
+        }
+      ],
+      "description": "Revisione del mese, come una lettera a te stesso. Seneca, Lettere a Lucilio.",
+      "icon": "CALENDAR_MONTH",
+      "color": "#8A2BE2",
+      "category": "diario"
+    },
+    {
+      "slug": "anno",
+      "name": "Almanacco",
+      "blocks": [
+        {
+          "key": "parola",
+          "type": "text",
+          "label": "La parola dell'anno"
+        },
+        {
+          "key": "traguardi",
+          "type": "longtext",
+          "label": "Traguardi"
+        },
+        {
+          "key": "lezioni",
+          "type": "longtext",
+          "label": "Lezioni"
+        },
+        {
+          "key": "propositi",
+          "type": "checklist",
+          "label": "Propositi per il prossimo anno"
+        }
+      ],
+      "description": "Revisione dell'anno: com'è andato e dove voglio andare. Leopardi, Dialogo di un venditore d'almanacchi e di un passeggere (1832).",
+      "icon": "AUTO_AWESOME",
+      "color": "#8A2BE2",
+      "category": "diario"
+    }
+  ]
+}

@@ -8,7 +8,7 @@ Ogni versione aggiunge **una sola** capacità, con test, nota in `docs/versioni/
 | v0.0.1 | Scheletro: `help`, `version`, docs, test, CHANGELOG | ✅ |
 | v0.0.2 | Cartella dati e trasparenza: avviso e consenso al primo avvio, `zbone privacy`, `zbone data path` | ✅ |
 | v0.0.3 | **Modelli e voci**: tutti i 12 blocchi (`text`, `longtext`, `number`, `rating`, `tags`, `date`, `checklist`, `scale`, `choice`, `progress`, `bookmark`, `link`); modelli serializzabili; database SQLite con migrazioni; `zbone template …`, `zbone entry …` | ✅ |
-| v0.0.4 | **Modelli pronti**: pacchetti integrati Diario (3 momenti della giornata, 8 aree, revisioni), Collezioni, Io, Persone | ⬜ |
+| v0.0.4 | **Modelli pronti** e **identità**: pacchetti integrati Diario (3 momenti della giornata, 8 aree, revisioni), Collezioni, Io, Persone; nomi filosofici, mascotte e pensiero del giorno ([identità](../brand/identita.md)) | ✅ |
 | v0.0.5 | **Pacchetti condivisibili** `.zbpack.json`: `zbone pack export/import/show/list/install` ([ADR-0005](../decisioni/ADR-0005-pacchetti-di-modelli.md)) | ⬜ |
 | v0.0.6 | **Storia e backup**: istantanee come commit, ripristino annullabile, durata a tempo, verifica; export Markdown e CSV ([ADR-0006](../decisioni/ADR-0006-storia-e-backup-cifrati.md)) | ⬜ |
 | v0.0.7 | **Cifratura**: passphrase e codice di recupero, backup sempre cifrati (AES-256-GCM + scrypt) | ⬜ |

@@ -43,7 +43,7 @@ def ensure_consent() -> None:
         raise typer.Exit(code=1)
     record_consent(folder, accepted=True, notice_version=NOTICE_VERSION)
     typer.echo(f"Consenso salvato. La tua cartella dati è {folder}")
-    typer.echo("")
+    typer.echo("Per iniziare con dei modelli pronti: zbone pack install diario\n")
 
 
 def fail(message: str, code: int = 1) -> None:

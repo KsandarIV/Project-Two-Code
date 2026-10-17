@@ -4,6 +4,19 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.0.4] — 2026-10-17
+### Aggiunto
+- **Pacchetti integrati** con nomi di scuole filosofiche: `diario` (Stoa, 8 modelli), `collezioni` (Museion, 9), `io` (Delfi, 5), `persone` (Agorà, 2). Riprendono le idee della vecchia Journal App come modelli modificabili.
+- `zbone pack list`, `zbone pack show`, `zbone pack install`: prima di installare mostra cosa cambierà (nuovo, aggiornato, già presente, copia) e chiede conferma.
+- Un modello dell'utente con lo stesso nome tecnico non viene mai sovrascritto: il pacchetto lo installa come copia.
+- Ogni modello installato ricorda da quale pacchetto e versione viene.
+- **Identità**: nomi filosofici per blocchi, modelli e parti dell'app (per esempio "Aut-Aut · Scelta"), 8 mascotte, una per area della vita, più una proposta per l'app.
+- `zbone pensiero` (una frase di un filosofo al giorno, con la fonte) e `zbone about`.
+- Dopo il consenso l'app suggerisce `zbone pack install diario`.
+### Documentazione
+- [Identità](docs/brand/identita.md): nome, tono, nomi filosofici con le fonti, mascotte.
+- [Guida rapida](docs/utente/guida-rapida.md) con i modelli pronti.
+
 ## [0.0.3] — 2026-10-17
 ### Aggiunto
 - **Blocchi**: 12 tipi con regole e messaggi in italiano: `text`, `longtext`, `number`, `rating`, `tags`, `date`, `checklist`, `scale`, `choice`, `progress`, `bookmark`, `link`. Quelli previsti per la v0.0.4 sono arrivati già qui.
