@@ -195,6 +195,35 @@ def sync_quietly(folder: Path) -> str:
     return ""
 
 
+# * — updates (0.1.1) —
+
+
+def check_updates(folder: Path) -> Any:
+    """At start: the newer release, if any (at most one question to GitHub a day). Never raises."""
+    from zibaldone.cloud import updates
+
+    return updates.maybe_check(folder)
+
+
+def check_updates_now(folder: Path) -> Any:
+    """From the Info page: ask GitHub now. Raises CloudError with an Italian message."""
+    from zibaldone.cloud import updates
+
+    return updates.check_now(folder)
+
+
+def update_check_enabled(folder: Path) -> bool:
+    from zibaldone.cloud import updates
+
+    return updates.auto_check_enabled(folder)
+
+
+def set_update_check(folder: Path, enabled: bool) -> None:
+    from zibaldone.cloud import updates
+
+    updates.set_auto_check(folder, enabled)
+
+
 # * — interface preferences —
 
 

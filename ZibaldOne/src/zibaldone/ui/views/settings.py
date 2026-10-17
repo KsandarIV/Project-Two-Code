@@ -398,6 +398,68 @@ class MnemosyneScreen:
 # * — Informazioni —
 
 
+class UpdatesPanel:
+    """Is there a newer ZibaldOne? The daily check and a button to ask now (0.1.1)."""
+
+    def __init__(self, ctx: AppContext) -> None:
+        self.ctx = ctx
+        self.result = ft.Column([], spacing=8)
+
+    def build(self) -> ft.Control:
+        try:
+            enabled = services.update_check_enabled(self.ctx.folder)
+        except Exception:
+            enabled = False
+        switch = ft.Switch(
+            label="Controlla da sola una volta al giorno",
+            value=enabled,
+            active_color=T.ACCENT,
+            label_text_style=ft.TextStyle(color=T.TEXT, size=15),
+            on_change=self.toggle,
+        )
+        return W.panel(
+            ft.Column(
+                [
+                    W.body("Aggiornamenti", size=16, weight=ft.FontWeight.W_600),
+                    W.caption("L'app chiede a GitHub se c'è una versione nuova: GitHub vede l'indirizzo IP del dispositivo e la versione dell'app, nient'altro."),
+                    switch,
+                    W.secondary_button("Controlla adesso", self.check, icon="SYSTEM_UPDATE"),
+                    self.result,
+                ],
+                spacing=10,
+            )
+        )
+
+    def toggle(self, event: Any) -> None:
+        enabled = bool(event.control.value)
+        try:
+            services.set_update_check(self.ctx.folder, enabled)
+        except Exception as error:
+            self.ctx.toast(str(error), error=True)
+            return
+        self.ctx.toast("Controllo automatico acceso." if enabled else "Controllo automatico spento: controlla tu da qui.")
+
+    def check(self, _: Any = None) -> None:
+        self.result.controls = [W.caption("Chiedo a GitHub…")]
+        self.ctx.update()
+
+        def done(release: Any) -> None:
+            if release is None:
+                self.result.controls = [W.body(f"Hai la versione più recente ({__version__}).", dim=True)]
+                return
+            url = release.apk_url if services.running_on_android() and release.apk_url else release.page_url
+            self.result.controls = [
+                W.body(f"È uscita ZibaldOne {release.version} (tu hai la {__version__}).", size=14),
+                W.primary_button("Scarica", lambda _: self.ctx.open_url(url), icon="DOWNLOAD"),
+            ]
+
+        def failed(problem: Exception) -> None:
+            self.result.controls = [W.body(str(problem), dim=True)]
+            self.ctx.update()
+
+        self.ctx.run_blocking(lambda: services.check_updates_now(self.ctx.folder), done, failed)
+
+
 def about(ctx: AppContext) -> ft.Control:
     cards = []
     for mascot in vm.mascot_cards():
@@ -438,6 +500,7 @@ def about(ctx: AppContext) -> ft.Control:
     return W.screen(
         [
             _header(ctx, "info", f"versione {__version__}"),
+            UpdatesPanel(ctx).build(),
             W.panel(
                 ft.Column(
                     [

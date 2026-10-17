@@ -27,6 +27,11 @@
 - **Revoca**: `zbone account logout` revoca l'accesso presso Google e cancella i token; le copie su Drive si cancellano con `zbone cloud forget`, o da Drive → Impostazioni → Gestisci app.
 - L'avviso del primo avvio è passato alla **versione 3**: spiega l'account e le copie su Drive, quindi chi aveva accettato lo rivede una volta.
 
+## Controllo degli aggiornamenti (dalla 0.1.1)
+- Una volta al giorno l'interfaccia chiede a GitHub l'elenco delle versioni, senza account. GitHub vede l'indirizzo IP del dispositivo e la versione dell'app; nessun dato dell'utente parte dal dispositivo.
+- Si spegne in Impostazioni → Informazioni o con `zbone update --no-auto`. L'avviso privacy (versione 5) lo dice, quindi chi aveva già accettato lo rilegge una volta.
+- La CLI non controlla da sola: solo con `zbone update`.
+
 ## Sicurezza tecnica
 - **Backup cifrati con storia** ([ADR-0006](../decisioni/ADR-0006-storia-e-backup-cifrati.md)): istantanee che durano un tempo scelto, cifrate sul dispositivo e copiabili fuori; nessuno tranne l'utente può aprirle. Una voce cancellata resta nei backup fino alla loro scadenza, e l'avviso lo deve dire.
 - **Cifratura opzionale** dei dati con una passphrase (un diario può contenere salute, opinioni e convinzioni: dati delicati). Se l'utente dimentica la passphrase, i dati non sono recuperabili: va detto chiaramente.

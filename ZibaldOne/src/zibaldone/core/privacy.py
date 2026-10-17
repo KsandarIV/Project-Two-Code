@@ -5,12 +5,13 @@ NOTICE_VERSION, so everyone is asked again. A change that only lowers a
 risk (like 0.0.7 saying that backups can now be encrypted) keeps it.
 Version 3 (0.0.8): the Google account and the copies on Drive.
 Version 4 (0.0.9): reminders on the lock screen.
+Version 5 (0.1.1): the daily check for a new version on GitHub.
 """
 
 from pathlib import Path
 from typing import List
 
-NOTICE_VERSION = 4
+NOTICE_VERSION = 5
 
 RISKS: List[str] = [
     "Se perdi o rompi il dispositivo senza un backup, perdi i dati.",
@@ -39,6 +40,9 @@ def notice_text(folder: Path) -> str:
         "Per entrare usi il tuo account Google: ZibaldOne riceve solo email e nome, "
         "e li tiene su questo dispositivo. Su Google Drive vede solo il suo spazio nascosto, "
         "mai gli altri tuoi file, e ci mette copie cifrate solo se lo scegli tu.\n\n"
+        "Una volta al giorno l'app chiede a GitHub se c'è una versione nuova: GitHub vede "
+        "l'indirizzo IP del dispositivo e la versione dell'app, nient'altro. Si spegne in Impostazioni · Informazioni "
+        "o con `zbone update --no-auto`.\n\n"
         f"Rischi:\n{risks}\n\n"
         "Puoi rileggere queste informazioni quando vuoi con `zbone privacy`."
     )

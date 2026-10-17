@@ -23,6 +23,10 @@ ui = [
 web = [
   "flet[web]==1.0.4",
 ]
+# `flet build apk` (docs/sviluppo/rilascio-android.md): Flutter and the Android SDK come by themselves.
+build = [
+  "flet[cli]==1.0.4",
+]
 
 [project.scripts]
 zibaldone = "zibaldone.cli.app:main"
@@ -39,7 +43,30 @@ version = { attr = "zibaldone.__version__" }
 where = ["src"]
 
 [tool.setuptools.package-data]
-zibaldone = ["packs/*.zbpack.json"]
+zibaldone = ["packs/*.zbpack.json", "cloud/google_client.json"]
+
+# * — `flet build`: the APK for testers (0.1.1) and, later, the Windows build —
+
+[tool.flet]
+product = "ZibaldOne"
+artifact = "ZibaldOne"
+org = "it.zibaldone"
+bundle_id = "it.zibaldone.app"
+company = "ZibaldOne"
+copyright = "Copyright (C) 2026 Alex"
+
+[tool.flet.app]
+path = "src"
+module = "main"
+
+[tool.flet.android]
+dependencies = ["flet==1.0.4"]
+
+[tool.flet.android.permission]
+"android.permission.INTERNET" = true
+
+[tool.flet.windows]
+dependencies = ["flet==1.0.4"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

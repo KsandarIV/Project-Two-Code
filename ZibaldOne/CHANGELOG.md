@@ -4,6 +4,20 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.1.1] — 2026-10-17
+### Aggiunto
+- **Prima versione per i tester**: GitHub Actions costruisce l'APK Android a ogni tag `zibaldone-v*` (test prima, firma con la chiave della repo, client Google dai segreti) e lo allega a una *pre-release*.
+- **Controllo degli aggiornamenti**: l'interfaccia chiede a GitHub una volta al giorno se c'è una versione nuova e lo dice con un avviso e il pulsante Scarica (su Android apre l'APK). In Impostazioni → Informazioni si spegne o si chiede subito.
+- `zbone update` per controllare dalla CLI; `zbone update --auto/--no-auto` accende o spegne il controllo dell'app.
+- `src/main.py` e la sezione `[tool.flet]` del `pyproject.toml` per `flet build`; pacchetto facoltativo `zibaldone[build]`.
+### Cambiato
+- Avviso privacy versione 5: dice del controllo degli aggiornamenti e di cosa vede GitHub (indirizzo IP e versione dell'app). Chi aveva accettato lo rivede una volta.
+- I test non vanno mai in rete: il client HTTP vero risponde come se non ci fosse connessione.
+### Documentazione
+- [Guida per chi prova ZibaldOne](docs/utente/guida-tester.md): installare l'APK, primo avvio, dati, aggiornare, feedback.
+- [Rilascio Android](docs/sviluppo/rilascio-android.md): chiave di firma, segreti della repo, come far uscire una versione.
+- Distribuzione, privacy e ADR-0003 aggiornati.
+
 ## [0.1.0] — 2026-10-17
 ### Aggiunto
 - **Interfaccia grafica** con Flet 1.0.4 e tema scuro neon, la stessa per Windows e Android: si apre con `zbone app` (finestra) o `zbone app --web` (browser).
