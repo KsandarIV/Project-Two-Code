@@ -1,0 +1,14 @@
+/* Colpisci le variabili globali del tema predefinito */
+:root {
+    --bold-color: rgb(138, 92, 245) !important;
+    --bold-weight: 850 !important;
+}
+
+/* Forza l'applicazione su tutti i selettori possibili del tema base */
+.markdown-source-view.mod-cm6 .cm-bold,
+.markdown-rendered strong,
+strong,
+b {
+    color: var(--bold-color) !important;
+    font-weight: var(--bold-weight) !important;
+}

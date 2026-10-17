@@ -1,0 +1,14 @@
+{
+  "showTags": false,
+  "showOrphans": true,
+  "showArrow": true,
+  "colorGroups": [
+    {"query": "path:Profilo", "color": {"a": 1, "rgb": 58879}},
+    {"query": "path:Progetti", "color": {"a": 1, "rgb": 16733440}},
+    {"query": "path:Studio", "color": {"a": 1, "rgb": 7663125}},
+    {"query": "path:Brainstorming", "color": {"a": 1, "rgb": 16711807}},
+    {"query": "path:Decisioni OR path:Log", "color": {"a": 1, "rgb": 9055202}}
+  ],
+  "linkDistance": 250,
+  "repelStrength": 10
+}
