@@ -17,6 +17,7 @@ import json
 import os
 import sqlite3
 from contextlib import contextmanager
+from datetime import date
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, Union
 
@@ -334,9 +335,15 @@ class Store:
     def has_areas(self) -> bool:
         return self.schema_version >= AREAS_SCHEMA
 
-    def add_entry(self, template_slug: str, values: Dict[str, Any], day: Optional[str] = None, area: Optional[str] = None) -> Entry:
-        """Add an entry. `area` is the entry's own life area (default: the template's)."""
+    def add_entry(
+        self, template_slug: str, values: Dict[str, Any], day: Optional[str] = None, area: Optional[str] = None, stamp: bool = True
+    ) -> Entry:
+        """Add an entry. `area` is the entry's own life area (default: the template's).
+
+        `stamp=False` leaves the start and finish dates as given: an import knows better than "today".
+        """
         template = self.get_template(template_slug)
+        values = self._stamp_progress(template, {}, values) if stamp else values
         entry = Entry.new(template, self._seal_secrets(template, values), day, area=area)
         secrets.check_sealed(template, entry.values)
         self._check_new_media(template, {}, entry.values)
@@ -406,7 +413,7 @@ class Store:
                 new_values.pop(key, None)
             else:
                 new_values[key] = value
-        entry.values = validate_values(template, self._seal_secrets(template, new_values))
+        entry.values = validate_values(template, self._seal_secrets(template, self._stamp_progress(template, old_values, new_values)))
         secrets.check_sealed(template, entry.values)
         self._check_new_media(template, old_values, entry.values)
         if day:
@@ -433,6 +440,37 @@ class Store:
         if template is not None and media.attachments_of(template, entry.values):
             self.remove_unused_media()
         return entry
+
+    # — 0.2.5: start and finish dates —
+
+    def _stamp_progress(self, template: Template, old: Dict[str, Any], new: Dict[str, Any]) -> Dict[str, Any]:
+        """The day an item is started and finished is written when its status changes (never overwritten).
+
+        A form saves only status and counter, so the dates already there are kept; leaving
+        "completed" clears the finish date, so finishing again gives a new one. An entry
+        whose status did not change is left alone: a book finished in 2019 and edited today
+        is not "finished today".
+        """
+        stamped = dict(new)
+        today = date.today().isoformat()
+        for spec in template.blocks:
+            value = new.get(spec.key)
+            if spec.type != "progress" or not isinstance(value, dict):
+                continue
+            value, before = dict(value), old.get(spec.key) if isinstance(old.get(spec.key), dict) else {}
+            for key in ("started", "finished"):
+                if key not in value and key in before:
+                    value[key] = before[key]
+            status = value.get("status", "not_started")
+            if not before or before.get("status") != status:
+                if status in ("ongoing", "paused", "completed", "dropped"):
+                    value.setdefault("started", today)
+                if status == "completed":
+                    value.setdefault("finished", today)
+                else:
+                    value.pop("finished", None)
+            stamped[spec.key] = value
+        return stamped
 
     # — 0.2.4: attached files —
 

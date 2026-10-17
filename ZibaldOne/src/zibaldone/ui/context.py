@@ -149,14 +149,14 @@ class AppContext:
 
         self.page.run_task(task)
 
-    def pick_files(self, on_picked: Callable[[List[Any]], Any]) -> None:
+    def pick_files(self, on_picked: Callable[[List[Any]], Any], multiple: bool = True) -> None:
         """The system file picker (0.2.4); `on_picked` gets the chosen files (name, path or bytes)."""
         if self.page is None:
             return
         web = bool(getattr(self.page, "web", False))
 
         async def task() -> None:
-            files = await ft.FilePicker().pick_files(allow_multiple=True, with_data=web)
+            files = await ft.FilePicker().pick_files(allow_multiple=multiple, with_data=web)
             on_picked(list(files or []))
             self.update()
 

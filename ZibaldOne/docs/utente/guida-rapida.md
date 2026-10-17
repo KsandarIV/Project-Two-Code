@@ -287,6 +287,22 @@ Prima che un testo arrivi a un'intelligenza artificiale, ZibaldOne toglie nomi, 
 
 I nomi di persona li riconosce dalle tue voci **Persona** (con i soprannomi): più persone hai scritto, meglio funziona. Nell'app: **Impostazioni → Anonimizzatore**. Come funziona: [anonimizzatore](../tecnica/anonimizzatore.md).
 
+## Libri, film e giochi · Museion
+Le Collezioni hanno tre riquadri che si riempiono da soli: **Preferiti** (i cuori), **Lista dei desideri** (le voci in stato «Da fare») e **Tempo speso** (le ore di lettura, visione e gioco per raccolta).
+- **Mezzi voti**: tocca una stella per darla intera, di nuovo per mezza, ancora per toglierla.
+- **Inizio e fine** si scrivono da soli quando cambi lo stato (in corso, completato…) e si leggono nella pagina della voce.
+- **Recensione con spoiler**: resta nascosta dietro «contiene spoiler» finché non tocchi **Mostra**.
+- **Importa da un file**: in Collezioni scegli Goodreads, Letterboxd, MyAnimeList o Steam, poi il file; vedi quanti elementi verrebbero aggiunti e confermi. Quelli già presenti non si toccano.
+
+| Comando | Cosa fa |
+|---|---|
+| `zbone importa goodreads libreria.csv --prova` | conta cosa verrebbe aggiunto, senza scrivere |
+| `zbone importa letterboxd ratings.csv` | porta i film |
+| `zbone importa myanimelist animelist.xml.gz` | porta gli anime |
+| `zbone importa steam giochi.json` | porta i videogiochi |
+
+Come ottenere i file e cosa diventano: [svago avanzato](../tecnica/svago.md).
+
 ## Foto e file · Mimesis
 Nell'Esame serale c'è **Foto del giorno**, nel Pensiero **Allegati**, nella Persona **Foto e file** e nel Simposio **Foto**: tocca «Aggiungi file» e scegli foto, video, audio o documenti (fino a 100 MB l'uno). Nella pagina della voce le foto si vedono in piccolo e si toccano per aprirle; gli altri file hanno **Apri**. Finiscono nei backup, cifrati se hai attivato la cifratura, e nelle copie fuori.
 

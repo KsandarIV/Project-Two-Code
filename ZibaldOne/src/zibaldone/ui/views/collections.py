@@ -9,13 +9,15 @@ from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route, section
+from zibaldone.ui.views.import_dialog import open_import
 
 
 def build(ctx: AppContext, route: Route) -> ft.Control:
     info = section("collezioni")
     with ctx.store() as store:
         groups = vm.build_collections(store)
-    controls: List[ft.Control] = [W.screen_header(info.label, info.nickname, "libri, film, serie e tutto ciò che raccogli")]
+    import_button = W.secondary_button("Importa da un file", lambda _: open_import(ctx, ctx.refresh), icon="DOWNLOAD")
+    controls: List[ft.Control] = [W.screen_header(info.label, info.nickname, "libri, film, serie e tutto ciò che raccogli", actions=[import_button])]
     if not groups:
         controls.append(
             W.empty_state(
@@ -25,6 +27,7 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
             )
         )
         return W.screen(controls, ctx.wide)
+    controls += _overview(ctx, groups)
     filled = [group for group in groups if group.items]
     empty = [group for group in groups if not group.items]
     for group in filled:
@@ -47,6 +50,35 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     return W.screen(controls, ctx.wide)
 
 
+def _chip(ctx: AppContext, text: str, entry_id: str, icon: str = "", color: str = T.ACCENT_2) -> ft.Control:
+    content: List[ft.Control] = ([ft.Icon(W.icon_of(icon), size=14, color=color)] if icon else []) + [W.body(text, size=13)]
+    return ft.Container(
+        ft.Row(content, spacing=6, tight=True),
+        padding=ft.Padding.symmetric(horizontal=12, vertical=6),
+        border=ft.Border.all(1, T.BORDER),
+        border_radius=T.RADIUS_SMALL,
+        on_click=lambda _: ctx.go(f"/voci/{entry_id}"),
+        ink=True,
+    )
+
+
+def _overview(ctx: AppContext, groups: List[vm.CollectionGroup]) -> List[ft.Control]:
+    """Favourites, the wish list and the time spent, across all the collections (0.2.5)."""
+    panels: List[ft.Control] = []
+    favorites, wishes = vm.favorites_of(groups), vm.wishlist_of(groups)
+    if favorites:
+        chips = [_chip(ctx, item.title, item.id, "FAVORITE") for _, item in favorites]
+        panels.append(W.panel(ft.Column([W.section_label("Preferiti"), ft.Row(chips, wrap=True, spacing=8, run_spacing=8)], spacing=10)))
+    if wishes:
+        chips = [_chip(ctx, f"{item.title} · {group.name}", item.id, "BOOKMARK_BORDER", T.ACCENT) for group, item in wishes]
+        panels.append(W.panel(ft.Column([W.section_label("Lista dei desideri"), ft.Row(chips, wrap=True, spacing=8, run_spacing=8)], spacing=10)))
+    spent = [group for group in groups if group.hours > 0]
+    if spent:
+        rows = [ft.Row([W.body(group.name, expand=True), W.body(vm.hours_label(group.hours), dim=True)]) for group in sorted(spent, key=lambda group: -group.hours)]
+        panels.append(W.panel(ft.Column([W.section_label("Tempo speso"), *rows], spacing=8)))
+    return panels
+
+
 def _group(ctx: AppContext, group: vm.CollectionGroup) -> ft.Control:
     header = ft.Row(
         [
@@ -62,7 +94,10 @@ def _group(ctx: AppContext, group: vm.CollectionGroup) -> ft.Control:
 
 
 def _item(ctx: AppContext, group: vm.CollectionGroup, item: vm.CollectionItem) -> ft.Control:
-    lines: List[ft.Control] = [ft.Text(item.title, size=15, weight=ft.FontWeight.W_600, color=T.TEXT, max_lines=2, overflow=ft.TextOverflow.ELLIPSIS)]
+    title: ft.Control = ft.Text(item.title, size=15, weight=ft.FontWeight.W_600, color=T.TEXT, max_lines=2, overflow=ft.TextOverflow.ELLIPSIS, expand=True)
+    if item.favorite:
+        title = ft.Row([title, ft.Icon(ft.Icons.FAVORITE, size=16, color=T.ACCENT_2)], spacing=6)
+    lines: List[ft.Control] = [title]
     if item.subtitle:
         lines.append(W.caption(item.subtitle))
     if item.rating is not None:
@@ -71,6 +106,8 @@ def _item(ctx: AppContext, group: vm.CollectionGroup, item: vm.CollectionItem) -
         lines.append(W.labelled_meter(item.status_label, item.fraction, item.counter, group.color))
     if item.bookmark:
         lines.append(ft.Row([ft.Icon(ft.Icons.BOOKMARK_BORDER, size=14, color=T.TEXT_DIM), W.caption(item.bookmark)], spacing=4))
+    if item.hours > 0:
+        lines.append(W.caption(vm.hours_label(item.hours)))
     return W.panel(
         ft.Column(lines, spacing=8),
         padding=14,

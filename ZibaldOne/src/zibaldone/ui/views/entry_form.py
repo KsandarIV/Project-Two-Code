@@ -91,13 +91,33 @@ class RatingEditor(FieldEditor):
 
     def _stars(self) -> ft.Control:
         top = forms.rating_max(self.spec)
-        label = "nessun voto" if self.state is None else f"{self.state} su {top}"
+        label = "nessun voto" if self.state is None else f"{forms.format_number(self.state)} su {top}"
         return ft.Row([W.stars(self.state, top, size=28, on_pick=self.pick), W.caption(label)], spacing=8, wrap=True)
 
     def pick(self, number: int) -> None:
-        self.state = forms.toggle_rating(self.state, number)
+        self.state = forms.toggle_rating(self.state, number, bool(self.spec.options.get("half")))
         self.holder.controls = [self._stars()]
         self.ctx.update(self.holder)
+
+
+class FavoriteEditor(FieldEditor):
+    def build(self) -> ft.Control:
+        self.button = W.icon_button("FAVORITE_BORDER", self.toggle, "Preferito", size=28)
+        self.note = W.caption("")
+        self._redraw(update=False)
+        return ft.Row([self.button, self.note], spacing=8, vertical_alignment=ft.CrossAxisAlignment.CENTER)
+
+    def _redraw(self, update: bool = True) -> None:
+        on = bool(self.state)
+        self.button.icon = W.icon_of("FAVORITE" if on else "FAVORITE_BORDER")
+        self.button.icon_color = T.ACCENT_2 if on else T.TEXT_DIM
+        self.note.value = "tra i preferiti" if on else "non è tra i preferiti"
+        if update:
+            self.ctx.update(self.button, self.note)
+
+    def toggle(self, _: Any) -> None:
+        self.state = None if self.state else True
+        self._redraw()
 
 
 class TagsEditor(FieldEditor):
@@ -521,6 +541,7 @@ EDITORS: Dict[str, Callable[["EntryForm", BlockSpec], FieldEditor]] = {
     "link": LinkEditor,
     "secret": SecretEditor,
     "media": MediaEditor,
+    "favorite": FavoriteEditor,
 }
 
 

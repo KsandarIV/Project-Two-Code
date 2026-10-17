@@ -2,6 +2,7 @@
 
 import os
 import time
+from datetime import timedelta
 from pathlib import Path
 
 import pytest
@@ -106,7 +107,7 @@ def test_encrypted_backups_seal_the_files_and_prune_what_no_snapshot_needs(isola
         backups.blob_bytes(folder, plain.media[0], None)
     assert backups.verify_snapshot(folder, plain.id, main).ok
     entry_id = remember(folder, "Dopo", ("voce.m4a", AUDIO))
-    later = backups.create_snapshot(folder)
+    later = backups.create_snapshot(folder, now=plain.created_at + timedelta(minutes=5))  # a later second, so the order is certain
     assert backups.list_snapshots(folder)[0].media == later.media  # read from the public header, no passphrase
     with Store.open(folder) as store:
         store.delete_entry(entry_id)

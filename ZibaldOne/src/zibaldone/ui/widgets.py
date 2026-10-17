@@ -304,13 +304,14 @@ def mascot_avatar(mascot: Optional[Mascot], size: int = 34) -> ft.Control:
     )
 
 
-def stars(value: Optional[int], maximum: int, size: int = 18, on_pick: Optional[Callable[[int], Any]] = None) -> ft.Row:
-    """A row of stars; with `on_pick`, each star is a button (tap the same star to clear)."""
+def stars(value: Optional[float], maximum: int, size: int = 18, on_pick: Optional[Callable[[int], Any]] = None) -> ft.Row:
+    """A row of stars (a half point shows a half star); with `on_pick`, each star is a button."""
     items: List[ft.Control] = []
     for number in range(1, maximum + 1):
         filled = value is not None and number <= value
-        name = ft.Icons.STAR if filled else ft.Icons.STAR_BORDER
-        color = T.ACCENT_2 if filled else T.TEXT_DIM
+        halved = value is not None and not filled and number - 0.5 <= value
+        name = ft.Icons.STAR if filled else (ft.Icons.STAR_HALF if halved else ft.Icons.STAR_BORDER)
+        color = T.ACCENT_2 if filled or halved else T.TEXT_DIM
         if on_pick is None:
             items.append(ft.Icon(name, color=color, size=size))
         else:

@@ -45,6 +45,7 @@ Ogni parte dell'app ha un nome filosofico accanto al nome semplice: l'interfacci
 | progress | Divenire | Eraclito |
 | bookmark | Anamnesi | Platone, Menone |
 | link | Nesso | Hume |
+| favorite | Philia | Aristotele, Etica Nicomachea |
 | secret | Echemythia | il silenzio dei pitagorici |
 | media | Mimesis | Aristotele, Poetica |
 

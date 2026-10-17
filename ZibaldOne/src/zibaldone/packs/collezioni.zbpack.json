@@ -2,13 +2,14 @@
   "format": 1,
   "id": "zibaldone.collezioni",
   "name": "Museion · Collezioni",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "ZibaldOne",
   "license": "CC0-1.0",
   "description": "Come il Museo di Alessandria, la casa delle Muse e dei libri: libri, film, serie, anime, videogiochi, giochi da tavolo, sport, musica e guardaroba.",
   "required_blocks": [
     "bookmark",
     "choice",
+    "favorite",
     "longtext",
     "number",
     "progress",
@@ -51,7 +52,8 @@
           "type": "rating",
           "label": "Voto",
           "options": {
-            "max": 5
+            "max": 5,
+            "half": true
           }
         },
         {
@@ -75,6 +77,29 @@
           "label": "ISBN",
           "options": {
             "max_length": 20
+          }
+        },
+        {
+          "key": "ore",
+          "type": "number",
+          "label": "Ore di lettura",
+          "options": {
+            "min": 0,
+            "unit": "ore"
+          }
+        },
+        {
+          "key": "preferito",
+          "type": "favorite",
+          "label": "Tra i preferiti"
+        },
+        {
+          "key": "recensione_spoiler",
+          "type": "longtext",
+          "label": "Recensione con spoiler",
+          "help": "resta nascosta nella voce finché non la apri",
+          "options": {
+            "spoiler": true
           }
         }
       ],
@@ -119,7 +144,8 @@
           "type": "rating",
           "label": "Voto",
           "options": {
-            "max": 5
+            "max": 5,
+            "half": true
           }
         },
         {
@@ -131,6 +157,29 @@
           "key": "recensione",
           "type": "longtext",
           "label": "Recensione"
+        },
+        {
+          "key": "ore",
+          "type": "number",
+          "label": "Ore di visione",
+          "options": {
+            "min": 0,
+            "unit": "ore"
+          }
+        },
+        {
+          "key": "preferito",
+          "type": "favorite",
+          "label": "Tra i preferiti"
+        },
+        {
+          "key": "recensione_spoiler",
+          "type": "longtext",
+          "label": "Recensione con spoiler",
+          "help": "resta nascosta nella voce finché non la apri",
+          "options": {
+            "spoiler": true
+          }
         }
       ],
       "description": "Film visti e da vedere: ombre su una parete, come nel mito di Platone (Repubblica VII).",
@@ -175,7 +224,8 @@
           "type": "rating",
           "label": "Voto",
           "options": {
-            "max": 5
+            "max": 5,
+            "half": true
           }
         },
         {
@@ -187,6 +237,29 @@
           "key": "recensione",
           "type": "longtext",
           "label": "Recensione"
+        },
+        {
+          "key": "ore",
+          "type": "number",
+          "label": "Ore di visione",
+          "options": {
+            "min": 0,
+            "unit": "ore"
+          }
+        },
+        {
+          "key": "preferito",
+          "type": "favorite",
+          "label": "Tra i preferiti"
+        },
+        {
+          "key": "recensione_spoiler",
+          "type": "longtext",
+          "label": "Recensione con spoiler",
+          "help": "resta nascosta nella voce finché non la apri",
+          "options": {
+            "spoiler": true
+          }
         }
       ],
       "description": "Serie TV, un episodio dopo l'altro. Nietzsche, La gaia scienza, 341.",
@@ -228,7 +301,8 @@
           "type": "rating",
           "label": "Voto",
           "options": {
-            "max": 5
+            "max": 5,
+            "half": true
           }
         },
         {
@@ -240,6 +314,29 @@
           "key": "recensione",
           "type": "longtext",
           "label": "Recensione"
+        },
+        {
+          "key": "ore",
+          "type": "number",
+          "label": "Ore di visione",
+          "options": {
+            "min": 0,
+            "unit": "ore"
+          }
+        },
+        {
+          "key": "preferito",
+          "type": "favorite",
+          "label": "Tra i preferiti"
+        },
+        {
+          "key": "recensione_spoiler",
+          "type": "longtext",
+          "label": "Recensione con spoiler",
+          "help": "resta nascosta nella voce finché non la apri",
+          "options": {
+            "spoiler": true
+          }
         }
       ],
       "description": "Anime e manga. L'anima del mondo di Platone, Timeo.",
@@ -282,7 +379,8 @@
           "type": "rating",
           "label": "Voto",
           "options": {
-            "max": 5
+            "max": 5,
+            "half": true
           }
         },
         {
@@ -294,6 +392,20 @@
           "key": "recensione",
           "type": "longtext",
           "label": "Recensione"
+        },
+        {
+          "key": "preferito",
+          "type": "favorite",
+          "label": "Tra i preferiti"
+        },
+        {
+          "key": "recensione_spoiler",
+          "type": "longtext",
+          "label": "Recensione con spoiler",
+          "help": "resta nascosta nella voce finché non la apri",
+          "options": {
+            "spoiler": true
+          }
         }
       ],
       "description": "Videogiochi, piattaforme e ore di gioco. Huizinga, Homo ludens (1938).",
@@ -341,13 +453,28 @@
           "type": "rating",
           "label": "Voto",
           "options": {
-            "max": 5
+            "max": 5,
+            "half": true
           }
         },
         {
           "key": "note",
           "type": "longtext",
           "label": "Note"
+        },
+        {
+          "key": "ore",
+          "type": "number",
+          "label": "Ore di gioco",
+          "options": {
+            "min": 0,
+            "unit": "ore"
+          }
+        },
+        {
+          "key": "preferito",
+          "type": "favorite",
+          "label": "Tra i preferiti"
         }
       ],
       "description": "Giochi da tavolo, di carte e di ruolo. Caillois, I giochi e gli uomini (1958).",
@@ -433,7 +560,8 @@
           "type": "rating",
           "label": "Voto",
           "options": {
-            "max": 5
+            "max": 5,
+            "half": true
           }
         },
         {
@@ -450,6 +578,11 @@
           "key": "ricordo",
           "type": "longtext",
           "label": "A cosa la associo"
+        },
+        {
+          "key": "preferito",
+          "type": "favorite",
+          "label": "Tra i preferiti"
         }
       ],
       "description": "Musica: la colonna sonora della tua vita. Dalla tradizione pitagorica.",
@@ -513,7 +646,8 @@
           "type": "rating",
           "label": "Quanto mi piace",
           "options": {
-            "max": 5
+            "max": 5,
+            "half": true
           }
         }
       ],

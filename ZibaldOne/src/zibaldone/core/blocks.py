@@ -181,7 +181,8 @@ class LongTextBlock(TextBlock):
     description = "riflessioni, note, recensioni, su più righe"
     nickname = "Saggio"
     nickname_source = "Montaigne, Saggi (1580): scrivere per provarsi"
-    options = {"max_length": _int_option, "placeholder": _str_option}
+    # 0.2.5: `spoiler` hides the text in the entry until the reader opens it.
+    options = {"max_length": _int_option, "placeholder": _str_option, "spoiler": _bool_option}
 
     def normalize(self, value: Any, options: Dict[str, Any]) -> str:
         if not isinstance(value, str):
@@ -235,35 +236,40 @@ class NumberBlock(BlockType):
 class RatingBlock(BlockType):
     name = "rating"
     label = "Voto a stelle"
-    description = "un voto da 0 al massimo scelto (5 di base)"
+    description = "un voto da 0 al massimo scelto (5 di base), anche a mezzi punti"
     nickname = "Giudizio"
     nickname_source = "Kant, Critica del Giudizio (1790): il giudizio di gusto"
-    options = {"max": _int_option}
+    options = {"max": _int_option, "half": _bool_option}  # 0.2.5: half = also 8,5 out of 10
 
     def check_option_rules(self, options: Dict[str, Any]) -> None:
         if not 3 <= options.get("max", 5) <= 10:
             raise ValueError("il voto massimo deve essere tra 3 e 10")
 
-    def normalize(self, value: Any, options: Dict[str, Any]) -> int:
-        if not is_number(value) or value != int(value):
-            raise ValueError("il voto è un numero intero")
+    def normalize(self, value: Any, options: Dict[str, Any]) -> float:
+        half = options.get("half", False)
+        if not is_number(value) or value * (2 if half else 1) != int(value * (2 if half else 1)):
+            raise ValueError("il voto va a mezzi punti (per esempio 8,5)" if half else "il voto è un numero intero")
         top = options.get("max", 5)
         if not 0 <= value <= top:
             raise ValueError(f"il voto va da 0 a {top}")
-        return int(value)
+        return int(value) if value == int(value) else float(value)
 
-    def parse(self, raw: str, options: Dict[str, Any]) -> int:
+    def parse(self, raw: str, options: Dict[str, Any]) -> float:
         text = raw.strip()
-        if text and set(text) <= {"*", "★"}:
-            return self.normalize(len(text), options)
+        if text and set(text) <= {"*", "★", "½"}:
+            return self.normalize(text.count("*") + text.count("★") + (0.5 if "½" in text else 0), options)
         try:
-            return self.normalize(int(text), options)
+            return self.normalize(float(text.replace(",", ".")), options)
         except ValueError as error:
+            if "voto" in str(error):
+                raise
             raise ValueError(f"'{raw}' non è un voto valido") from error
 
     def to_text(self, value: Any, options: Dict[str, Any]) -> str:
         top = options.get("max", 5)
-        return "★" * value + "☆" * (top - value)
+        whole = int(value)
+        halves = "½" if value != whole else ""
+        return "★" * whole + halves + "☆" * (top - whole - (1 if halves else 0))
 
 
 class TagsBlock(BlockType):
@@ -445,7 +451,7 @@ class ProgressBlock(BlockType):
     options = {"unit": _str_option, "total": _int_option}
 
     def normalize(self, value: Any, options: Dict[str, Any]) -> Dict[str, Any]:
-        if not isinstance(value, dict) or set(value) - {"status", "current", "total"}:
+        if not isinstance(value, dict) or set(value) - {"status", "current", "total", "started", "finished"}:
             raise ValueError("l'avanzamento ha 'status', 'current' e 'total'")
         status = value.get("status", "not_started")
         if status not in PROGRESS_STATUSES:
@@ -464,6 +470,9 @@ class ProgressBlock(BlockType):
             raise ValueError("il contatore supera il totale")
         if status == "completed" and "total" in result:
             result["current"] = result["total"]
+        for key in ("started", "finished"):  # 0.2.5: the Store fills them in when the status changes
+            if value.get(key):
+                result[key] = parse_day(str(value[key]))
         return result
 
     def parse(self, raw: str, options: Dict[str, Any]) -> Dict[str, Any]:
@@ -642,6 +651,42 @@ class MediaBlock(BlockType):
         return ", ".join(item["name"] for item in value)
 
 
+# — 0.2.5: favourites —
+
+YES_WORDS = ("sì", "si", "s", "y", "yes", "true", "1", "x", "preferito")
+NO_WORDS = ("no", "n", "false", "0")
+
+
+class FavoriteBlock(BlockType):
+    """A mark for the things you care about most: on or not there."""
+
+    name = "favorite"
+    label = "Preferito"
+    description = "un segno per quello a cui tieni di più (un libro, un film, un gioco)"
+    nickname = "Philia"
+    nickname_source = "Aristotele, Etica Nicomachea: l'amore per ciò che si sceglie per sé"
+    options = {}
+
+    def normalize(self, value: Any, options: Dict[str, Any]) -> bool:
+        if not isinstance(value, bool):
+            raise ValueError("un preferito è sì o no")
+        return value
+
+    def parse(self, raw: str, options: Dict[str, Any]) -> bool:
+        text = raw.strip().lower()
+        if text in YES_WORDS:
+            return True
+        if text in NO_WORDS:
+            return False
+        raise ValueError(f"'{raw}' non è sì o no")
+
+    def to_text(self, value: Any, options: Dict[str, Any]) -> str:
+        return "♥ preferito"
+
+    def is_empty(self, value: Any) -> bool:
+        return value is None or value is False
+
+
 BLOCK_TYPES: Dict[str, BlockType] = {
     block.name: block
     for block in (
@@ -659,6 +704,7 @@ BLOCK_TYPES: Dict[str, BlockType] = {
         LinkBlock(),
         SecretBlock(),
         MediaBlock(),
+        FavoriteBlock(),
     )
 }
 
