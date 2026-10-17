@@ -11,7 +11,8 @@ Each block type has a *state*, the plain data its control edits:
 - link: a list of entry ids;
 - secret: `{"text": what is typed, "sealed": the stored value or None,
   "original": its text once opened, else None}`. While closed, an empty
-  field keeps the stored secret; once opened, the field shows it.
+  field keeps the stored secret; once opened, the field shows it;
+- media: the attached files as stored (`[{"file", "name", "size"}]`).
 
 `collect_values` turns the states into values and checks them with the core
 (`BlockType.normalize`, `validate_values`), keeping the core's Italian messages
@@ -44,6 +45,7 @@ HINTS: Dict[str, str] = {
     "bookmark": "per esempio pag. 150, S02E05, capitolo 7",
     "link": "scegli tra le voci già scritte",
     "secret": "cifrato con la tua chiave: resta fuori da ricerca, esportazioni e IA",
+    "media": "foto, video, audio o documenti, fino a 100 MB l'uno",
 }
 
 
@@ -107,7 +109,7 @@ def empty_state(spec: BlockSpec) -> Any:
         return []
     if kind == "progress":
         return {"status": None, "current": "", "total": format_number(spec.options.get("total"))}
-    if kind == "link":
+    if kind in ("link", "media"):
         return []
     if kind == "secret":
         return {"text": "", "sealed": None, "original": None}
@@ -137,6 +139,8 @@ def value_to_state(spec: BlockSpec, value: Any) -> Any:
         return list(value) if isinstance(value, list) else [value]
     if kind == "secret":
         return {"text": "", "sealed": str(value), "original": None}
+    if kind == "media":
+        return [dict(item) for item in value]
     return value  # rating, scale, choice
 
 
@@ -180,7 +184,7 @@ def state_to_raw(spec: BlockSpec, state: Any) -> Any:
         if total is not None:
             raw["total"] = total
         return raw
-    if kind == "link":
+    if kind in ("link", "media"):
         return list(state) or None
     if kind == "secret":
         text = str(state.get("text", "")).replace("\r\n", "\n").strip()

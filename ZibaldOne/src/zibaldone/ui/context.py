@@ -29,6 +29,7 @@ class AppContext:
         self.wide = True
         self.memory: Dict[str, Any] = {}  # screen state kept while the app is open (filters …)
         self.toasts: List[str] = []  # what was shown, for tests
+        self.opened: List[Path] = []  # files handed to the system, for tests
         self._navigate: Callable[[str, bool], None] = lambda path, replace: None
         self._back: Callable[[], None] = lambda: None
         self._refresh: Callable[[], None] = lambda: None
@@ -145,6 +146,38 @@ class AppContext:
 
         async def task() -> None:
             await ft.UrlLauncher().launch_url(url)
+
+        self.page.run_task(task)
+
+    def pick_files(self, on_picked: Callable[[List[Any]], Any]) -> None:
+        """The system file picker (0.2.4); `on_picked` gets the chosen files (name, path or bytes)."""
+        if self.page is None:
+            return
+        web = bool(getattr(self.page, "web", False))
+
+        async def task() -> None:
+            files = await ft.FilePicker().pick_files(allow_multiple=True, with_data=web)
+            on_picked(list(files or []))
+            self.update()
+
+        self.page.run_task(task)
+
+    def open_file(self, path: Path) -> None:
+        """Open an attached file with the system app; on a phone, through the share sheet."""
+        self.opened.append(path)
+        if self.page is None:
+            return
+        platform = getattr(self.page, "platform", None)
+
+        async def task() -> None:
+            try:
+                if platform is not None and platform.is_mobile():
+                    await ft.Share().share_files([ft.ShareFile.from_path(str(path))])
+                else:
+                    await ft.UrlLauncher().launch_url(path.as_uri())
+            except Exception as error:  # no app for this kind of file
+                logger.info("open file failed", exc_info=True)
+                self.toast(f"Non riesco ad aprire il file: {error}", error=True)
 
         self.page.run_task(task)
 

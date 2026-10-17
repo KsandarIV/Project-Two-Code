@@ -41,6 +41,11 @@
 - Il **PIN** apre solo il livello protetto ed è una comodità: chi copia `keys.json` può provare tutti i PIN fuori dall'app. Quello che conta va al livello massimo, che si apre solo con la passphrase.
 - Il resto del database resta in chiaro. L'avviso privacy non cambia: nessun dato nuovo lascia il dispositivo.
 
+## Allegati (dalla 0.2.4)
+- Foto, video, audio e documenti allegati stanno sul dispositivo in chiaro, nella cartella `media/`, come il database. Nei backup e nelle Nuvole vanno solo cifrati ([gli allegati](allegati.md)).
+- Chi ha i file dei backup vede quanti allegati ci sono e la loro impronta SHA-256, non il contenuto: può solo confermare che hai un file che possiede già.
+- Le foto possono contenere la posizione (EXIF): l'app non la legge e non la toglie.
+
 ## Sicurezza tecnica
 - **Backup cifrati con storia** ([ADR-0006](../decisioni/ADR-0006-storia-e-backup-cifrati.md)): istantanee che durano un tempo scelto, cifrate sul dispositivo e copiabili fuori; nessuno tranne l'utente può aprirle. Una voce cancellata resta nei backup fino alla loro scadenza, e l'avviso lo deve dire.
 - **Cifratura opzionale** dei dati con una passphrase (un diario può contenere salute, opinioni e convinzioni: dati delicati). Se l'utente dimentica la passphrase, i dati non sono recuperabili: va detto chiaramente.

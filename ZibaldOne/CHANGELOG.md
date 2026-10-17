@@ -4,6 +4,18 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.2.4] — 2026-10-17
+### Aggiunto
+- **Blocco Allegati** (*Mimesis*): foto, video, audio e documenti di una voce, scelti con la finestra del sistema. Nella pagina della voce le foto in miniatura, gli altri file con **Apri** (sul telefono dal menu Condividi).
+- I file stanno nella cartella `media/`, una volta sola per contenuto (fino a 100 MB l'uno); quelli che nessuna voce usa più si cancellano da soli.
+- **Backup**: una copia di ogni allegato accanto alle istantanee, cifrata con la cifratura attiva; verifica e ripristino li controllano e li rimettono. **Le Nuvole** li caricano e li riportano su un dispositivo nuovo.
+- `zbone allegati` (stato), `allegati aggiungi`, `mostra`, `salva`, `togli`.
+### Cambiato
+- Stoa · Diario 1.1.0: *Foto del giorno* nell'Esame serale, *Allegati* nel Pensiero. Agorà · Persone 1.5.0: *Foto e file* nella Persona, *Foto* nel Simposio. Le voci di prima restano valide.
+- `zbone entry add` salta i blocchi allegati.
+### Documentazione
+- [Gli allegati](docs/tecnica/allegati.md); backup, privacy, blocchi, guida rapida, persone, aree, interfaccia, identità, roadmap e requisiti aggiornati.
+
 ## [0.2.3] — 2026-10-17
 ### Aggiunto
 - **Blocco Segreto** (*Echemythia*): un testo cifrato con la tua chiave prima di essere salvato, con la stessa cifratura dei backup. Due livelli: *protetto* (si apre con il PIN o la passphrase) e *massimo* (solo con la passphrase o il codice di recupero).

@@ -64,6 +64,8 @@ def ask_values(store: Store, template: Template, current: Optional[Dict[str, Any
     values: Dict[str, Any] = {}
     typer.echo(f"{template.name}: rispondi a ogni blocco, invio per saltare.")
     for spec in template.blocks:
+        if spec.type == "media":
+            continue  # files: `zbone allegati aggiungi`
         hint = HINTS.get(spec.type, "")
         if spec.type == "choice":
             hint = " / ".join(f"{number}={choice}" for number, choice in enumerate(spec.options["choices"], 1))

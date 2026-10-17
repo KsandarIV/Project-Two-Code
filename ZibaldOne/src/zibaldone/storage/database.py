@@ -23,6 +23,7 @@ from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tupl
 from zibaldone.core.areas import entry_areas
 from zibaldone.core.templates import Entry, Template, check_area, now_iso, validate_values
 from zibaldone.core import secrets
+from zibaldone.storage import media
 from zibaldone.core.blocks import parse_day
 from zibaldone.core.links import (
     KIND_BLOCK,
@@ -338,6 +339,7 @@ class Store:
         template = self.get_template(template_slug)
         entry = Entry.new(template, self._seal_secrets(template, values), day, area=area)
         secrets.check_sealed(template, entry.values)
+        self._check_new_media(template, {}, entry.values)
         with self.transaction() as cursor:
             cursor.execute(
                 "INSERT INTO entries (id, template, day, data, created_at, updated_at, area) VALUES (?, ?, ?, ?, ?, ?, ?)",
@@ -397,6 +399,7 @@ class Store:
         """
         entry = self.get_entry(reference)
         template = self.get_template(entry.template)
+        old_values = dict(entry.values)
         new_values = dict(entry.values) if merge else {}
         for key, value in values.items():
             if value is None:
@@ -405,6 +408,7 @@ class Store:
                 new_values[key] = value
         entry.values = validate_values(template, self._seal_secrets(template, new_values))
         secrets.check_sealed(template, entry.values)
+        self._check_new_media(template, old_values, entry.values)
         if day:
             entry.day = parse_day(day)
         if area is not None:
@@ -416,6 +420,8 @@ class Store:
                 (json.dumps(entry.values, ensure_ascii=False), entry.day, entry.updated_at, entry.area, entry.id),
             )
             self.after_entry_saved(entry, template)
+        if media.attachments_of(template, old_values) != media.attachments_of(template, entry.values):
+            self.remove_unused_media()
         return entry
 
     def delete_entry(self, reference: str) -> Entry:
@@ -423,7 +429,23 @@ class Store:
         with self.transaction() as cursor:
             cursor.execute("DELETE FROM entries WHERE id = ?", (entry.id,))
             self.after_entry_deleted(entry)
+        template = self.find_template(entry.template)
+        if template is not None and media.attachments_of(template, entry.values):
+            self.remove_unused_media()
         return entry
+
+    # — 0.2.4: attached files —
+
+    def _check_new_media(self, template: Template, old: Dict[str, Any], new: Dict[str, Any]) -> None:
+        """A newly attached file must already be in the media folder (`storage/media.py`)."""
+        known = {item.file for item in media.attachments_of(template, old)}
+        for item in media.attachments_of(template, new):
+            if item.file not in known and not media.path_of(self.path.parent, item.file).exists():
+                raise StoreError(f"il file di «{item.name}» non è nella cartella degli allegati: aggiungilo di nuovo")
+
+    def remove_unused_media(self) -> List[str]:
+        """Delete the attached files no entry names any more (after an hour; backups keep theirs)."""
+        return media.remove_unused(self.path.parent, media.referenced_files(self))
 
     # — hooks: keep the indexes in sync, inside the entry's transaction —
 

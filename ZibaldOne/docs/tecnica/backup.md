@@ -9,6 +9,7 @@ Come funzionano le istantanee di ZibaldOne ([ADR-0006](../decisioni/ADR-0006-sto
   - `manifest.json`: id, ora, versione dell'app, versione dello schema, motivo (manuale, automatica, prima di un ripristino, prima di un aggiornamento), nota, impronta SHA-256 e dimensione del database, numero di voci e modelli;
   - `zibaldone.db`: la copia fatta con l'API di backup di SQLite, coerente anche se l'app sta scrivendo;
   - `settings.json`: una copia delle impostazioni, per consultarla.
+- Dalla 0.2.4 il manifest elenca anche gli **allegati** (`media`): i file stanno una volta sola accanto alle istantanee, come `<file>.zbblob`, cifrati come loro; verifica, ripristino, pulizia e Le Nuvole li trattano insieme alle istantanee ([gli allegati](allegati.md)).
 - Prima che un aggiornamento dell'app cambi lo schema del database, ZibaldOne salva un'istantanea "prima di un aggiornamento".
 
 ## Ripristino

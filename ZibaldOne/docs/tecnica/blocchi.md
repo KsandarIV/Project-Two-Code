@@ -16,6 +16,7 @@ Un **blocco** è un tipo di campo con le sue regole. Ogni modello è una lista o
 | `progress` | stato e contatore | `unit`, `total` | `in corso 150/320`, `completato`, `pausa` |
 | `bookmark` | dove sei arrivato | `placeholder` | `pag. 150`, `S02E05` |
 | `link` | collegamento ad altre voci | `template` (solo voci di quel modello), `multiple` | il titolo della voce o le prime lettere del suo id |
+| `media` | foto, video, audio e documenti allegati (dalla 0.2.4) | `max_items` (di base 50) | non da `--set`: `zbone allegati aggiungi VOCE FILE` |
 | `secret` | testo cifrato con la tua chiave (dalla 0.2.3) | `level` (`protetto` di base, o `massimo`), `multiline`, `placeholder` | un testo qualsiasi; con `multiline`, `\n` va a capo |
 
 ## Regole comuni
@@ -24,6 +25,7 @@ Un **blocco** è un tipo di campo con le sue regole. Ogni modello è una lista o
 - Gli stati di `progress` sono: lista dei desideri, da iniziare, in corso, in pausa, completato, abbandonato. "Completato" porta il contatore al totale.
 - `choice` con `values` dà un punteggio a ogni scelta (per esempio l'umore da 1 a 5): dalla v0.1.4 le statistiche lo usano per l'umore ([statistiche e revisioni](statistiche.md)).
 - `secret` si salva solo cifrato e ovunque si legge «🔒 cifrato»: non entra nella ricerca, nei collegamenti, nelle esportazioni né nell'IA, e non può fare da titolo ([i segreti](segreti.md)).
+- `media` salva solo i nomi dei file (`file`, `name`, `size`): i file stanno nella cartella `media/` e nei backup ([gli allegati](allegati.md)).
 - `link` salva gli id delle voci collegate. Dalla v0.1.2 ogni collegamento (anche `[[Titolo]]` in un testo) è nella tabella `links`: chi cita chi, "tutto su Marco" ([ricerca e collegamenti](ricerca-e-collegamenti.md)); dalla 0.1.3 diventa il grafo.
 
 ## Aggiungere un tipo nuovo

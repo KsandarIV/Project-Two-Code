@@ -612,6 +612,7 @@ OPTION_FIELDS: Dict[str, Tuple[OptionField, ...]] = {
         OptionField("multiline", "Più righe", "bool"),
         OptionField("placeholder", "Esempio da mostrare", "text"),
     ),
+    "media": (OptionField("max_items", "File al massimo", "int", "50 di base"),),
 }
 
 REQUIRED_OPTIONS: Dict[str, Dict[str, Any]] = {

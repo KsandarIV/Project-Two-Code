@@ -297,3 +297,12 @@ def test_a_secret_field_keeps_the_sealed_value_until_changed() -> None:
     assert forms.state_to_raw(spec, {**opened, "text": ""}) is None  # opened and emptied: removed
     assert forms.state_to_raw(spec, forms.removed_secret_state()) is None
     assert forms.state_to_raw(spec, forms.empty_state(spec)) is None
+
+
+def test_a_media_field_keeps_the_attached_files() -> None:
+    spec = BlockSpec.from_dict({"key": "f", "type": "media", "label": "F"})
+    item = {"file": "a" * 64 + ".jpg", "name": "mare.jpg", "size": 3}
+    assert forms.empty_state(spec) == [] and forms.state_to_raw(spec, []) is None
+    state = forms.value_to_state(spec, [item])
+    assert state == [item] and state[0] is not item  # a copy: the form never edits the entry
+    assert forms.state_to_raw(spec, state) == [item]
