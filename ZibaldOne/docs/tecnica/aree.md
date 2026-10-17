@@ -8,8 +8,9 @@
 
 ## A quale area appartiene una voce
 1. L'**area della voce**, se l'utente l'ha scelta (`--area`, o "Area della vita" nel modulo).
-2. Altrimenti l'**area del suo modello**: per esempio i libri vanno in Svago, lo sport in Salute, le persone in Sociale.
-3. In più, le aree scritte in un blocco *etichette* che si chiama `aree` (come nella Persona di Agorà): una persona può stare in Famiglia e in Lavoro insieme.
+2. In più, le aree scritte in un blocco *etichette* che si chiama `aree` (come nella Persona di Agorà): una persona può stare in Famiglia e in Lavoro insieme.
+3. Per le persone, dalla 0.2.1, le aree del legame e dei ruoli: la madre in Famiglia, il capo in Lavoro ([le persone](persone.md)).
+4. Solo se nessuna di queste dà un'area, l'**area del suo modello**: per esempio i libri vanno in Svago, lo sport in Salute, le persone senza ruoli in Sociale.
 
 Una voce senza area non è sbagliata: semplicemente non compare nelle pagine delle aree. I nomi si scrivono come si vuole: `Salute`, `salute`, `health`, `soldi` (per Finanze), `amici` (per Sociale) vanno tutti bene.
 
@@ -45,7 +46,7 @@ Le pagine delle aree mostrano anche quello che non c'è ancora, con la versione 
 ## Dove si usa
 - **App**: **Oggi → Aree** (o un riquadro delle aree in Oggi) apre le otto aree (`/aree`); un'area si apre con `/aree/<area>`. Da lì: **Check-in**, **Obiettivo** e **Nota** aprono il modulo con l'area già scelta (`/scrivi/<modello>/<area>`). In **Voci** c'è il filtro per area e la pagina di una voce mostra le sue aree; l'editor dei modelli ha "Area della vita delle sue voci".
 - **CLI**: `zbone area` (le otto aree), `zbone area show salute`, `zbone area checkin salute -p 7`, `zbone area todo salute "prenotare il dentista"`, `zbone area fatto salute 1`; `--area` in `entry add/list/edit`, `template create`, `search`; `zbone template area libro svago` ([guida rapida](../utente/guida-rapida.md#le-otto-aree--eudaimonia)).
-- **Esportazioni**: le aree della voce nelle proprietà Markdown (`areas:`) e la colonna `area` nei CSV.
+- **Esportazioni**: le aree della voce nelle proprietà Markdown (`areas:`) e la sua area principale nella colonna `area` dei CSV.
 
 ## Codice
 - `core/areas.py`: le aree e i loro nomi, a quale area appartiene una voce, punteggi, cose da fare, obiettivi, riepilogo e pagina di un'area, «In arrivo», e le azioni su uno Store (check-in, aggiungere e spuntare). Funzioni pure con `today` sempre passato.

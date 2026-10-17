@@ -13,9 +13,11 @@ from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from zibaldone.core import areas as eudaimonia
+from zibaldone.core import people as agora
 from zibaldone.core.blocks import BLOCK_TYPES, PROGRESS_STATUSES, is_number
 from zibaldone.core.brand import AREAS, MASCOTS, Mascot, Quote, mascot_for, quote_of_the_day
 from zibaldone.core.packs import InstallPlan, Pack, build_pack, write_pack_file
+from zibaldone.core.stats import long_date
 from zibaldone.core.reminders import MOMENT_LABELS, MOMENTS, WEEKDAY_NAMES, MomentConfig, QuietHours, ReminderConfig
 from zibaldone.core.templates import SLUG, BlockSpec, Entry, Template, slugify, validate_values
 from zibaldone.ui import forms
@@ -1436,6 +1438,7 @@ class AreaPage:
     missing: Tuple[str, ...]  # areas-pack templates not installed
     note_template: str  # where "Nuova nota" writes ('' when there is none)
     template_names: Tuple[str, ...]  # templates whose entries go here by default
+    people: Tuple["PersonRow", ...] = ()
 
     @property
     def trend_label(self) -> str:
@@ -1502,6 +1505,7 @@ def area_page(store: Any, key: str, today: date, weeks: int = 12, recent: int = 
         missing=tuple(areas_pack_missing(store)),
         note_template=note_template,
         template_names=tuple(templates[slug].name for slug in detail.templates),
+        people=people_rows(agora.people_in_area(agora.people_from(entries, templates), area.key), today),
     )
 
 
@@ -1513,6 +1517,110 @@ def install_areas_pack(store: Any) -> int:
     if pack is None:
         return 0
     return len(apply_install(plan_install(pack, store), store))
+
+
+# * — Agorà: people (0.2.1) —
+
+
+@dataclass(frozen=True)
+class PersonRow:
+    id: str
+    name: str
+    roles: str
+    contact: str
+    due: bool
+
+
+def people_rows(people: Sequence[agora.Person], today: date) -> Tuple[PersonRow, ...]:
+    """Who is due first, then everyone else by name."""
+    due = agora.due_people(people, today)
+    due_ids = {person.id for person in due}
+    rest = [person for person in people if person.id not in due_ids]
+    return tuple(PersonRow(person.id, person.name, person.role_line, person.contact_line(today), person.is_due(today)) for person in due + rest)
+
+
+@dataclass(frozen=True)
+class ContactRow:
+    entry_id: str
+    title: str
+    label: str
+    icon: str
+    day_label: str
+    note: str
+
+
+@dataclass(frozen=True)
+class PersonGroup:
+    area: str
+    label: str
+    color: str
+    rows: Tuple[EntryRow, ...]
+
+
+@dataclass(frozen=True)
+class PersonView:
+    id: str
+    name: str
+    nicknames: str
+    roles: str
+    areas: Tuple[Tuple[str, str, str], ...]  # (key, label, color)
+    details: Tuple[Tuple[str, str, str], ...]  # (label, value, url to open or '')
+    contact: str
+    rhythm: str
+    due: bool
+    contacts: Tuple[ContactRow, ...]
+    groups: Tuple[PersonGroup, ...]
+    mentions: Tuple[EntryRow, ...]
+    can_log: bool  # the meeting template is installed
+
+
+def person_view(store: Any, entry_id: str, today: date, contacts: int = 3) -> Optional[PersonView]:
+    """The page "tutto di Marco"; None when the entry is not a person."""
+    found = next((person for person in agora.load_people(store) if person.id == entry_id), None)
+    if found is None:
+        return None
+    page = agora.person_page(store, found)
+    templates = {template.slug: template for template in store.list_templates()}
+    details = []
+    if found.phone:
+        details.append(("Telefono", found.phone, "tel:" + "".join(char for char in found.phone if char.isdigit() or char == "+")))
+    if found.email:
+        details.append(("Email", found.email, f"mailto:{found.email}"))
+    if found.social:
+        details.append(("Social", ", ".join(found.social), ""))
+    if found.birthday:
+        details.append(("Compleanno", long_date(found.birthday), ""))
+    groups = tuple(
+        PersonGroup(
+            group.area,
+            group.label,
+            eudaimonia.area_info(group.area).color if group.area else TEXT_DIM,
+            tuple(entry_row(item.entry, templates[item.entry.template], today) for item in group.items),
+        )
+        for group in page.groups
+    )
+    return PersonView(
+        id=found.id,
+        name=found.name,
+        nicknames=", ".join(found.nicknames),
+        roles=found.role_line,
+        areas=tuple((key, eudaimonia.area_label(key), eudaimonia.area_info(key).color) for key in found.areas),
+        details=tuple(details),
+        contact=found.contact_line(today),
+        rhythm=found.rhythm_line(today),
+        due=found.is_due(today),
+        contacts=tuple(
+            ContactRow(c.entry_id, c.title, c.label, c.icon, short_date(c.day.isoformat(), today), c.note) for c in found.contacts[:contacts]
+        ),
+        groups=groups,
+        mentions=tuple(entry_row(hit.entry, templates[hit.entry.template], today) for hit in page.mentions if hit.entry.template in templates),
+        can_log=store.find_template(agora.MEETING_TEMPLATE) is not None,
+    )
+
+
+def log_person_contact(store: Any, entry_id: str, kind: str) -> Entry:
+    person = next(person for person in agora.load_people(store) if person.id == entry_id)
+    return agora.log_contact(store, person, kind)
 
 
 def entry_area_problem(template: Template, area: str) -> str:

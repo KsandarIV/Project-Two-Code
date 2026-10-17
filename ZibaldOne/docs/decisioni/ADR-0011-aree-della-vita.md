@@ -14,3 +14,6 @@
   - Le versioni successive (persone, finanze, abitudini …) agganciano le loro voci a un'area con lo stesso campo, senza un'altra migrazione.
   - Cambiare l'area di un modello sposta tutte le sue voci che non hanno un'area propria.
 - **Alternative scartate**: una tabella delle aree modificabile dall'utente (le 8 aree sono il cuore della richiesta e delle mascotte); un modello per area con i dati dentro (avrebbe separato i libri dalla Biblioteca); le aree come semplici etichette (nessun controllo sui nomi, nessuna area ereditata dal modello).
+
+## Nota 2026-10-17 (0.2.1)
+Per le persone il legame e i ruoli di base danno un'area (`core/roles.py`), e l'area del modello diventa solo il ripiego per le voci che non ne hanno altre: la madre sta in Famiglia, non anche in Sociale. Quando queste regole cambiano si alza `AREA_RULES` in `storage/database.py` e l'indice `entry_areas` si ricostruisce all'apertura, senza una migrazione.

@@ -48,9 +48,11 @@ class FieldEditor:
 class TextEditor(FieldEditor):
     def build(self) -> ft.Control:
         long = self.spec.type == "longtext"
+        keyboard = {"email": ft.KeyboardType.EMAIL, "telefono": ft.KeyboardType.PHONE}.get(self.spec.options.get("format", ""))
         field = W.text_input(
             self.state,
             hint_text=forms.field_hint(self.spec) or None,
+            **({"keyboard_type": keyboard} if keyboard else {}),
             multiline=long,
             min_lines=3 if long else 1,
             max_lines=12 if long else 1,

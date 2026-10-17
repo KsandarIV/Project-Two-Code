@@ -6,6 +6,7 @@ from typing import Any, List
 import flet as ft
 
 from zibaldone.core.brand import mascot_for
+from zibaldone.core.links import is_person_template
 from zibaldone.storage.database import StoreError
 from zibaldone.ui import forms
 from zibaldone.ui import theme as T
@@ -169,6 +170,7 @@ def build_detail(ctx: AppContext, route: Route) -> ft.Control:
                 on_back=ctx.back,
                 actions=[
                     W.primary_button("Modifica", lambda _: ctx.go(f"/voci/{entry_id}/modifica"), icon="EDIT"),
+                    *([W.secondary_button(f"Tutto di {detail.title}", lambda _: ctx.go(f"/persone/{entry_id}"), icon="PERSON_SEARCH")] if is_person_template(detail.template) else []),
                     W.secondary_button("Nel grafo", lambda _: ctx.go(f"/grafo/{entry_id}"), icon="HUB"),
                     W.secondary_button("Cancella", ask_delete, icon="DELETE_OUTLINE"),
                 ],

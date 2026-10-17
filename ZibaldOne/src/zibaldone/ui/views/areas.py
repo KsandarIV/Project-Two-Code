@@ -135,6 +135,8 @@ class AreaScreen:
         controls.append(self._score(page))
         controls.append(self._todos(page))
         controls.append(self._goals(page))
+        if page.people:
+            controls.append(self._people(page))
         controls.append(self._entries(page))
         if page.upcoming:
             controls.append(W.section_label(f"In arrivo per {page.label.lower()}"))
@@ -225,6 +227,19 @@ class AreaScreen:
         if not page.goals:
             rows.append(W.body("Nessun obiettivo in quest'area. Un obiettivo ha i suoi passi, che compaiono anche tra le cose da fare.", dim=True))
         return W.panel(ft.Column(rows, spacing=8))
+
+    def _people(self, page: vm.AreaPage) -> ft.Control:
+        rows: List[ft.Control] = [W.body(f"Persone ({len(page.people)})", size=16, weight=ft.FontWeight.W_600)]
+        for person in page.people:
+            line = " · ".join(part for part in (person.roles, person.contact) if part)
+            right: List[ft.Control] = [W.pill("da sentire", T.ACCENT_2, icon="WAVING_HAND")] if person.due else []
+            rows.append(
+                ft.Container(
+                    ft.Row([ft.Column([W.body(person.name, size=15, weight=ft.FontWeight.W_600), W.caption(line)], spacing=0, expand=True), *right], spacing=8),
+                    on_click=lambda _, person_id=person.id: self.ctx.go(f"/persone/{person_id}"),
+                )
+            )
+        return W.panel(ft.Column(rows, spacing=10))
 
     def _entries(self, page: vm.AreaPage) -> ft.Control:
         rows: List[ft.Control] = [W.body(f"Le voci dell'area ({page.total})", size=16, weight=ft.FontWeight.W_600)]

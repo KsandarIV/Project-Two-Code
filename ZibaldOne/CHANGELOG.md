@@ -4,6 +4,19 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.2.1] — 2026-10-17
+### Aggiunto
+- **Persone complete** (Agorà): legame e ruoli di base o tuoi (madre, capo, medico …) che mettono la persona nelle aree giuste da soli; telefono ed email controllati mentre li scrivi; social; "ogni quanto sentirvi".
+- Contatti: ogni Simposio con la persona, con il nuovo blocco **Come** (chiamata, messaggi, uscita, visita …); ultimo contatto, ritmo medio e chi è "da sentire", in parole neutre e senza notifiche.
+- **Tutto di Marco**: la pagina di una persona (`/persone/<id>`) con contatti, segna-contatto al volo (Chiamata, Messaggi, Di persona) e tutte le voci che la collegano, raggruppate per area; dalla voce Persona e dal nuovo riquadro **Persone** nelle pagine delle aree.
+- `zbone persona` (`list`, `show`, `sentito`).
+- Blocco testo: opzione `format` (`email`, `telefono`).
+### Cambiato
+- Agorà · Persone 1.2.0: L'Altro ha Ruoli, Telefono, Email, Social e Ogni quanto sentirvi ("Ruolo" ora si chiama Legame); Simposio ha Come. Le voci di prima restano valide.
+- L'area del modello vale solo quando una voce non ne ha altre; l'indice delle aree si ricostruisce da solo all'apertura. Nei CSV la colonna `area` è l'area principale della voce.
+### Documentazione
+- [Le persone](docs/tecnica/persone.md); guida rapida, aree, blocchi, roadmap, requisiti e ADR-0011 aggiornati.
+
 ## [0.2.0] — 2026-10-17
 ### Aggiunto
 - **Le 8 aree della vita** (Eudaimonia) come concetto dell'app: ogni modello e ogni voce può appartenere a un'area (Personale, Salute, Finanze, Famiglia, Sociale, Lavoro, Studio, Svago). L'area della voce vince su quella del modello; un blocco etichette `aree` mette una voce in più aree.

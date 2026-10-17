@@ -130,6 +130,30 @@ class BlockType:
 
 # — v0.0.3 base blocks —
 
+# 0.2.1: a short text can be a contact, checked as it is written.
+TEXT_FORMATS = ("email", "telefono")
+EMAIL = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s.]{2,}$")
+PHONE_CHARS = re.compile(r"^\+?[0-9 ().\-/]+$")
+
+
+def _format_option(value: Any, name: str) -> str:
+    if value not in TEXT_FORMATS:
+        raise ValueError(f"l'opzione '{name}' è uno tra: {', '.join(TEXT_FORMATS)}")
+    return value
+
+
+def check_text_format(text: str, kind: str) -> str:
+    """An email or a phone number as the user wrote it, or an Italian ValueError."""
+    if kind == "email":
+        if not EMAIL.match(text):
+            raise ValueError(f"'{text}' non sembra un'email (per esempio nome@esempio.it)")
+        return text
+    if kind == "telefono":
+        digits = sum(char.isdigit() for char in text)
+        if not PHONE_CHARS.match(text) or not 5 <= digits <= 15:
+            raise ValueError(f"'{text}' non sembra un numero di telefono (per esempio +39 333 123 4567)")
+    return text
+
 
 class TextBlock(BlockType):
     name = "text"
@@ -137,7 +161,7 @@ class TextBlock(BlockType):
     description = "una riga di testo, per esempio un titolo"
     nickname = "Aforisma"
     nickname_source = "il pensiero breve: Ippocrate, Leopardi, Nietzsche"
-    options = {"max_length": _int_option, "placeholder": _str_option}
+    options = {"max_length": _int_option, "placeholder": _str_option, "format": _format_option}
 
     def normalize(self, value: Any, options: Dict[str, Any]) -> str:
         if not isinstance(value, str):
@@ -146,6 +170,8 @@ class TextBlock(BlockType):
         limit = options.get("max_length", 300)
         if len(text) > limit:
             raise ValueError(f"testo troppo lungo (massimo {limit} caratteri)")
+        if text and options.get("format"):
+            check_text_format(text, options["format"])
         return text
 
 
@@ -155,6 +181,7 @@ class LongTextBlock(TextBlock):
     description = "riflessioni, note, recensioni, su più righe"
     nickname = "Saggio"
     nickname_source = "Montaigne, Saggi (1580): scrivere per provarsi"
+    options = {"max_length": _int_option, "placeholder": _str_option}
 
     def normalize(self, value: Any, options: Dict[str, Any]) -> str:
         if not isinstance(value, str):

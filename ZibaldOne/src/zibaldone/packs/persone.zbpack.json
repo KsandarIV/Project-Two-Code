@@ -2,10 +2,10 @@
   "format": 1,
   "id": "zibaldone.persone",
   "name": "Agorà · Persone",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "ZibaldOne",
   "license": "CC0-1.0",
-  "description": "La piazza dove ci si incontra: le persone della tua vita e i momenti con loro. Niente dati sensibili come documenti o salute.",
+  "description": "La piazza dove ci si incontra: le persone della tua vita, i loro ruoli e contatti, e i momenti con loro. Niente dati sensibili come documenti o salute.",
   "required_blocks": [
     "choice",
     "date",
@@ -33,7 +33,7 @@
         {
           "key": "ruolo",
           "type": "choice",
-          "label": "Ruolo",
+          "label": "Legame",
           "options": {
             "choices": [
               "Famiglia",
@@ -44,6 +44,43 @@
               "Altro"
             ]
           }
+        },
+        {
+          "key": "ruoli",
+          "type": "tags",
+          "label": "Ruoli",
+          "options": {
+            "suggestions": [
+              "madre",
+              "padre",
+              "fratello",
+              "sorella",
+              "partner",
+              "figlio",
+              "figlia",
+              "nonno",
+              "nonna",
+              "cugino",
+              "cugina",
+              "amico",
+              "amica",
+              "migliore amico",
+              "migliore amica",
+              "vicino di casa",
+              "collega",
+              "capo",
+              "cliente",
+              "socio",
+              "professore",
+              "compagno di corso",
+              "mentore",
+              "medico",
+              "allenatore",
+              "commercialista",
+              "compagno di squadra"
+            ]
+          },
+          "help": "madre, collega, medico… o un ruolo tuo"
         },
         {
           "key": "aree",
@@ -63,9 +100,48 @@
           }
         },
         {
+          "key": "telefono",
+          "type": "text",
+          "label": "Telefono",
+          "options": {
+            "format": "telefono",
+            "placeholder": "+39 333 123 4567"
+          }
+        },
+        {
+          "key": "email",
+          "type": "text",
+          "label": "Email",
+          "options": {
+            "format": "email",
+            "placeholder": "nome@esempio.it"
+          }
+        },
+        {
+          "key": "social",
+          "type": "tags",
+          "label": "Social",
+          "help": "per esempio instagram: @marco"
+        },
+        {
           "key": "compleanno",
           "type": "date",
           "label": "Compleanno"
+        },
+        {
+          "key": "frequenza",
+          "type": "choice",
+          "label": "Ogni quanto sentirvi",
+          "options": {
+            "choices": [
+              "Ogni settimana",
+              "Ogni due settimane",
+              "Ogni mese",
+              "Ogni tre mesi",
+              "Ogni sei mesi",
+              "Ogni anno"
+            ]
+          }
         },
         {
           "key": "note",
@@ -73,7 +149,7 @@
           "label": "Note"
         }
       ],
-      "description": "Una persona della tua vita: famiglia, amici, lavoro. Levinas, Totalità e infinito (1961).",
+      "description": "Una persona della tua vita: famiglia, amici, lavoro, con i suoi ruoli e i contatti. Levinas, Totalità e infinito (1961).",
       "icon": "PERSON",
       "color": "#FF5500",
       "category": "persone",
@@ -88,6 +164,23 @@
           "type": "text",
           "label": "Titolo",
           "required": true
+        },
+        {
+          "key": "tipo",
+          "type": "choice",
+          "label": "Come",
+          "options": {
+            "choices": [
+              "Di persona",
+              "Uscita",
+              "Visita",
+              "Chiamata",
+              "Videochiamata",
+              "Messaggi",
+              "Evento",
+              "Altro"
+            ]
+          }
         },
         {
           "key": "con",
@@ -130,7 +223,7 @@
           }
         }
       ],
-      "description": "Un incontro, un momento passato con qualcuno. Platone, Simposio.",
+      "description": "Un incontro, una chiamata, un momento passato con qualcuno. Platone, Simposio.",
       "icon": "GROUPS",
       "color": "#FF5500",
       "category": "persone",

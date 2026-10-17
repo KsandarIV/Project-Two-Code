@@ -33,7 +33,7 @@ Le richieste della vecchia Journal App: [requisiti della fase 0.2](requisiti-v0.
 | Versione | Capacità | Stato |
 |---|---|---|
 | v0.2.0 | **Le 8 aree della vita** come concetto dell'app: area di modelli e voci, punteggio nel tempo, cose da fare, obiettivi, check-in e note per area ([le 8 aree](aree.md), [ADR-0011](../decisioni/ADR-0011-aree-della-vita.md)); registro dei temi | ✅ |
-| v0.2.1 | **Persone complete**: più aree, ruoli, contatti, incontri, ultimo contatto | |
+| v0.2.1 | **Persone complete**: più aree, ruoli, contatti, incontri, ultimo contatto ([le persone](persone.md)) | ✅ |
 | v0.2.2 | **Albero genealogico e rete sociale** | |
 | v0.2.3 | **Dati sensibili cifrati e diario segreto** | |
 | v0.2.4 | **Media**: foto, video, audio e documenti | |

@@ -15,6 +15,7 @@ from zibaldone.cli.entry_cmd import entry_app
 from zibaldone.cli.export_cmd import export_app
 from zibaldone.cli.graph_cmd import graph_command
 from zibaldone.cli.pack_cmd import pack_app
+from zibaldone.cli.person_cmd import person_app
 from zibaldone.cli.privacy_cmd import data_app, privacy_app
 from zibaldone.cli.remind_cmd import remind_app
 from zibaldone.cli.search_cmd import SEARCH_CONTEXT, links_command, search_command
@@ -41,6 +42,7 @@ app.add_typer(cloud_app, name="cloud")
 app.add_typer(remind_app, name="remind")
 app.add_typer(anon_app, name="anon")
 app.add_typer(area_app, name="area")
+app.add_typer(person_app, name="persona")
 app.command("update")(check_updates)
 app.command("search", context_settings=SEARCH_CONTEXT)(search_command)
 app.command("links")(links_command)
