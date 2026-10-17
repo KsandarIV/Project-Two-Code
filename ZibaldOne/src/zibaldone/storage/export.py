@@ -1,12 +1,13 @@
 """Export every entry to formats other programs read: Markdown and CSV, zipped.
 
 - **Markdown** (Obsidian friendly): one folder per template, one `.md` per
-  entry named `<day> <title>.md`, YAML front matter (template, day, id, tags,
-  created_at, updated_at) and one `##` section per filled block, written with
-  the block's `to_text`. Links to other entries become `[[wikilinks]]`.
+  entry named `<day> <title>.md`, YAML front matter (template, day, id, areas
+  when it has some, tags, created_at, updated_at) and one `##` section per
+  filled block, written with the block's `to_text`. Links to other entries
+  become `[[wikilinks]]`.
 - **CSV** (for spreadsheets and pandas): one `<template>.csv` per template,
-  UTF-8 with BOM (Excel reads the accents), columns id, day, created_at,
-  updated_at and then the block keys. Numbers and texts are written as they
+  UTF-8 with BOM (Excel reads the accents), columns id, day, area (the entry's
+  own, else its template's), created_at, updated_at and then the block keys. Numbers and texts are written as they
   are, lists and objects as JSON, so nothing is lost.
 
 `markdown_files` and `csv_files` only read the Store; `export_*` write the zip.
@@ -24,13 +25,14 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple
 
+from zibaldone.core.areas import entry_areas, own_area
 from zibaldone.core.templates import BlockSpec, Entry, Template
 from zibaldone.storage.database import Store
 
 UNSAFE_NAME_CHARS = re.compile(r'[\\/:*?"<>|#^\[\]\x00-\x1f]')  # Windows and Obsidian links
 WINDOWS_RESERVED_NAMES = {"CON", "PRN", "AUX", "NUL", *(f"COM{n}" for n in range(1, 10)), *(f"LPT{n}" for n in range(1, 10))}
 MAX_NAME_LENGTH = 80
-CSV_BASE_COLUMNS = ("id", "day", "created_at", "updated_at")
+CSV_BASE_COLUMNS = ("id", "day", "area", "created_at", "updated_at")
 CSV_ENCODING = "utf-8-sig"
 
 
@@ -125,11 +127,13 @@ def _block_text(block: BlockSpec, value: Any, links: Dict[str, Tuple[str, str]])
 def entry_markdown(entry: Entry, template: Template, links: Dict[str, Tuple[str, str]]) -> str:
     """One entry as Markdown; `links` maps entry ids to (path, title) for wikilinks."""
     tags = ", ".join(_yaml_string(tag) for tag in _tags(entry, template))
+    areas = entry_areas(entry, template)
     lines = [
         "---",
         f"template: {template.slug}",
         f"day: {entry.day}",
         f"id: {_yaml_string(entry.id)}",
+        *([f"areas: [{', '.join(_yaml_string(area) for area in areas)}]"] if areas else []),
         f"tags: [{tags}]",
         f"created_at: {_yaml_string(entry.created_at)}",
         f"updated_at: {_yaml_string(entry.updated_at)}",
@@ -175,7 +179,7 @@ def template_csv(template: Template, entries: List[Entry]) -> str:
     writer = csv.writer(buffer)
     writer.writerow(columns)
     for entry in entries:
-        writer.writerow([entry.id, entry.day, entry.created_at, entry.updated_at, *(_csv_value(entry.values.get(key)) for key in keys)])
+        writer.writerow([entry.id, entry.day, own_area(entry, template), entry.created_at, entry.updated_at, *(_csv_value(entry.values.get(key)) for key in keys)])
     return buffer.getvalue()
 
 

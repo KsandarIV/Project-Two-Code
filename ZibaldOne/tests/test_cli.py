@@ -29,5 +29,5 @@ def test_quote_and_about() -> None:
     quote = runner.invoke(app, ["pensiero"])
     assert quote.exit_code == 0 and "«" in quote.output
     about = runner.invoke(app, ["about"])
-    for name in ("Leopy", "Hegy", "Archy", "Monty", "Diogy", "Mandy", "Aristy", "Hobby", "Velo d'ignoranza"):
+    for name in ("Leopy", "Hegy", "Archy", "Monty", "Diggy", "Mandy", "Ary", "Hobbsy", "Velo d'ignoranza"):
         assert name in about.output

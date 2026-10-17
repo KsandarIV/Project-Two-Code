@@ -5,7 +5,7 @@ Fonte: i documenti della vecchia Journal App in `GitHubRepository/Personal Proje
 ## Sprint v0.2
 | Versione | Capacità | Da quale richiesta |
 |---|---|---|
-| v0.2.0 | **Le 8 aree della vita come concetto dell'app**: ogni modello e ogni voce può appartenere a un'area (Personale, Salute, Finanze, Famiglia, Sociale, Lavoro, Studio, Svago); per ogni area check-in, note, obiettivi, to-do e punteggio 0-10 nel tempo | Manifest "Aspetti della vita", Checklist 1.1.5–1.1.7 |
+| v0.2.0 ✅ | **Le 8 aree della vita come concetto dell'app** ([le 8 aree](aree.md)): ogni modello e ogni voce può appartenere a un'area (Personale, Salute, Finanze, Famiglia, Sociale, Lavoro, Studio, Svago); per ogni area check-in, note, obiettivi, to-do e punteggio 0-10 nel tempo | Manifest "Aspetti della vita", Checklist 1.1.5–1.1.7 |
 | v0.2.1 | **Persone complete**: una persona può stare in più aree (famiglia, sociale, lavoro, finanze) con ruoli base e personalizzati, contatti strutturati, eventi di interazione (chiamata, uscita …), data dell'ultimo contatto e frequenza; "Mostrami tutto di Marco" su tutte le aree | Architecture "Person-centric", Work_Person, Finance_Person |
 | v0.2.2 | **Albero genealogico e rete sociale**: relazioni tipizzate tra persone (genitore di, fratello di, conosce, collega di), vista ad albero per la famiglia e a rete per gli amici, contatti in comune, forza della relazione | Architecture "Family tree", "Social network", Query 2–3 |
 | v0.2.3 | **Dati sensibili cifrati e diario segreto**: blocchi segreti cifrati con la chiave dell'utente (documenti, indirizzi, note mediche), livelli di sicurezza, sblocco con PIN o impronta, voci segrete escluse da ricerca e IA | Manifest "Security Layers", Checklist fase 6 |

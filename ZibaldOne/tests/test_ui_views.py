@@ -140,6 +140,7 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
         "/collezioni", "/modelli", "/modelli/nuovo", "/modelli/libro", "/modelli/nonesiste", "/scuole", "/organon",
         "/benvenuto/consenso", "/benvenuto/accesso", "/benvenuto/copie", "/benvenuto/diario", "/scrivi/nonesiste",
         "/grafo", f"/grafo/{known['persona']}", "/grafo/nonesiste", "/theoria",
+        "/aree", "/aree/salute", "/aree/svago", "/scrivi/checkin_area/salute", "/scrivi/riflessione/lavoro",
     ]
     paths += [f"/scrivi/{slug}" for slug in ("sera", "aree", "mattina", "libro", "serie", "incontro", "persona", "desiderio")]
     paths += [f"/organon/{part}" for part in ("parresia", "daimon", "mnemosyne", "nuvole", "velo", "info")]
@@ -152,7 +153,7 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
 
 def test_screens_cover_every_route_kind() -> None:
     assert ONBOARDING_SCREENS <= set(SCREENS)
-    assert {"oggi", "voci", "voce", "scrivi", "modifica", "collezioni", "modelli", "modello", "scuole", "grafo", "theoria", "organon", "parte"} <= set(SCREENS)
+    assert {"oggi", "voci", "voce", "scrivi", "modifica", "collezioni", "modelli", "modello", "scuole", "grafo", "theoria", "aree", "area", "organon", "parte"} <= set(SCREENS)
 
 
 def test_missing_entry_and_template_say_so_gently(ready: Path) -> None:
@@ -180,6 +181,7 @@ def test_first_run_consent_then_diary_then_today(folder: Path) -> None:
     assert shell.current.screen == "oggi"
     with Store.open(folder) as store:
         assert store.find_template("sera") is not None
+        assert store.find_template("checkin_area") is not None  # 0.2.0: the areas pack comes along
     assert shell.rail is not None and shell.rail.selected_index == 0
 
 
@@ -434,3 +436,104 @@ def test_trying_the_anonymizer_from_organon(ready: Path) -> None:
     assert any(text.startswith("Sostituzioni (2)") for text in shown)
     click(button(screen, "Usa l'ultima voce"))
     assert field.value
+
+
+# * — 0.2.0: the 8 areas —
+
+
+def find(control: Any, kind: type, **attributes: Any) -> Any:
+    for item in walk(control):
+        if isinstance(item, kind) and all(getattr(item, name, None) == value for name, value in attributes.items()):
+            return item
+    raise LookupError(f"no {kind.__name__} with {attributes}")
+
+
+def with_areas_pack(folder: Path) -> None:
+    with Store.open(folder) as store:
+        apply_install(plan_install(find_builtin_pack("aree"), store), store)
+
+
+def test_the_areas_from_oggi_with_to_dos_and_coming_soon(ready: Path) -> None:
+    with_areas_pack(ready)
+    with Store.open(ready) as store:
+        store.add_entry("aree", {"salute": 7, "lavoro": 4})
+        store.add_entry("obiettivo", {"titolo": "Correre 10 km", "passi": ["5 km"]}, area="salute")
+    shell = Shell(FakePage(), ready)
+    shell.start("/oggi")
+    click(button(shell.body.content, "Aree"))
+    assert shell.current.path == "/aree"
+    shown = texts(shell.body.content)
+    assert "Le otto aree" in shown and "Diggy" in shown and "7/10" in shown
+    assert "IN ARRIVO PER TUTTE LE AREE" in shown and "Maieutica" in shown and "In arrivo · dopo la 1.0" in shown
+    card = next(item for item in walk(shell.body.content) if getattr(item, "on_click", None) and "Salute" in texts(item) and "Diggy" in texts(item))
+    click(card)
+    assert shell.current.path == "/aree/salute" and shell.section_key == "oggi"
+    shown = texts(shell.body.content)
+    assert "Correre 10 km" in shown and "5 km" in shown and "Da fare (1)" in shown
+    assert "IN ARRIVO PER SALUTE" in shown and "Note mediche protette" in shown and "In arrivo · versione 0.2.3" in shown
+    field = find(shell.body.content, ft.TextField, hint_text="Che cosa c'è da fare?")
+    field.value = "prenotare il dentista"
+    click(button(shell.body.content, "Aggiungi"))
+    assert "Aggiunto alle cose da fare." in shell.ctx.toasts
+    assert "Da fare (2)" in texts(shell.body.content)
+    box = next(item for item in walk(shell.body.content) if isinstance(item, ft.Checkbox))
+    box.on_change(SimpleNamespace(control=SimpleNamespace(value=True)))
+    assert "Fatto: 5 km." in shell.ctx.toasts and "Da fare (1)" in texts(shell.body.content)
+    with Store.open(ready) as store:
+        goal = store.list_entries(template="obiettivo")[0]
+        assert goal.values["passi"] == [{"text": "5 km", "done": True}]
+
+
+def test_an_area_check_in_starts_in_its_area(ready: Path) -> None:
+    with_areas_pack(ready)
+    shell = Shell(FakePage(), ready)
+    shell.start("/aree/lavoro")
+    click(button(shell.body.content, "Check-in"))
+    assert shell.current.path == "/scrivi/checkin_area/lavoro"
+    menu = find(shell.body.content, ft.Dropdown, label="Area della vita")
+    assert menu.value == "lavoro"
+    click(button(shell.body.content, "Salva"))
+    assert shell.current.screen == "voce"
+    with Store.open(ready) as store:
+        assert store.get_entry(shell.current.arg).area == "lavoro"
+    assert any(text == "Lavoro" for text in texts(shell.body.content))  # the area chip on the entry
+
+
+def test_a_check_in_without_area_asks_for_one(ready: Path) -> None:
+    with_areas_pack(ready)
+    shell = Shell(FakePage(), ready)
+    shell.start("/scrivi/checkin_area")
+    form = shell.body.content
+    click(button(form, "Salva"))
+    assert shell.current.screen == "scrivi"
+    assert any(isinstance(item, ft.Text) and item.visible and item.value == "scegli l'area di questo check-in" for item in walk(form))
+    menu = find(form, ft.Dropdown, label="Area della vita")
+    menu.value = "studio"
+    menu.on_select(SimpleNamespace(control=menu))
+    click(button(form, "Salva"))
+    assert shell.current.screen == "voce"
+
+
+def test_an_area_page_offers_the_missing_pack(ready: Path) -> None:
+    shell = Shell(FakePage(), ready)
+    shell.start("/aree/finanze")
+    assert any("Liceo · Aree" in text for text in texts(shell.body.content))
+    click(button(shell.body.content, "Installa «Liceo · Aree»"))
+    assert "Liceo · Aree installato: 3 modelli." in shell.ctx.toasts
+    assert button(shell.body.content, "Check-in")
+
+
+def test_entries_by_area_and_the_area_of_a_template(ready: Path) -> None:
+    known = ids(ready)
+    shell = Shell(FakePage(), ready)
+    shell.start(f"/voci/{known['libro']}")
+    assert "Svago" in texts(shell.body.content)  # Libro belongs to svago
+    shell.navigate("/voci")
+    menu = find(shell.body.content, ft.Dropdown, label="Area")
+    menu.value = "svago"
+    menu.on_select(SimpleNamespace(control=menu))
+    shown = texts(shell.body.content)
+    assert "Ficciones" in shown and "Cena" not in shown and "1 voce" in shown
+    shell.navigate("/modelli/libro")
+    editor_menu = find(shell.body.content, ft.Dropdown, label="Area della vita delle sue voci")
+    assert editor_menu.value == "svago"

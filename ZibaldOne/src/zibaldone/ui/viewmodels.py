@@ -12,6 +12,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
+from zibaldone.core import areas as eudaimonia
 from zibaldone.core.blocks import BLOCK_TYPES, PROGRESS_STATUSES, is_number
 from zibaldone.core.brand import AREAS, MASCOTS, Mascot, Quote, mascot_for, quote_of_the_day
 from zibaldone.core.packs import InstallPlan, Pack, build_pack, write_pack_file
@@ -151,6 +152,7 @@ class EntryQuery:
     day_from: str = ""
     day_to: str = ""
     text: str = ""
+    area: str = ""  # 0.2.0
 
 
 def list_entry_rows(store: Any, query: EntryQuery, today: date, limit: int = 300) -> List[EntryRow]:
@@ -162,7 +164,7 @@ def list_entry_rows(store: Any, query: EntryQuery, today: date, limit: int = 300
     rows: List[EntryRow] = []
     if text:
         # every block, best match first; the summary becomes the piece of text that matched
-        found = store.search(text, template=query.template or None, since=day_from, until=day_to, limit=limit)
+        found = store.search(text, template=query.template or None, since=day_from, until=day_to, limit=limit, area=query.area or None)
         for hit in found.hits:
             template = templates.get(hit.entry.template)
             if template is None:
@@ -170,7 +172,7 @@ def list_entry_rows(store: Any, query: EntryQuery, today: date, limit: int = 300
             row = entry_row(hit.entry, template, today)
             rows.append(replace(row, summary=hit.snippet.text) if hit.snippet else row)
         return rows
-    for entry in store.list_entries(template=query.template or None, day_from=day_from, day_to=day_to):
+    for entry in store.list_entries(template=query.template or None, day_from=day_from, day_to=day_to, area=query.area or None):
         template = templates.get(entry.template)
         if template is None:
             continue
@@ -347,6 +349,8 @@ class EntryDetail:
     # 0.1.2: who links here and who names it without a link ("tutto su Marco")
     backlinks: Tuple["RelatedEntry", ...] = ()
     mentions: Tuple["RelatedEntry", ...] = ()
+    # 0.2.0: the life areas of the entry (key, label, color)
+    areas: Tuple[Tuple[str, str, str], ...] = ()
 
     @property
     def has_own_title(self) -> bool:
@@ -420,6 +424,7 @@ def entry_detail(store: Any, entry_id: str, today: date, mentions: int = 10) -> 
         blocks=tuple(blocks),
         backlinks=backlinks,
         mentions=named,
+        areas=tuple((key, eudaimonia.area_label(key), eudaimonia.AREA_BY_KEY[key].color) for key in eudaimonia.entry_areas(entry, template)),
     )
 
 
@@ -513,9 +518,10 @@ CATEGORY_LABELS: Dict[str, str] = {
     "collezioni": "Collezioni · Museion",
     "io": "Io · Delfi",
     "persone": "Persone · Agorà",
+    "aree": "Aree · Liceo",
     "": "I tuoi modelli",
 }
-CATEGORY_ORDER = ("diario", "collezioni", "io", "persone")
+CATEGORY_ORDER = ("diario", "aree", "collezioni", "io", "persone")
 
 
 @dataclass(frozen=True)
@@ -731,6 +737,7 @@ class EditorState:
     title_block: str = ""
     origin: Dict[str, str] = field(default_factory=dict)
     version: int = 1
+    area: str = ""  # 0.2.0
 
     @property
     def is_new(self) -> bool:
@@ -749,6 +756,7 @@ def editor_from_template(template: Template) -> EditorState:
         title_block=template.title_block,
         origin=dict(template.origin),
         version=template.version,
+        area=template.area,
     )
 
 
@@ -778,6 +786,7 @@ def template_from_editor(state: EditorState, slug: str) -> Template:
         title_block=state.title_block if state.title_block in keys else "",
         origin=dict(state.origin),
         version=state.version,
+        area=state.area,
     )
     return template.validate()
 
@@ -1297,4 +1306,217 @@ def latest_entry_text(store: Any, limit: int = 4000) -> str:
                     parts.append(plain_text(text))
         if parts:
             return "\n".join(parts)[:limit]
+    return ""
+
+
+# * — 0.2.0: Eudaimonia, the 8 life areas —
+
+NO_AREA = "-"  # dropdown key for "no area of its own" (Flet options need a non-empty key)
+TREND_LABELS = {"su": "in salita", "giù": "in discesa", "stabile": "stabile"}
+TREND_ICONS = {"su": "TRENDING_UP", "giù": "TRENDING_DOWN", "stabile": "TRENDING_FLAT"}
+
+
+def area_options(inherited: str = "", inherited_label: str = "Area del modello") -> List[Tuple[str, str]]:
+    """Dropdown choices: 'from the template' (or 'none'), then the 8 areas."""
+    first = f"{inherited_label}: {eudaimonia.area_label(inherited)}" if inherited else "Nessuna area"
+    return [(NO_AREA, first)] + [(area.key, area.label) for area in eudaimonia.AREA_LIST]
+
+
+def area_from_option(value: Optional[str]) -> str:
+    return "" if value in (None, "", NO_AREA) else eudaimonia.parse_area(value)
+
+
+@dataclass(frozen=True)
+class UpcomingRow:
+    title: str
+    teaser: str
+    when: str
+
+
+def upcoming_rows(area: str = "") -> Tuple[UpcomingRow, ...]:
+    return tuple(UpcomingRow(item.title, item.teaser, item.when) for item in eudaimonia.upcoming_for(area))
+
+
+@dataclass(frozen=True)
+class AreaCard:
+    key: str
+    label: str
+    covers: str
+    color: str
+    mascot: Optional[Mascot]
+    score_label: str
+    fraction: Optional[float]
+    trend: Optional[str]
+    counts_label: str
+    upcoming: int  # features announced for this area
+
+    @property
+    def trend_label(self) -> str:
+        return TREND_LABELS.get(self.trend or "", "")
+
+    @property
+    def trend_icon(self) -> str:
+        return TREND_ICONS.get(self.trend or "", "")
+
+
+def _load_all(store: Any) -> Tuple[List[Entry], Dict[str, Template]]:
+    templates = {template.slug: template for template in store.list_templates()}
+    return store.list_entries(newest_first=False), templates
+
+
+def area_cards(store: Any, today: date) -> List[AreaCard]:
+    entries, templates = _load_all(store)
+    cards = []
+    for summary in eudaimonia.area_overview(entries, templates, today):
+        area = summary.area
+        score = summary.latest if summary.latest is not None else summary.average
+        cards.append(AreaCard(
+            key=area.key,
+            label=area.label,
+            covers=area.covers,
+            color=area.color,
+            mascot=area.mascot,
+            score_label=eudaimonia.score_text(score),
+            fraction=summary.fraction,
+            trend=summary.trend,
+            counts_label=summary.counts_label,
+            upcoming=len(eudaimonia.upcoming_for(area.key)),
+        ))
+    return cards
+
+
+def areas_pack_missing(store: Any) -> List[str]:
+    """Slugs of the areas-pack templates that are not installed (empty: all there)."""
+    wanted = (eudaimonia.CHECKIN_TEMPLATE, eudaimonia.GOAL_TEMPLATE, eudaimonia.TODO_TEMPLATE)
+    return [slug for slug in wanted if store.find_template(slug) is None]
+
+
+@dataclass(frozen=True)
+class WeekBar:
+    label: str
+    average: Optional[float]
+
+    @property
+    def fraction(self) -> Optional[float]:
+        return None if self.average is None else max(0.0, min(1.0, self.average / 10))
+
+
+@dataclass(frozen=True)
+class AreaTodoRow:
+    text: str
+    where: str
+    todo: Any  # core.areas.AreaTodo, needed to tick it
+
+
+@dataclass(frozen=True)
+class AreaGoalRow:
+    entry_id: str
+    title: str
+    meta: str
+    fraction: Optional[float]
+    active: bool
+
+
+@dataclass
+class AreaPage:
+    key: str
+    label: str
+    covers: str
+    color: str
+    mascot: Optional[Mascot]
+    score_label: str
+    score_note: str
+    trend: Optional[str]
+    weeks: Tuple[WeekBar, ...]
+    todos: Tuple[AreaTodoRow, ...]
+    goals: Tuple[AreaGoalRow, ...]
+    entries: Tuple[EntryRow, ...]
+    total: int
+    upcoming: Tuple[UpcomingRow, ...]
+    missing: Tuple[str, ...]  # areas-pack templates not installed
+    note_template: str  # where "Nuova nota" writes ('' when there is none)
+    template_names: Tuple[str, ...]  # templates whose entries go here by default
+
+    @property
+    def trend_label(self) -> str:
+        return TREND_LABELS.get(self.trend or "", "")
+
+    @property
+    def trend_icon(self) -> str:
+        return TREND_ICONS.get(self.trend or "", "")
+
+    @property
+    def has_scores(self) -> bool:
+        return any(week.average is not None for week in self.weeks)
+
+
+def goal_meta(goal: Any, today: date) -> str:
+    parts = [goal.status_label]
+    if goal.percent is not None:
+        parts.append(f"{goal.percent}%")
+    if goal.deadline is not None:
+        late = goal.active and goal.deadline < today
+        parts.append(("scaduto il " if late else "entro il ") + short_date(goal.deadline.isoformat(), today))
+    if goal.steps_total:
+        parts.append(f"{goal.steps_done}/{goal.steps_total} passi")
+    return " · ".join(parts)
+
+
+def area_page(store: Any, key: str, today: date, weeks: int = 12, recent: int = 12) -> AreaPage:
+    entries, templates = _load_all(store)
+    detail = eudaimonia.area_detail(entries, templates, key, today, weeks=weeks, recent=recent)
+    area, summary = detail.area, detail.summary
+    if summary.latest is not None:
+        when = short_date(summary.latest_day.isoformat(), today)
+        note = f"l'ultimo è di {when}" if when in ("oggi", "ieri") else f"l'ultimo è del {when}"
+        if summary.average is not None:
+            note += f" · media degli ultimi 30 giorni {eudaimonia.score_text(summary.average)}"
+    else:
+        note = "ancora nessun punteggio: fai un check-in"
+    bars = tuple(WeekBar(f"{point.start.day} {MONTHS_SHORT[point.start.month - 1]}", point.average) for point in detail.series)
+    todos = tuple(
+        AreaTodoRow(todo.text, short_date(todo.day.isoformat(), today) if todo.template == eudaimonia.TODO_TEMPLATE else f"{todo.source} · {short_date(todo.day.isoformat(), today)}", todo)
+        for todo in detail.todos
+    )
+    goals = tuple(
+        AreaGoalRow(goal.entry_id, goal.title, goal_meta(goal, today), None if goal.percent is None else goal.percent / 100, goal.active)
+        for goal in detail.goals
+    )
+    rows = tuple(entry_row(entry, templates[entry.template], today) for entry in detail.recent if entry.template in templates)
+    note_template = next((slug for slug in ("riflessione", "nota") if slug in templates), "")
+    return AreaPage(
+        key=area.key,
+        label=area.label,
+        covers=area.covers,
+        color=area.color,
+        mascot=area.mascot,
+        score_label=eudaimonia.score_text(summary.latest),
+        score_note=note,
+        trend=summary.trend,
+        weeks=bars,
+        todos=todos,
+        goals=goals,
+        entries=rows,
+        total=summary.total,
+        upcoming=upcoming_rows(area.key),
+        missing=tuple(areas_pack_missing(store)),
+        note_template=note_template,
+        template_names=tuple(templates[slug].name for slug in detail.templates),
+    )
+
+
+def install_areas_pack(store: Any) -> int:
+    """Install (or update) the «Liceo · Aree» pack; returns how many templates changed."""
+    from zibaldone.core.packs import apply_install, find_builtin_pack, plan_install
+
+    pack = find_builtin_pack(eudaimonia.AREAS_PACK)
+    if pack is None:
+        return 0
+    return len(apply_install(plan_install(pack, store), store))
+
+
+def entry_area_problem(template: Template, area: str) -> str:
+    """A check-in needs an area: the message to show when it has none."""
+    if template.slug == eudaimonia.CHECKIN_TEMPLATE and not (area or template.area):
+        return "scegli l'area di questo check-in"
     return ""

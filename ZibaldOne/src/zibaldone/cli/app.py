@@ -8,6 +8,7 @@ from zibaldone import __version__
 from zibaldone.core.brand import APP_MOTTO, APP_NAME, APP_TAGLINE, MASCOTS, NOMENCLATURE, quote_of_the_day
 from zibaldone.cli.account_cmd import account_app, cloud_app
 from zibaldone.cli.anon_cmd import anon_app
+from zibaldone.cli.area_cmd import area_app
 from zibaldone.cli.backup_cmd import backup_app
 from zibaldone.cli.common import fail
 from zibaldone.cli.entry_cmd import entry_app
@@ -39,6 +40,7 @@ app.add_typer(account_app, name="account")
 app.add_typer(cloud_app, name="cloud")
 app.add_typer(remind_app, name="remind")
 app.add_typer(anon_app, name="anon")
+app.add_typer(area_app, name="area")
 app.command("update")(check_updates)
 app.command("search", context_settings=SEARCH_CONTEXT)(search_command)
 app.command("links")(links_command)

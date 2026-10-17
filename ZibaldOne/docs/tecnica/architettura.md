@@ -36,6 +36,13 @@ Diario, Collezioni, Documenti, Finanze, Password, Grafo, Raccomandazioni: ognuno
 - Le migrazioni possono avere un passo in Python dopo l'SQL (`BACKFILLS`), dentro la stessa transazione: la 2 riempie gli indici.
 - Dettagli: [ricerca e collegamenti](ricerca-e-collegamenti.md).
 
+## Le 8 aree (dalla 0.2.0)
+- Migrazione 3: colonna `area` in `entries` e indice `entry_areas` (voce, area), scritto con gli altri indici a ogni salvataggio. L'area di una voce è la sua, altrimenti quella del modello, più quelle del blocco etichette `aree` ([le 8 aree](aree.md), [ADR-0011](../decisioni/ADR-0011-aree-della-vita.md)).
+- `core/areas.py` ricava punteggi, cose da fare e obiettivi dalle voci, senza tabelle proprie.
+
+## Temi (dalla 0.2.0)
+- `core/brand.py` tiene un registro di temi (`Theme`: nomi, mascotte, citazioni). Filosofia è il tema di base e i nomi pubblici di prima (`NOMENCLATURE`, `MASCOTS`, `QUOTES`, `mascot_for` …) puntano a lui. Le 8 aree non fanno parte del tema: ogni tema deve avere una mascotte per area.
+
 ## Backup (dalla 0.0.6)
 - Istantanee complete in `backups/` nella cartella dati, una al giorno in automatico dopo un comando che salva dati, più quelle a mano. `cli/common.open_store()` le avvia: prima di un aggiornamento dello schema e dopo un comando che ha cambiato qualcosa.
 - Formato, durata e ripristino: [storia e backup](backup.md).

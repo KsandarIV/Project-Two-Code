@@ -157,7 +157,10 @@ def copies(ctx: AppContext, route: Route) -> ft.Control:
 
 def diario(ctx: AppContext, route: Route) -> ft.Control:
     pack = find_builtin_pack("diario")
+    extra = find_builtin_pack("aree")  # 0.2.0: check-in of one area, goals and to-dos come along
     names: List[ft.Control] = [W.pill(template.name) for template in pack.templates] if pack else []
+    if extra is not None:
+        names += [W.pill(template.name, T.ACCENT) for template in extra.templates]
 
     def later(_: Any) -> None:
         services.save_ui_settings(ctx.folder, diario_suggested=True)
@@ -170,6 +173,8 @@ def diario(ctx: AppContext, route: Route) -> ft.Control:
         try:
             with ctx.store() as store:
                 installed = apply_install(plan_install(pack, store), store)
+                if extra is not None:
+                    installed += apply_install(plan_install(extra, store), store)
         except (StoreError, ValueError) as problem:
             ctx.toast(str(problem), error=True)
             return
@@ -186,6 +191,7 @@ def diario(ctx: AppContext, route: Route) -> ft.Control:
                 ft.Column(
                     [
                         W.body(pack.description if pack else ""),
+                        W.body(f"Insieme arriva «{extra.name}»: il check-in di una sola area, gli obiettivi e le cose da fare di ogni area.", dim=True) if extra else ft.Container(),
                         ft.Row(names, wrap=True, spacing=6, run_spacing=6),
                         W.body("Puoi cambiarlo, toglierlo o aggiungere altre Scuole quando vuoi, da Modelli.", dim=True),
                     ],

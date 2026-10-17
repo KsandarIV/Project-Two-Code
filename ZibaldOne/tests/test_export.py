@@ -111,15 +111,15 @@ def test_csv_columns_and_values(store, filled) -> None:
     files = csv_files(store)
     assert sorted(files) == ["libro.csv", "persona.csv", "sera.csv", "vuoto.csv"]
     header, *rows = read_csv(files["libro.csv"])
-    assert header == ["id", "day", "created_at", "updated_at", "titolo", "voto", "generi", "note", "autore"]
+    assert header == ["id", "day", "area", "created_at", "updated_at", "titolo", "voto", "generi", "note", "autore"]
     by_id = {row[0]: row for row in rows}
     dune = filled["dune"]
     assert by_id[dune.id] == [
-        dune.id, "2026-10-01", dune.created_at, dune.updated_at, "Dune: parte 1/2", "4",
+        dune.id, "2026-10-01", "", dune.created_at, dune.updated_at, "Dune: parte 1/2", "4",
         '["fantascienza classica", "2026"]', "Riga uno\nRiga due", f'["{filled["herbert"].id}"]',
     ]
-    assert by_id[filled["copy"].id][4:] == ["Dune: parte 1/2", "", "", "", ""]
-    assert read_csv(files["vuoto.csv"]) == [["id", "day", "created_at", "updated_at", "x"]]
+    assert by_id[filled["copy"].id][5:] == ["Dune: parte 1/2", "", "", "", ""]
+    assert read_csv(files["vuoto.csv"]) == [["id", "day", "area", "created_at", "updated_at", "x"]]
 
 
 def test_csv_block_named_like_a_base_column(store) -> None:
@@ -144,3 +144,19 @@ def test_export_writes_zip_files(store, filled, tmp_path) -> None:
     with pytest.raises(ValueError, match="non esiste"):
         export_csv(store, tmp_path / "manca" / "csv.zip")
     assert not list(tmp_path.glob(".zbexport-*"))
+
+
+def test_areas_in_both_exports(store) -> None:
+    store.save_template(Template("corsa", "Corsa", [BlockSpec("km", "number", "Km")], area="salute"))
+    store.save_template(Template("amico", "Amico", [BlockSpec("nome", "text", "Nome"), BlockSpec("aree", "tags", "Aree")]))
+    run = store.add_entry("corsa", {"km": 5}, day="2026-10-03")
+    plain = store.add_entry("sera", {"umore": "Bene"}, day="2026-10-03")
+    friend = store.add_entry("amico", {"nome": "Lia", "aree": ["Lavoro"]}, day="2026-10-03", area="sociale")
+    texts = markdown_files(store)
+    assert 'areas: ["salute"]' in next(text for text in texts.values() if run.id in text)
+    assert 'areas: ["sociale", "lavoro"]' in next(text for text in texts.values() if friend.id in text)
+    assert "areas:" not in next(text for text in texts.values() if plain.id in text)
+    files = csv_files(store)
+    assert read_csv(files["corsa.csv"])[1][2] == "salute"
+    header, row = read_csv(files["amico.csv"])
+    assert (row[2], row[header.index("aree")]) == ("sociale", '["lavoro"]')

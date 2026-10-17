@@ -25,6 +25,7 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     actions: List[ft.Control] = [
         W.primary_button("Nuova voce", lambda _: choose_template(ctx), icon="ADD"),
         W.secondary_button("Statistiche", lambda _: ctx.go("/theoria"), icon="INSIGHTS"),
+        W.secondary_button("Aree", lambda _: ctx.go("/aree"), icon="DONUT_LARGE"),
     ]
     if model.streak_label:
         actions.append(W.pill(model.streak_label, T.ACCENT_2, icon="LOCAL_FIRE_DEPARTMENT"))
@@ -133,7 +134,11 @@ def _areas(ctx: AppContext, areas: vm.AreaCheckin) -> ft.Control:
                 [
                     avatars,
                     W.body("Come vanno oggi le otto aree della tua vita? Un tocco per ciascuna, senza pensarci troppo."),
-                    ft.Row([W.primary_button("Fai il check-in", lambda _: ctx.go("/scrivi/aree"), icon="DONUT_LARGE")], alignment=ft.MainAxisAlignment.END),
+                    ft.Row(
+                        [W.text_button("Le otto aree", lambda _: ctx.go("/aree"), icon="DONUT_LARGE"), W.primary_button("Fai il check-in", lambda _: ctx.go("/scrivi/aree"), icon="DONUT_LARGE")],
+                        alignment=ft.MainAxisAlignment.END,
+                        wrap=True,
+                    ),
                 ],
                 spacing=12,
             )
@@ -158,14 +163,22 @@ def _areas(ctx: AppContext, areas: vm.AreaCheckin) -> ft.Control:
                     spacing=10,
                 ),
                 col={"xs": 12, "sm": 6, "xl": 3},
-                padding=ft.Padding.symmetric(vertical=4),
+                padding=ft.Padding.symmetric(vertical=4, horizontal=4),
+                on_click=lambda _, area=score.area: ctx.go(f"/aree/{area}"),
+                border_radius=T.RADIUS_SMALL,
+                ink=True,
+                tooltip=f"Apri l'area {score.label}",
             )
         )
     return W.panel(
         ft.Column(
             [
                 ft.ResponsiveRow(tiles, spacing=16, run_spacing=10),
-                ft.Row([W.text_button("Modifica il check-in", lambda _: ctx.go(f"/voci/{areas.entry_id}/modifica"), icon="EDIT")], alignment=ft.MainAxisAlignment.END),
+                ft.Row(
+                    [W.text_button("Le otto aree", lambda _: ctx.go("/aree"), icon="DONUT_LARGE"), W.text_button("Modifica il check-in", lambda _: ctx.go(f"/voci/{areas.entry_id}/modifica"), icon="EDIT")],
+                    alignment=ft.MainAxisAlignment.END,
+                    wrap=True,
+                ),
             ],
             spacing=8,
         )

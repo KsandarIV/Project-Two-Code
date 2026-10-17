@@ -7,6 +7,7 @@ from typing import Any, Dict, List, Optional
 import typer
 
 from zibaldone.cli.common import ask_yes_no, open_store
+from zibaldone.core.areas import area_label, parse_area
 from zibaldone.core.blocks import BLOCK_TYPES
 from zibaldone.core.templates import BlockSpec, Template, slugify
 
@@ -85,6 +86,7 @@ def create_template(
     slug: Optional[str] = typer.Option(None, help="nome tecnico (di base dal nome)"),
     description: str = typer.Option("", help="a cosa serve"),
     category: str = typer.Option("", help="per raggruppare: diario, collezioni, io, persone …"),
+    area: str = typer.Option("", "--area", "-a", help="l'area della vita delle sue voci: personale, salute … svago"),
     from_file: Optional[Path] = typer.Option(None, "--from-file", help="modello in formato JSON"),
 ) -> None:
     """Crea un modello: con --block, da file JSON o con domande."""
@@ -97,7 +99,8 @@ def create_template(
             blocks = [parse_block_flag(flag) for flag in block] if block else ask_blocks()
             apply_option_flags(blocks, option)
             template = Template(
-                slug=slug or slugify(name), name=name, blocks=blocks, description=description, category=category
+                slug=slug or slugify(name), name=name, blocks=blocks, description=description, category=category,
+                area=parse_area(area) if area else "",
             ).validate()
         store.save_template(template)
         typer.echo(f"Modello creato: {template.name} ({template.slug}) con {len(template.blocks)} blocchi.")
@@ -116,7 +119,8 @@ def list_templates(category: Optional[str] = typer.Option(None, help="solo una c
         for template in templates:
             count = store.count_entries(template.slug)
             group = f"[{template.category}] " if template.category else ""
-            typer.echo(f"  {template.slug.ljust(width)}  {group}{template.name} · {len(template.blocks)} blocchi · {count} voci")
+            area = f" · {area_label(template.area)}" if template.area else ""
+            typer.echo(f"  {template.slug.ljust(width)}  {group}{template.name} · {len(template.blocks)} blocchi · {count} voci{area}")
 
 
 @template_app.command("show")
@@ -128,6 +132,8 @@ def show_template(slug: str, as_json: bool = typer.Option(False, "--json", help=
             typer.echo(json.dumps(template.to_dict(), ensure_ascii=False, indent=2))
             return
         typer.echo(f"{template.name} ({template.slug})" + (f" — {template.description}" if template.description else ""))
+        if template.area:
+            typer.echo(f"Area: {area_label(template.area)}")
         if template.origin:
             typer.echo(f"Provenienza: {template.origin.get('pack_id', '')} {template.origin.get('pack_version', '')}".rstrip())
         for spec in template.blocks:
@@ -135,6 +141,22 @@ def show_template(slug: str, as_json: bool = typer.Option(False, "--json", help=
             options = f" {json.dumps(spec.options, ensure_ascii=False)}" if spec.options else ""
             typer.echo(f"  {spec.key:<16} {spec.type:<10} {spec.label}{mark}{options}")
         typer.echo("(* = obbligatorio)")
+
+
+@template_app.command("area")
+def set_template_area(
+    slug: str = typer.Argument(..., metavar="MODELLO"),
+    area: str = typer.Argument(..., metavar="AREA", help="personale, salute, finanze, famiglia, sociale, lavoro, studio, svago o nessuna"),
+) -> None:
+    """Sceglie l'area della vita delle voci di un modello."""
+    with open_store() as store:
+        template = store.get_template(slug)
+        template.area = "" if area.strip().lower() in ("nessuna", "none", "-") else parse_area(area)
+        store.save_template(template, replace=True)
+        if template.area:
+            typer.echo(f"Le voci di «{template.name}» ora sono nell'area {area_label(template.area)}, se non ne scelgono un'altra.")
+        else:
+            typer.echo(f"«{template.name}» non ha più un'area: le sue voci contano solo l'area scelta da ciascuna.")
 
 
 @template_app.command("delete")

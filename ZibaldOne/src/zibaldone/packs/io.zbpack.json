@@ -2,7 +2,7 @@
   "format": 1,
   "id": "zibaldone.io",
   "name": "Delfi · Io",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "ZibaldOne",
   "license": "CC0-1.0",
   "description": "Il secondo cervello, all'ombra del tempio di Delfi: identità, filosofia personale, capitoli di vita, desideri e abitudini.",
@@ -52,7 +52,8 @@
       "description": "Chi sono, ridotto all'essenziale. Il motto del tempio di Delfi.",
       "icon": "FINGERPRINT",
       "color": "#FF007F",
-      "category": "io"
+      "category": "io",
+      "area": "personale"
     },
     {
       "slug": "filosofia",
@@ -87,7 +88,8 @@
       "description": "La mia filosofia: valori, principi e domande che guidano le scelte. I presocratici cercavano l'arché, il principio di tutte le cose.",
       "icon": "BALANCE",
       "color": "#8A2BE2",
-      "category": "io"
+      "category": "io",
+      "area": "personale"
     },
     {
       "slug": "capitolo",
@@ -118,7 +120,8 @@
       "description": "L'autobiografia, un capitolo di vita alla volta. Agostino, Confessioni.",
       "icon": "AUTO_STORIES",
       "color": "#00E5FF",
-      "category": "io"
+      "category": "io",
+      "area": "personale"
     },
     {
       "slug": "desiderio",
@@ -144,7 +147,8 @@
       "description": "La lista dei desideri, da sognare a realizzato. Spinoza, Etica III: il desiderio è l'essenza stessa dell'uomo.",
       "icon": "STAR",
       "color": "#FFFF00",
-      "category": "io"
+      "category": "io",
+      "area": "personale"
     },
     {
       "slug": "abitudine",
@@ -178,7 +182,8 @@
       "description": "Un'abitudine da costruire o da lasciare. Aristotele, Etica Nicomachea II: le virtù nascono dall'abitudine.",
       "icon": "REPEAT",
       "color": "#74EE15",
-      "category": "io"
+      "category": "io",
+      "area": "personale"
     }
   ]
 }

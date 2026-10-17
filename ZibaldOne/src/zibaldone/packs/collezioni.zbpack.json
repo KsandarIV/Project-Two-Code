@@ -2,7 +2,7 @@
   "format": 1,
   "id": "zibaldone.collezioni",
   "name": "Museion · Collezioni",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "author": "ZibaldOne",
   "license": "CC0-1.0",
   "description": "Come il Museo di Alessandria, la casa delle Muse e dei libri: libri, film, serie, anime, videogiochi, giochi da tavolo, sport, musica e guardaroba.",
@@ -81,7 +81,8 @@
       "description": "Libri: la tua libreria e il tuo viaggio intellettuale. Borges, La biblioteca di Babele (1941).",
       "icon": "MENU_BOOK",
       "color": "#00E5FF",
-      "category": "collezioni"
+      "category": "collezioni",
+      "area": "svago"
     },
     {
       "slug": "film",
@@ -135,7 +136,8 @@
       "description": "Film visti e da vedere: ombre su una parete, come nel mito di Platone (Repubblica VII).",
       "icon": "MOVIE",
       "color": "#FF5500",
-      "category": "collezioni"
+      "category": "collezioni",
+      "area": "svago"
     },
     {
       "slug": "serie",
@@ -190,7 +192,8 @@
       "description": "Serie TV, un episodio dopo l'altro. Nietzsche, La gaia scienza, 341.",
       "icon": "TV",
       "color": "#FF007F",
-      "category": "collezioni"
+      "category": "collezioni",
+      "area": "svago"
     },
     {
       "slug": "anime",
@@ -242,7 +245,8 @@
       "description": "Anime e manga. L'anima del mondo di Platone, Timeo.",
       "icon": "AUTO_AWESOME_MOTION",
       "color": "#B3F3F6",
-      "category": "collezioni"
+      "category": "collezioni",
+      "area": "svago"
     },
     {
       "slug": "videogioco",
@@ -295,7 +299,8 @@
       "description": "Videogiochi, piattaforme e ore di gioco. Huizinga, Homo ludens (1938).",
       "icon": "SPORTS_ESPORTS",
       "color": "#74EE15",
-      "category": "collezioni"
+      "category": "collezioni",
+      "area": "svago"
     },
     {
       "slug": "gioco_tavolo",
@@ -348,7 +353,8 @@
       "description": "Giochi da tavolo, di carte e di ruolo. Caillois, I giochi e gli uomini (1958).",
       "icon": "CASINO",
       "color": "#FFFF00",
-      "category": "collezioni"
+      "category": "collezioni",
+      "area": "svago"
     },
     {
       "slug": "sport",
@@ -392,7 +398,8 @@
       "description": "Sport: allenamenti, partite e record. Giovenale, Satire X.",
       "icon": "FITNESS_CENTER",
       "color": "#FF0000",
-      "category": "collezioni"
+      "category": "collezioni",
+      "area": "salute"
     },
     {
       "slug": "musica",
@@ -448,7 +455,8 @@
       "description": "Musica: la colonna sonora della tua vita. Dalla tradizione pitagorica.",
       "icon": "MUSIC_NOTE",
       "color": "#8A2BE2",
-      "category": "collezioni"
+      "category": "collezioni",
+      "area": "svago"
     },
     {
       "slug": "capo",
@@ -512,7 +520,8 @@
       "description": "Guardaroba: come ti presenti al mondo. In latino persona è la maschera; Pirandello, Uno, nessuno e centomila (1926).",
       "icon": "CHECKROOM",
       "color": "#00E5FF",
-      "category": "collezioni"
+      "category": "collezioni",
+      "area": "personale"
     }
   ]
 }

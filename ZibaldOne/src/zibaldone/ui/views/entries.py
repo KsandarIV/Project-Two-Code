@@ -35,14 +35,22 @@ class EntryList:
             templates = store.list_templates()
         options = [(ALL, "Tutti i modelli")] + [(template.slug, template.name) for template in templates]
         template_menu = W.dropdown(options, self.query.template or ALL, label="Modello", on_select=self.template_changed, expand=True)
+        area_menu = W.dropdown(
+            [(ALL, "Tutte le aree")] + [(key, label) for key, label in vm.area_options()[1:]],
+            self.query.area or ALL,
+            label="Area",
+            on_select=self.area_changed,
+            expand=True,
+        )
         search = W.text_input(self.query.text, hint_text="Cerca nelle voci", prefix_icon=ft.Icons.SEARCH, on_change=self.text_changed)
         filters = W.panel(
             ft.Column(
                 [
                     ft.ResponsiveRow(
                         [
-                            ft.Container(ft.Row([template_menu]), col={"xs": 12, "md": 6}),
-                            ft.Container(search, col={"xs": 12, "md": 6}),
+                            ft.Container(ft.Row([template_menu]), col={"xs": 12, "md": 4}),
+                            ft.Container(ft.Row([area_menu]), col={"xs": 12, "md": 3}),
+                            ft.Container(search, col={"xs": 12, "md": 5}),
                         ],
                         spacing=12,
                         run_spacing=12,
@@ -70,6 +78,11 @@ class EntryList:
     def template_changed(self, event: Any) -> None:
         value = event.control.value
         self.query.template = "" if value in (None, ALL) else value
+        self.reload()
+
+    def area_changed(self, event: Any) -> None:
+        value = event.control.value
+        self.query.area = "" if value in (None, ALL) else value
         self.reload()
 
     def text_changed(self, event: Any) -> None:
@@ -101,7 +114,7 @@ class EntryList:
                 for row in rows
             ]
         else:
-            empty = "Nessuna voce con questi filtri." if (self.query.template or self.query.text or self.query.day_from or self.query.day_to) else "Non hai ancora scritto nulla. Comincia da Oggi, o con «Nuova voce»."
+            empty = "Nessuna voce con questi filtri." if (self.query.template or self.query.area or self.query.text or self.query.day_from or self.query.day_to) else "Non hai ancora scritto nulla. Comincia da Oggi, o con «Nuova voce»."
             self.list_column.controls = [W.empty_state(empty, "EDIT_NOTE")]
         if update:
             self.ctx.update()
@@ -160,12 +173,24 @@ def build_detail(ctx: AppContext, route: Route) -> ft.Control:
                     W.secondary_button("Cancella", ask_delete, icon="DELETE_OUTLINE"),
                 ],
             ),
+            *_area_pills(ctx, detail),
             W.panel(ft.Column(blocks, spacing=18)),
             *_related_panels(ctx, detail),
             W.caption(meta),
         ],
         ctx.wide,
     )
+
+
+def _area_pills(ctx: AppContext, detail: vm.EntryDetail) -> List[ft.Control]:
+    """The life areas of the entry (0.2.0); a tap opens the area."""
+    if not detail.areas:
+        return []
+    chips: List[ft.Control] = [
+        ft.Container(W.pill(label, color, icon="DONUT_LARGE"), on_click=lambda _, key=key: ctx.go(f"/aree/{key}"), border_radius=999, ink=True)
+        for key, label, color in detail.areas
+    ]
+    return [ft.Row(chips, wrap=True, spacing=6, run_spacing=6)]
 
 
 def _related_panels(ctx: AppContext, detail: vm.EntryDetail) -> List[ft.Control]:

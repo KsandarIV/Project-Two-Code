@@ -1,0 +1,112 @@
+{
+  "format": 1,
+  "id": "zibaldone.aree",
+  "name": "Liceo · Aree",
+  "version": "1.0.0",
+  "author": "ZibaldOne",
+  "license": "CC0-1.0",
+  "description": "Il Liceo di Aristotele, dove la felicità (eudaimonia) è una vita che fiorisce in tutte le sue parti: il check-in di una singola area, gli obiettivi e la lista delle cose da fare di ogni area.",
+  "required_blocks": [
+    "checklist",
+    "date",
+    "longtext",
+    "progress",
+    "scale",
+    "text"
+  ],
+  "templates": [
+    {
+      "slug": "checkin_area",
+      "name": "Prosoché",
+      "blocks": [
+        {
+          "key": "punteggio",
+          "type": "scale",
+          "label": "Come va quest'area",
+          "options": {
+            "min": 0,
+            "max": 10,
+            "low_label": "male",
+            "high_label": "benissimo"
+          }
+        },
+        {
+          "key": "bene",
+          "type": "longtext",
+          "label": "Cosa va bene"
+        },
+        {
+          "key": "meglio",
+          "type": "longtext",
+          "label": "Cosa può andare meglio"
+        },
+        {
+          "key": "nota",
+          "type": "longtext",
+          "label": "Nota"
+        }
+      ],
+      "description": "Uno sguardo attento a una sola area: com'è, cosa va bene, cosa può andare meglio. Per gli stoici la prosoché è l'attenzione costante a sé stessi.",
+      "icon": "CENTER_FOCUS_STRONG",
+      "color": "#00E5FF",
+      "category": "aree"
+    },
+    {
+      "slug": "obiettivo",
+      "name": "Telos",
+      "blocks": [
+        {
+          "key": "titolo",
+          "type": "text",
+          "label": "Obiettivo",
+          "required": true
+        },
+        {
+          "key": "stato",
+          "type": "progress",
+          "label": "A che punto sono"
+        },
+        {
+          "key": "scadenza",
+          "type": "date",
+          "label": "Entro quando"
+        },
+        {
+          "key": "perche",
+          "type": "longtext",
+          "label": "Perché è importante"
+        },
+        {
+          "key": "passi",
+          "type": "checklist",
+          "label": "I passi"
+        }
+      ],
+      "description": "Un obiettivo di un'area, con i passi per arrivarci. Per Aristotele ogni cosa tende al suo telos, il suo fine.",
+      "icon": "FLAG_OUTLINED",
+      "color": "#74EE15",
+      "category": "aree"
+    },
+    {
+      "slug": "da_fare",
+      "name": "Opere e giorni",
+      "blocks": [
+        {
+          "key": "elenco",
+          "type": "checklist",
+          "label": "Da fare",
+          "required": true
+        },
+        {
+          "key": "nota",
+          "type": "longtext",
+          "label": "Nota"
+        }
+      ],
+      "description": "La lista delle cose da fare di un'area. Da Esiodo, Le opere e i giorni: il lavoro di ogni giorno, al momento giusto.",
+      "icon": "CHECKLIST",
+      "color": "#FFFF00",
+      "category": "aree"
+    }
+  ]
+}
