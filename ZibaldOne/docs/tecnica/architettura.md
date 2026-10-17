@@ -19,7 +19,7 @@ src/zibaldone/
   ui/        interfaccia grafica (dalla v0.1.0), sopra gli stessi moduli
   ai/        funzioni IA (rinviate: si definiranno molto più avanti)
 ```
-Regola: `cli/` e `ui/` chiamano `core/` e `storage/`, mai il contrario.
+Regola: `cli/` e `ui/` chiamano `core/`, `storage/` e `cloud/`, mai il contrario. L'interfaccia è descritta in [interfaccia](interfaccia.md).
 
 ## Moduli funzionali
 Diario, Collezioni, Documenti, Finanze, Password, Grafo, Raccomandazioni: ognuno sarà un sottopacchetto in `src/zibaldone/modules/` che usa solo il cuore. Dettagli in [visione](visione.md).

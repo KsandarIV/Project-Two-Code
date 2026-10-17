@@ -8,6 +8,7 @@ from zibaldone import __version__
 from zibaldone.core.brand import APP_MOTTO, APP_NAME, APP_TAGLINE, MASCOTS, NOMENCLATURE, quote_of_the_day
 from zibaldone.cli.account_cmd import account_app, cloud_app
 from zibaldone.cli.backup_cmd import backup_app
+from zibaldone.cli.common import fail
 from zibaldone.cli.entry_cmd import entry_app
 from zibaldone.cli.export_cmd import export_app
 from zibaldone.cli.pack_cmd import pack_app
@@ -65,6 +66,20 @@ def show_help() -> None:
     for name, summary in summaries:
         typer.echo(f"  {name.ljust(width)}  {summary}")
     typer.echo("\nScrivi `zbone <comando> --help` per i dettagli di un comando.")
+
+
+@app.command("app")
+def open_app(
+    web: bool = typer.Option(False, "--web", help="apri nel browser invece che in una finestra"),
+    port: int = typer.Option(0, "--port", help="porta del server web (0 = una libera)"),
+    route: Optional[str] = typer.Option(None, "--route", help="la pagina da aprire, per esempio /voci o /scrivi/sera"),
+) -> None:
+    """Apre l'interfaccia grafica (in una finestra o nel browser)."""
+    try:
+        from zibaldone.ui.app import run
+    except ImportError:
+        fail('l\'interfaccia grafica non è installata: `pip install -e ".[ui]"` e riprova')
+    run(web=web, port=port, route=route)  # consent and sign-in are asked by the app itself
 
 
 @app.command("version")
