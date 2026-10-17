@@ -2,14 +2,15 @@
 
 Every screen has a route, so the app can start on any of them (handy for
 tests and screenshots): `/oggi`, `/voci`, `/voci/<id>`, `/voci/<id>/modifica`,
-`/scrivi/<modello>`, `/collezioni`, `/modelli`, `/modelli/nuovo`,
-`/modelli/<modello>`, `/scuole`, `/organon`, `/organon/<parte>`.
+`/scrivi/<modello>`, `/scrivi/<modello>/<area>`, `/collezioni`, `/modelli`,
+`/modelli/nuovo`, `/modelli/<modello>`, `/scuole`, `/aree`, `/aree/<area>`,
+`/organon`, `/organon/<parte>`.
 """
 
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
-from zibaldone.core.brand import NOMENCLATURE
+from zibaldone.core.brand import AREAS, NOMENCLATURE
 from zibaldone.ui.theme import WIDE_MIN_WIDTH
 
 START_ROUTE_ENV = "ZIBALDONE_UI_START"
@@ -103,23 +104,26 @@ class Route:
     screen: str
     section: str
     arg: str = ""
+    extra: str = ""  # a second argument: the area of a new entry (`/scrivi/<modello>/<area>`)
 
     @property
     def path(self) -> str:
-        return route_path(self.screen, self.arg)
+        return route_path(self.screen, self.arg, self.extra)
 
     @property
     def is_top_level(self) -> bool:
         return self.screen in SECTION_KEYS
 
 
-def route_path(screen: str, arg: str = "") -> str:
+def route_path(screen: str, arg: str = "", extra: str = "") -> str:
     if screen in SECTION_KEYS:
         return f"/{screen}"
     paths = {
         "voce": f"/voci/{arg}",
         "modifica": f"/voci/{arg}/modifica",
-        "scrivi": f"/scrivi/{arg}",
+        "scrivi": f"/scrivi/{arg}/{extra}" if extra else f"/scrivi/{arg}",
+        "aree": "/aree",
+        "area": f"/aree/{arg}",
         "modello": f"/modelli/{arg or 'nuovo'}",
         "scuole": "/scuole",
         "grafo": f"/grafo/{arg}" if arg else "/grafo",
@@ -151,6 +155,12 @@ def parse_route(path: Optional[str]) -> Route:
         return Route("modifica", "voci", rest[0])
     if head == "scrivi" and len(rest) == 1:
         return Route("scrivi", "", rest[0])
+    if head == "scrivi" and len(rest) == 2 and rest[1].lower() in AREAS:
+        return Route("scrivi", "", rest[0], rest[1].lower())
+    if head == "aree" and not rest:
+        return Route("aree", "oggi")
+    if head == "aree" and len(rest) == 1 and rest[0].lower() in AREAS:
+        return Route("area", "oggi", rest[0].lower())
     if head == "modelli" and len(rest) == 1:
         return Route("modello", "modelli", "" if rest[0] == "nuovo" else rest[0])
     if head == "scuole" and not rest:

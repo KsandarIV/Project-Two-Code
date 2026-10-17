@@ -21,6 +21,8 @@ from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route
 from zibaldone.ui.views.common import not_found, pick_date
 
+AREA_KEY = "_area"
+
 
 class FieldEditor:
     """Base: holds the block spec and writes its state into the form."""
@@ -408,10 +410,11 @@ EDITORS: Dict[str, Callable[["EntryForm", BlockSpec], FieldEditor]] = {
 
 
 class EntryForm:
-    def __init__(self, ctx: AppContext, template: Template, entry: Optional[Entry] = None) -> None:
+    def __init__(self, ctx: AppContext, template: Template, entry: Optional[Entry] = None, area: str = "") -> None:
         self.ctx = ctx
         self.template = template
         self.entry = entry
+        self.area = entry.area if entry else area  # 0.2.0: '' = the template's area
         self.states: Dict[str, Any] = forms.initial_states(template, entry.values if entry else None)
         self.day = entry.day if entry else ctx.now().date().isoformat()
         self.dirty = False
@@ -448,11 +451,24 @@ class EntryForm:
         self.form_error = W.error_text()
         self._day_label()
         self.errors[forms.DAY_KEY] = W.error_text()
+        self.errors[AREA_KEY] = W.error_text()
+        self.area_menu = W.dropdown(
+            vm.area_options(self.template.area),
+            self.area or vm.NO_AREA,
+            label="Area della vita",
+            on_select=self.area_changed,
+            width=280,
+        )
         fields: List[ft.Control] = [
             W.panel(
                 ft.Column(
-                    [ft.Row([W.caption("Il giorno di questa voce"), self.day_button], wrap=True, spacing=12, vertical_alignment=ft.CrossAxisAlignment.CENTER), self.errors[forms.DAY_KEY]],
-                    spacing=4,
+                    [
+                        ft.Row([W.caption("Il giorno di questa voce"), self.day_button], wrap=True, spacing=12, vertical_alignment=ft.CrossAxisAlignment.CENTER),
+                        self.errors[forms.DAY_KEY],
+                        ft.Row([self.area_menu], wrap=True),
+                        self.errors[AREA_KEY],
+                    ],
+                    spacing=6,
                 ),
                 padding=ft.Padding.symmetric(horizontal=16, vertical=10),
             )
@@ -510,6 +526,10 @@ class EntryForm:
 
         pick_date(self.ctx, self.day, chosen, "Il giorno della voce")
 
+    def area_changed(self, event: Any) -> None:
+        self.area = vm.area_from_option(event.control.value)
+        self.dirty = True
+
     def cancel(self, _: Any = None) -> None:
         if not self.dirty:
             self.ctx.back()
@@ -533,20 +553,25 @@ class EntryForm:
 
     def save(self, _: Any = None) -> None:
         result = forms.collect_values(self.template, self.states, self.day)
+        area_problem = vm.entry_area_problem(self.template, self.area)
+        if area_problem:
+            result.errors[AREA_KEY] = area_problem
         self.show_errors(result.errors)
-        if not result.ok:
+        if not result.ok or area_problem:
             labels = [spec.label for spec in self.template.blocks if spec.key in result.errors]
             if forms.DAY_KEY in result.errors:
                 labels.insert(0, "giorno")
+            if area_problem:
+                labels.insert(0, "area")
             self.ctx.toast(f"Da sistemare: {', '.join(labels) or 'la voce'}.", error=True)
             self.ctx.update()
             return
         try:
             with self.ctx.store() as store:
                 if self.entry is not None:
-                    saved = store.update_entry(self.entry.id, result.values, day=result.day or None, merge=False)
+                    saved = store.update_entry(self.entry.id, result.values, day=result.day or None, merge=False, area=self.area)
                 else:
-                    saved = store.add_entry(self.template.slug, result.values, day=result.day or None)
+                    saved = store.add_entry(self.template.slug, result.values, day=result.day or None, area=self.area or None)
         except (StoreError, ValueError) as error:
             self.show_errors({forms.FORM_KEY: str(error)})
             self.ctx.update()
@@ -562,7 +587,7 @@ def build_new(ctx: AppContext, route: Route) -> ft.Control:
         template = store.find_template(route.arg)
     if template is None:
         return not_found(ctx, f"Non c'è un modello «{route.arg}». Puoi installarlo dalle Scuole o crearlo nelle Forme.")
-    return EntryForm(ctx, template).build()
+    return EntryForm(ctx, template, area=route.extra).build()
 
 
 def build_edit(ctx: AppContext, route: Route) -> ft.Control:

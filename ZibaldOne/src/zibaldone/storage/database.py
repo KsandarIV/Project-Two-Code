@@ -7,6 +7,10 @@ From 0.1.2 the store also keeps derived indexes (search text, tags, names and
 links), always written in the same transaction as the entry they come from.
 They can be rebuilt from the entries at any time (`rebuild_indexes`). The
 FTS5 table is optional: SQLite builds without FTS5 use a LIKE search instead.
+
+From 0.2.0 an entry can have its own life area (`entries.area`); the derived
+table `entry_areas` lists every area of each entry (its own, its template's,
+and those of an `aree` tags block), so lists and searches can filter by area.
 """
 
 import json
@@ -16,7 +20,8 @@ from contextlib import contextmanager
 from pathlib import Path
 from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tuple, Union
 
-from zibaldone.core.templates import Entry, Template, now_iso, validate_values
+from zibaldone.core.areas import entry_areas
+from zibaldone.core.templates import Entry, Template, check_area, now_iso, validate_values
 from zibaldone.core.blocks import parse_day
 from zibaldone.core.links import (
     KIND_BLOCK,
@@ -124,10 +129,21 @@ MIGRATIONS: Sequence[str] = (
         value TEXT NOT NULL
     );
     """,
+    # 3 — 0.2.0: the 8 life areas (Eudaimonia). Backfilled by `_reindex_areas`.
+    """
+    ALTER TABLE entries ADD COLUMN area TEXT NOT NULL DEFAULT '';
+    CREATE TABLE entry_areas (
+        entry_id TEXT NOT NULL,
+        area TEXT NOT NULL,
+        PRIMARY KEY (entry_id, area)
+    );
+    CREATE INDEX entry_areas_by_area ON entry_areas(area);
+    """,
 )
 
 # Python steps run right after a migration, inside its transaction (method names).
-BACKFILLS: Dict[int, str] = {2: "_reindex_all"}
+BACKFILLS: Dict[int, str] = {2: "_reindex_all", 3: "_reindex_areas"}
+AREAS_SCHEMA = 3
 
 # Order for resolving [[Titolo]]: not itself, people first, titles before nicknames, oldest first
 # (rowid breaks ties within the same second).
@@ -306,15 +322,21 @@ class Store:
             day=row["day"],
             created_at=row["created_at"],
             updated_at=row["updated_at"],
+            area=row["area"] if "area" in row.keys() else "",  # no column before migration 3
         )
 
-    def add_entry(self, template_slug: str, values: Dict[str, Any], day: Optional[str] = None) -> Entry:
+    @property
+    def has_areas(self) -> bool:
+        return self.schema_version >= AREAS_SCHEMA
+
+    def add_entry(self, template_slug: str, values: Dict[str, Any], day: Optional[str] = None, area: Optional[str] = None) -> Entry:
+        """Add an entry. `area` is the entry's own life area (default: the template's)."""
         template = self.get_template(template_slug)
-        entry = Entry.new(template, values, day)
+        entry = Entry.new(template, values, day, area=area)
         with self.transaction() as cursor:
             cursor.execute(
-                "INSERT INTO entries (id, template, day, data, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-                (entry.id, entry.template, entry.day, json.dumps(entry.values, ensure_ascii=False), entry.created_at, entry.updated_at),
+                "INSERT INTO entries (id, template, day, data, created_at, updated_at, area) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                (entry.id, entry.template, entry.day, json.dumps(entry.values, ensure_ascii=False), entry.created_at, entry.updated_at, entry.area),
             )
             self.after_entry_saved(entry, template)
         return entry
@@ -338,11 +360,16 @@ class Store:
         day_to: Optional[str] = None,
         limit: Optional[int] = None,
         newest_first: bool = True,
+        area: Optional[str] = None,
     ) -> List[Entry]:
+        """Entries by day. `area` keeps those in that life area (own, template's or listed)."""
         clauses, params = [], []
         if template:
             clauses.append("template = ?")
             params.append(template)
+        if area:
+            clauses.append("id IN (SELECT entry_id FROM entry_areas WHERE area = ?)")
+            params.append(check_area(area))
         if day_from:
             clauses.append("day >= ?")
             params.append(parse_day(day_from))
@@ -351,13 +378,18 @@ class Store:
             params.append(parse_day(day_to))
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
         order = "DESC" if newest_first else "ASC"
-        sql = f"SELECT * FROM entries {where} ORDER BY day {order}, created_at {order}"
+        sql = f"SELECT * FROM entries {where} ORDER BY day {order}, created_at {order}, rowid {order}"  # rowid: same second, insertion order
         if limit:
             sql += f" LIMIT {int(limit)}"
         return [self._entry_from_row(row) for row in self.connection.execute(sql, params).fetchall()]
 
-    def update_entry(self, reference: str, values: Dict[str, Any], day: Optional[str] = None, merge: bool = True) -> Entry:
-        """Change an entry. With merge=True, only the given blocks change; None clears a block."""
+    def update_entry(
+        self, reference: str, values: Dict[str, Any], day: Optional[str] = None, merge: bool = True, area: Optional[str] = None
+    ) -> Entry:
+        """Change an entry. With merge=True, only the given blocks change; None clears a block.
+
+        `area`: None leaves it as it is, '' goes back to the template's area.
+        """
         entry = self.get_entry(reference)
         template = self.get_template(entry.template)
         new_values = dict(entry.values) if merge else {}
@@ -369,11 +401,13 @@ class Store:
         entry.values = validate_values(template, new_values)
         if day:
             entry.day = parse_day(day)
+        if area is not None:
+            entry.area = check_area(area)
         entry.updated_at = now_iso()
         with self.transaction() as cursor:
             cursor.execute(
-                "UPDATE entries SET data = ?, day = ?, updated_at = ? WHERE id = ?",
-                (json.dumps(entry.values, ensure_ascii=False), entry.day, entry.updated_at, entry.id),
+                "UPDATE entries SET data = ?, day = ?, updated_at = ?, area = ? WHERE id = ?",
+                (json.dumps(entry.values, ensure_ascii=False), entry.day, entry.updated_at, entry.area, entry.id),
             )
             self.after_entry_saved(entry, template)
         return entry
@@ -424,6 +458,7 @@ class Store:
         )
         affected = old_names | {name for name, _ in names} | {link.target_name for link in links if link.kind == KIND_WIKI}
         self._resolve_wiki(affected)
+        self._write_areas(entry, template)
         if old is not None and old[0] != document.title:
             self._refresh_linkers(entry.id)
 
@@ -442,6 +477,8 @@ class Store:
         names = {name for (name,) in connection.execute("SELECT name FROM entry_names WHERE entry_id = ?", (entry.id,))}
         connection.execute("DELETE FROM entry_names WHERE entry_id = ?", (entry.id,))
         connection.execute("DELETE FROM entry_tags WHERE entry_id = ?", (entry.id,))
+        if self.has_areas:
+            connection.execute("DELETE FROM entry_areas WHERE entry_id = ?", (entry.id,))
         connection.execute("DELETE FROM links WHERE source = ?", (entry.id,))
         connection.execute(
             "UPDATE links SET target = NULL, target_title = CASE WHEN target_title = '' THEN ? ELSE target_title END "
@@ -552,6 +589,43 @@ class Store:
                 refs = [link.target_ref for link in outgoing_links(entry, template) if link.target_ref]
                 self._write_document(entry, entry_document(entry, template, self._titles_of(refs)))
 
+    # — 0.2.0: areas —
+
+    def _write_areas(self, entry: Entry, template: Optional[Template]) -> None:
+        if not self.has_areas:
+            return
+        self.connection.execute("DELETE FROM entry_areas WHERE entry_id = ?", (entry.id,))
+        self.connection.executemany(
+            "INSERT INTO entry_areas (entry_id, area) VALUES (?, ?)", [(entry.id, area) for area in entry_areas(entry, template)]
+        )
+
+    def _reindex_areas(self) -> None:
+        """Rebuild `entry_areas` from the entries (migration 3 backfill; also part of `_reindex_all`)."""
+        if not self.has_areas and not self._table_exists("entry_areas"):
+            return
+        templates = self._template_map()
+        self.connection.execute("DELETE FROM entry_areas")
+        rows = []
+        for row in self.connection.execute("SELECT * FROM entries"):
+            entry = self._entry_from_row(row)
+            rows += [(entry.id, area) for area in entry_areas(entry, templates.get(entry.template))]
+        self.connection.executemany("INSERT INTO entry_areas (entry_id, area) VALUES (?, ?)", rows)
+
+    def _table_exists(self, name: str) -> bool:
+        return self.connection.execute("SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = ?", (name,)).fetchone() is not None
+
+    def areas_of(self, reference: str) -> List[str]:
+        """The life areas of an entry, from the index."""
+        entry = self.get_entry(reference)
+        template = self.find_template(entry.template)
+        return entry_areas(entry, template)
+
+    def area_counts(self) -> Dict[str, int]:
+        """Number of entries in each area that has any."""
+        if not self.has_areas:
+            return {}
+        return {row[0]: row[1] for row in self.connection.execute("SELECT area, COUNT(*) FROM entry_areas GROUP BY area")}
+
     def _reindex_template(self, template: Template) -> None:
         rows = self.connection.execute("SELECT * FROM entries WHERE template = ?", (template.slug,)).fetchall()
         for row in rows:
@@ -594,6 +668,7 @@ class Store:
             "INSERT INTO links (source, kind, block, position, target, target_ref, target_title, target_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", link_rows
         )
         connection.execute(f"UPDATE links SET target = ({_BEST_NAME}) WHERE kind = ?", (KIND_WIKI,))
+        self._reindex_areas()
         self._ensure_fts()
         if self.fts:
             self._fill_fts()
@@ -629,7 +704,7 @@ class Store:
                     self._fill_fts()
 
     def rebuild_indexes(self) -> None:
-        """Rebuild search, tags, names and links from the entries."""
+        """Rebuild search, tags, names, links and areas from the entries."""
         with self.transaction():
             self._reindex_all()
 
@@ -649,6 +724,7 @@ class Store:
         until: Optional[str] = None,
         limit: int = 50,
         engine: Optional[str] = None,
+        area: Optional[str] = None,
     ) -> SearchResult:
         """Search entries. Words are ANDed; "frase", parol* and -parola work; the filters narrow down.
 
@@ -674,6 +750,9 @@ class Store:
         if until:
             clauses.append("s.day <= ?")
             params.append(parse_day(until))
+        if area:
+            clauses.append("s.entry_id IN (SELECT entry_id FROM entry_areas WHERE area = ?)")
+            params.append(check_area(area))
         for tag in tags:
             tag = " ".join(tag.strip().lstrip("#").lower().split())
             if tag:

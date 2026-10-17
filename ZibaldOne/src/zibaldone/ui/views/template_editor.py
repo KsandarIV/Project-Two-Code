@@ -47,6 +47,13 @@ class TemplateEditor:
         name = W.text_input(state.name, label="Nome *", on_change=lambda e: self._set("name", e.control.value))
         description = W.text_input(state.description, label="Descrizione", multiline=True, min_lines=1, max_lines=3, on_change=lambda e: self._set("description", e.control.value))
         category = W.text_input(state.category, label="Categoria", hint_text="diario, collezioni, io, persone o una tua", on_change=lambda e: self._set("category", e.control.value))
+        area_menu = W.dropdown(
+            vm.area_options(),
+            state.area or vm.NO_AREA,
+            label="Area della vita delle sue voci",
+            on_select=lambda e: self._set("area", vm.area_from_option(e.control.value)),
+            expand=True,
+        )
         icons = list(vm.TEMPLATE_ICONS)
         if state.icon and state.icon not in icons:
             icons.insert(0, state.icon)
@@ -72,6 +79,7 @@ class TemplateEditor:
                         spacing=12,
                         run_spacing=12,
                     ),
+                    ft.Row([area_menu]),
                     ft.Column([W.caption("Colore"), self.color_row], spacing=6),
                 ],
                 spacing=14,

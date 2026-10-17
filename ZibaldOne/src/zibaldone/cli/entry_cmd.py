@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional
 import typer
 
 from zibaldone.cli.common import ask_yes_no, open_store
+from zibaldone.core.areas import area_label, entry_areas, parse_area
 from zibaldone.core.blocks import parse_day
 from zibaldone.core.templates import BlockSpec, Entry, Template
 from zibaldone.storage.database import Store, StoreError
@@ -88,9 +89,32 @@ def ask_values(store: Store, template: Template, current: Optional[Dict[str, Any
     return values
 
 
+NO_AREA = ("", "nessuna", "nessuno", "none", "-")
+
+
+def area_option(raw: Optional[str]) -> Optional[str]:
+    """--area: None leaves it alone, 'nessuna' clears it, anything else must be one of the 8 areas."""
+    if raw is None:
+        return None
+    if raw.strip().lower() in NO_AREA:
+        return ""
+    return parse_area(raw)
+
+
+def areas_text(entry: Entry, template: Template) -> str:
+    areas = entry_areas(entry, template)
+    if not areas:
+        return ""
+    text = ", ".join(area_label(area) for area in areas)
+    return text if entry.area or not template.area else f"{text} (dal modello)"
+
+
 def print_entry(entry: Entry, template: Template) -> None:
     typer.echo(f"{entry.title(template)}")
     typer.echo(f"  {template.name} · {entry.day} · id {entry.short_id}")
+    areas = areas_text(entry, template)
+    if areas:
+        typer.echo(f"  Aree: {areas}")
     for spec in template.blocks:
         if spec.key not in entry.values:
             continue
@@ -108,12 +132,14 @@ def add_entry(
     template_slug: str = typer.Argument(..., metavar="MODELLO", help="nome tecnico del modello"),
     set_values: List[str] = typer.Option([], "--set", "-s", help="blocco=valore (senza --set fa le domande)"),
     day: Optional[str] = typer.Option(None, "--day", "-d", help="il giorno della voce (di base oggi)"),
+    area: Optional[str] = typer.Option(None, "--area", "-a", help="l'area della vita (di base quella del modello)"),
 ) -> None:
     """Aggiunge una voce a un modello."""
     with open_store() as store:
         template = store.get_template(template_slug)
+        chosen = area_option(area)
         values = parse_set_flags(store, template, set_values) if set_values else ask_values(store, template)
-        entry = store.add_entry(template.slug, values, day)
+        entry = store.add_entry(template.slug, values, day, area=chosen)
         typer.echo(f"Voce salvata: {entry.title(template)} (id {entry.short_id})")
 
 
@@ -124,12 +150,13 @@ def list_entries(
     since: Optional[str] = typer.Option(None, help="dal giorno"),
     until: Optional[str] = typer.Option(None, help="al giorno"),
     limit: int = typer.Option(30, help="quante voci al massimo"),
+    area: Optional[str] = typer.Option(None, "--area", "-a", help="solo un'area della vita"),
 ) -> None:
     """Elenca le voci, dalla più recente."""
     with open_store() as store:
         if day:
             since = until = parse_day(day)
-        entries = store.list_entries(template_slug, since, until, limit)
+        entries = store.list_entries(template_slug, since, until, limit, area=parse_area(area) if area else None)
         if not entries:
             typer.echo("Nessuna voce.")
             return
@@ -152,18 +179,20 @@ def edit_entry(
     reference: str = typer.Argument(..., metavar="ID"),
     set_values: List[str] = typer.Option([], "--set", "-s", help="blocco=valore; blocco= svuota il blocco"),
     day: Optional[str] = typer.Option(None, "--day", "-d", help="sposta la voce a un altro giorno"),
+    area: Optional[str] = typer.Option(None, "--area", "-a", help="cambia l'area della vita; 'nessuna' torna a quella del modello"),
 ) -> None:
     """Modifica una voce."""
     with open_store() as store:
         entry = store.get_entry(reference)
         template = store.get_template(entry.template)
+        chosen = area_option(area)
         if set_values:
             values = parse_set_flags(store, template, set_values)
-        elif day:
+        elif day or chosen is not None:
             values = {}
         else:
             values = ask_values(store, template, entry.values)
-        entry = store.update_entry(entry.id, values, day)
+        entry = store.update_entry(entry.id, values, day, area=chosen)
         typer.echo(f"Voce aggiornata: {entry.title(template)} (id {entry.short_id})")
 
 

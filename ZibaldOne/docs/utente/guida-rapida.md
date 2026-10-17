@@ -9,7 +9,7 @@ Cinque sezioni, nel menu a sinistra sul PC e in basso sul telefono:
 
 | Sezione | Cosa trovi |
 |---|---|
-| **Oggi** · Hic et nunc | il pensiero del giorno, i 3 momenti (mattina, metà giornata, sera) da scrivere o riaprire, il check-in delle 8 aree, le voci di oggi, la serie di giorni |
+| **Oggi** · Hic et nunc | il pensiero del giorno, i 3 momenti (mattina, metà giornata, sera) da scrivere o riaprire, il check-in delle 8 aree e la pagina di ogni area, le voci di oggi, la serie di giorni |
 | **Voci** · Pensieri | tutte le voci, con filtri per titolo, modello e date; apri, modifica, cancella |
 | **Collezioni** · Museion | libri, film, giochi, viaggi…: le voci dei modelli da collezione, con il loro stato |
 | **Modelli** · Forme | i tuoi modelli, l'editor dei blocchi e le **Scuole**, cioè i pacchetti pronti da installare |
@@ -113,8 +113,25 @@ Come è andata la settimana o il mese: quante voci, l'umore giorno per giorno, l
 
 La proposta è una bozza: il voto viene dai voti alle giornate, l'area su cui concentrarti è la più bassa, gli obiettivi sono le cose ancora aperte, i momenti belli sono presi dalle tue voci. Nell'app il pulsante **Revisione della settimana** fa lo stesso e apre il modulo per completarla. Come funziona: [statistiche e revisioni](../tecnica/statistiche.md).
 
+## Le otto aree · Eudaimonia
+Personale, Salute, Finanze, Famiglia, Sociale, Lavoro, Studio e Svago: ogni modello e ogni voce può appartenere a un'area. I libri vanno da soli in Svago, lo sport in Salute, le persone in Sociale; a una voce puoi dare un'altra area. Ogni area ha la sua pagina: il punteggio da 0 a 10 settimana per settimana, le cose da fare, gli obiettivi, le voci, e le novità **in arrivo**. Nell'app: **Oggi → Aree**, oppure tocca un'area in Oggi.
+
+| Comando | Cosa fa |
+|---|---|
+| `zbone area` | le otto aree a colpo d'occhio, con l'ultimo punteggio |
+| `zbone area show salute` | un'area: punteggio nel tempo, cose da fare, obiettivi, voci |
+| `zbone area checkin salute -p 7 --bene "dormo di più"` | il check-in di una sola area (Prosoché) |
+| `zbone area todo salute prenotare il dentista` | aggiunge una cosa da fare all'area |
+| `zbone area fatto salute 1` | spunta la cosa da fare numero 1 di `zbone area show` |
+| `zbone entry add obiettivo --area salute` | un obiettivo (Telos) dell'area |
+| `zbone entry list --area svago` | le voci di un'area (anche in `zbone search`) |
+| `zbone entry edit b29f --area lavoro` | sposta una voce in un'altra area (`--area nessuna` per toglierla) |
+| `zbone template area libro studio` | sceglie l'area di tutte le voci di un modello |
+
+Il punteggio viene dal check-in delle 8 aree (Eudaimonia) e dai check-in di una sola area. I modelli per le aree (check-in, obiettivo, cose da fare) sono nella Scuola **Liceo · Aree**: l'app la installa al primo avvio, oppure `zbone pack install aree`. Come funziona: [le 8 aree](../tecnica/aree.md).
+
 ## Modelli pronti
-ZibaldOne ha quattro **pacchetti** di modelli già pronti, ognuno con il nome di una scuola filosofica. Installarli non tocca le tue voci e puoi modificarli come i tuoi.
+ZibaldOne ha cinque **pacchetti** di modelli già pronti, ognuno con il nome di una scuola filosofica. Installarli non tocca le tue voci e puoi modificarli come i tuoi.
 
 | Pacchetto | Cosa contiene |
 |---|---|
@@ -122,6 +139,7 @@ ZibaldOne ha quattro **pacchetti** di modelli già pronti, ognuno con il nome di
 | `collezioni` · Museion | libri, film, serie, anime, videogiochi, giochi da tavolo, sport, musica, guardaroba |
 | `io` · Delfi | identità, filosofia personale, capitoli di vita, desideri, abitudini |
 | `persone` · Agorà | le persone della tua vita e gli incontri con loro |
+| `aree` · Liceo | il check-in di una sola area, gli obiettivi e le cose da fare di ogni area |
 
 | Comando | Cosa fa |
 |---|---|
@@ -235,8 +253,8 @@ Prima che un testo arrivi a un'intelligenza artificiale, ZibaldOne toglie nomi, 
 I nomi di persona li riconosce dalle tue voci **Persona** (con i soprannomi): più persone hai scritto, meglio funziona. Nell'app: **Impostazioni → Anonimizzatore**. Come funziona: [anonimizzatore](../tecnica/anonimizzatore.md).
 
 ## Esportare
-- `zbone export markdown`: uno zip con un file per voce, da aprire in Obsidian.
-- `zbone export csv`: uno zip con un foglio per modello, da aprire in Excel.
+- `zbone export markdown`: uno zip con un file per voce, da aprire in Obsidian (le aree della voce sono nelle sue proprietà).
+- `zbone export csv`: uno zip con un foglio per modello, da aprire in Excel (con la colonna dell'area).
 
 Il file esportato non è cifrato: chi lo apre legge le tue voci.
 

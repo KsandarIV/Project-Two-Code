@@ -11,12 +11,13 @@ from datetime import date, datetime, timezone
 from typing import Any, Dict, List, Optional
 
 from zibaldone.core.blocks import BlockType, get_block_type, parse_day
+from zibaldone.core.brand import AREAS
 
 SLUG = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
 HEX_COLOR = re.compile(r"^#[0-9A-Fa-f]{6}$")
 MAX_BLOCKS = 60
 
-TEMPLATE_FIELDS = {"slug", "name", "blocks", "description", "icon", "color", "category", "title_block", "origin", "version"}
+TEMPLATE_FIELDS = {"slug", "name", "blocks", "description", "icon", "color", "category", "area", "title_block", "origin", "version"}
 BLOCK_FIELDS = {"key", "type", "label", "required", "options", "help"}
 ORIGIN_FIELDS = {"pack_id", "pack_version", "author"}
 
@@ -28,6 +29,15 @@ def slugify(text: str) -> str:
     if not cleaned or not cleaned[0].isalpha():
         cleaned = f"m_{cleaned}" if cleaned else "modello"
     return cleaned[:40].rstrip("_")
+
+
+def check_area(value: Any, what: str = "area") -> str:
+    """'' (no area) or one of the 8 life areas (0.2.0)."""
+    if value is None or value == "":
+        return ""
+    if not isinstance(value, str) or value.strip().lower() not in AREAS:
+        raise ValueError(f"{what}: scegli una delle aree ({', '.join(AREAS)})")
+    return value.strip().lower()
 
 
 def now_iso() -> str:
@@ -118,6 +128,7 @@ class Template:
     title_block: str = ""
     origin: Dict[str, str] = field(default_factory=dict)
     version: int = 1
+    area: str = ""  # 0.2.0: the life area its entries belong to, unless an entry says otherwise
 
     def validate(self) -> "Template":
         if not SLUG.match(self.slug):
@@ -126,6 +137,7 @@ class Template:
         self.description = _short_text(self.description, "descrizione del modello", 300)
         self.icon = _short_text(self.icon, "icona", 60)
         self.category = _short_text(self.category, "categoria", 40).lower()
+        self.area = check_area(self.area, "area del modello")
         if self.color and not HEX_COLOR.match(self.color):
             raise ValueError("il colore deve essere nel formato #RRGGBB")
         if not isinstance(self.blocks, list) or not self.blocks:
@@ -167,7 +179,7 @@ class Template:
 
     def to_dict(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {"slug": self.slug, "name": self.name, "blocks": [block.to_dict() for block in self.blocks]}
-        for key in ("description", "icon", "color", "category", "title_block"):
+        for key in ("description", "icon", "color", "category", "area", "title_block"):
             if getattr(self, key):
                 data[key] = getattr(self, key)
         if self.origin:
@@ -190,6 +202,7 @@ class Template:
             icon=data.get("icon", ""),
             color=data.get("color", ""),
             category=data.get("category", ""),
+            area=data.get("area", ""),
             title_block=data.get("title_block", ""),
             origin=dict(data.get("origin", {})) if isinstance(data.get("origin", {}), dict) else data.get("origin"),
             version=data.get("version", 1),
@@ -230,7 +243,10 @@ def validate_values(template: Template, values: Dict[str, Any], partial: bool = 
 
 @dataclass
 class Entry:
-    """A filled-in template. `day` is the day the entry is about."""
+    """A filled-in template. `day` is the day the entry is about.
+
+    `area` (0.2.0) is the entry's own life area; empty means "the template's".
+    """
 
     id: str
     template: str
@@ -238,9 +254,10 @@ class Entry:
     day: str
     created_at: str
     updated_at: str
+    area: str = ""
 
     @classmethod
-    def new(cls, template: Template, values: Dict[str, Any], day: Optional[str] = None) -> "Entry":
+    def new(cls, template: Template, values: Dict[str, Any], day: Optional[str] = None, area: Optional[str] = None) -> "Entry":
         timestamp = now_iso()
         return cls(
             id=uuid.uuid4().hex,
@@ -249,6 +266,7 @@ class Entry:
             day=parse_day(day) if day else date.today().isoformat(),
             created_at=timestamp,
             updated_at=timestamp,
+            area=check_area(area),
         )
 
     @property
@@ -270,7 +288,7 @@ class Entry:
         return texts
 
     def to_dict(self) -> Dict[str, Any]:
-        return {
+        data = {
             "id": self.id,
             "template": self.template,
             "day": self.day,
@@ -278,3 +296,6 @@ class Entry:
             "created_at": self.created_at,
             "updated_at": self.updated_at,
         }
+        if self.area:
+            data["area"] = self.area
+        return data

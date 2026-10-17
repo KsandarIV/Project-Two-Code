@@ -368,6 +368,29 @@ def coming_soon(text: str) -> ft.Control:
     )
 
 
+def upcoming_card(title: str, teaser: str, when: str, color: str = T.ACCENT_2, col: Any = None) -> ft.Control:
+    """A feature announced before it exists (0.2.0): name, what it will do, when it arrives."""
+    return panel(
+        ft.Column(
+            [
+                ft.Row(
+                    [
+                        ft.Icon(ft.Icons.AUTO_AWESOME, color=color, size=20),
+                        ft.Text(title, size=15, weight=ft.FontWeight.W_600, color=T.TEXT, expand=True),
+                    ],
+                    spacing=10,
+                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ),
+                body(teaser, dim=True, size=13),
+                ft.Row([pill(f"In arrivo · {when}", color, icon="HOURGLASS_EMPTY")], wrap=True),
+            ],
+            spacing=8,
+        ),
+        border_color=fade(color, 0.35),
+        col=col,
+    )
+
+
 def input_border() -> dict:
     """Rounded outline: quiet border at rest, accent when focused."""
     return {

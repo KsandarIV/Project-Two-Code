@@ -5,13 +5,17 @@ a notebook of thousands of pages where everything found a place. "One" stands
 for all-in-one. Every name here comes with its source so it can be checked.
 """
 
+import os
+import re
 from dataclasses import dataclass
 from datetime import date
-from typing import Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional, Tuple
 
-APP_NAME = "ZibaldOne"
-APP_TAGLINE = "il tuo zibaldone di pensieri, fatto a blocchi"
-APP_MOTTO = "Tutto in uno, un pensiero alla volta."
+DEFAULT_THEME_ID = "filosofia"
+THEME_ENV_VAR = "ZIBALDONE_THEME"
+THEME_SETTING_KEY = "theme"
+MIN_QUOTES = 7
+_THEME_ID_RE = re.compile(r"^[a-z0-9_-]+$")
 
 
 @dataclass(frozen=True)
@@ -24,12 +28,13 @@ class Name:
 
 
 # * — the parts of the app —
-NOMENCLATURE: Dict[str, Name] = {
+_FILOSOFIA_NOMENCLATURE: Dict[str, Name] = {
     "block": Name("Atomi", "i blocchi", "Democrito: tutto è fatto di atomi che si combinano"),
     "template": Name("Forme", "i modelli", "Platone e Aristotele: la forma che dà struttura alla materia"),
     "entry": Name("Pensieri", "le voci", "Leopardi, Zibaldone di pensieri; Pascal, Pensieri"),
     "pack": Name("Scuole", "i pacchetti di modelli", "le scuole filosofiche antiche: Stoa, Accademia, Liceo, Giardino"),
     "today": Name("Hic et nunc", "la pagina di oggi", "locuzione latina: qui e ora"),
+    "areas": Name("Eudaimonia", "le 8 aree della vita", "Aristotele, Etica Nicomachea: la felicità come vita che fiorisce in tutte le sue parti"),
     "search": Name("Zetesis", "la ricerca", "Sesto Empirico: lo scettico è zetetico, cioè colui che cerca"),
     "graph": Name("Rizoma", "il grafo dei collegamenti", "Deleuze e Guattari, Mille piani (1980)"),
     "stats": Name("Theoria", "le statistiche", "greco theorein: guardare, contemplare"),
@@ -54,8 +59,18 @@ class Mascot:
     color: str
 
 
+@dataclass(frozen=True)
+class Quote:
+    text: str
+    author: str
+    source: str
+
+
+AREAS: List[str] = ["personale", "salute", "finanze", "famiglia", "sociale", "lavoro", "studio", "svago"]
+
+
 # * — one mascot per life area, plus the app's own (proposal) —
-MASCOTS: List[Mascot] = [
+_FILOSOFIA_MASCOTS: List[Mascot] = [
     Mascot("Leopy", "passero", "personale", "Giacomo Leopardi",
            "Il passero solitario dei Canti: ama stare con sé stesso e scrivere quello che pensa.", "#B3F3F6"),
     Mascot("Hegy", "nottola", "studio", "G. W. F. Hegel",
@@ -64,37 +79,20 @@ MASCOTS: List[Mascot] = [
            "\"La volpe sa molte cose, il riccio una sola ma grande\": si concentra su ciò che conta.", "#FF5500"),
     Mascot("Monty", "gatta", "svago", "Michel de Montaigne",
            "\"Quando gioco con la mia gatta, chissà se non è lei a passare il tempo con me\" (Saggi II, 12).", "#FFFF00"),
-    Mascot("Diogy", "cane", "salute", "Diogene di Sinope",
+    Mascot("Diggy", "cane", "salute", "Diogene di Sinope",
            "Il cane dei cinici: vita semplice, sole, movimento e poche cose.", "#74EE15"),
     Mascot("Mandy", "ape", "finanze", "Bernard de Mandeville",
            "L'ape della Favola delle api (1714): conta, risparmia e sa dove va il miele.", "#FF0000"),
-    Mascot("Aristy", "cicogna", "famiglia", "Aristotele",
+    Mascot("Ary", "cicogna", "famiglia", "Aristotele",
            "La cicogna che, scrive Aristotele, accudisce i genitori quando invecchiano.", "#FF007F"),
-    Mascot("Hobby", "lupo", "sociale", "Thomas Hobbes",
+    Mascot("Hobbsy", "lupo", "sociale", "Thomas Hobbes",
            "\"Homo homini lupus\": un lupo burbero che sta imparando a stare in compagnia.", "#00E5FF"),
     Mascot("Zibby", "chimera", "app", "Platone",
            "Proposta: una piccola chimera fatta di pezzi delle altre otto, come i blocchi dell'app e l'anima-chimera della Repubblica (IX, 588c).", "#00E5FF"),
 ]
 
-AREAS: List[str] = ["personale", "salute", "finanze", "famiglia", "sociale", "lavoro", "studio", "svago"]
-
-
-def mascot_for(sphere: str) -> Optional[Mascot]:
-    for mascot in MASCOTS:
-        if mascot.sphere == sphere.lower():
-            return mascot
-    return None
-
-
-@dataclass(frozen=True)
-class Quote:
-    text: str
-    author: str
-    source: str
-
-
 # * — short, well-known quotes for the "pensiero del giorno" —
-QUOTES: List[Quote] = [
+_FILOSOFIA_QUOTES: List[Quote] = [
     Quote("Conosci te stesso.", "Iscrizione del tempio di Apollo", "Delfi"),
     Quote("Una vita senza ricerca non è degna di essere vissuta.", "Socrate", "Platone, Apologia di Socrate, 38a"),
     Quote("Tutto scorre.", "Eraclito", "frammento attribuito"),
@@ -115,7 +113,123 @@ QUOTES: List[Quote] = [
 ]
 
 
+# * — themes: one registry entry per brand identity —
+@dataclass(frozen=True)
+class Theme:
+    """A complete brand identity: app texts, nomenclature, mascots and quotes."""
+
+    id: str
+    label: str
+    app_name: str
+    app_tagline: str
+    app_motto: str
+    nomenclature: Mapping[str, Name]
+    mascots: Tuple[Mascot, ...]
+    quotes: Tuple[Quote, ...]
+
+    def mascot_for(self, sphere: str) -> Optional[Mascot]:
+        for mascot in self.mascots:
+            if mascot.sphere == sphere.lower():
+                return mascot
+        return None
+
+    def quote_of_the_day(self, day: Optional[date] = None) -> Quote:
+        """Same quote all day, a different one tomorrow."""
+        day = day or date.today()
+        return self.quotes[day.toordinal() % len(self.quotes)]
+
+
+_THEMES: Dict[str, Theme] = {}
+
+
+def validate_theme(theme: Theme) -> None:
+    """Raise ValueError (naming theme and problem) if the theme is incomplete."""
+
+    def fail(problem: str) -> None:
+        raise ValueError(f"theme {theme.id!r}: {problem}")
+
+    if not theme.id or not _THEME_ID_RE.match(theme.id):
+        fail("id must be a non-empty slug [a-z0-9_-]+")
+    for field in ("label", "app_name", "app_tagline", "app_motto"):
+        if not getattr(theme, field).strip():
+            fail(f"{field} is empty")
+    default = _THEMES.get(DEFAULT_THEME_ID)
+    if default is not None and set(theme.nomenclature) != set(default.nomenclature):
+        missing = sorted(set(default.nomenclature) - set(theme.nomenclature))
+        extra = sorted(set(theme.nomenclature) - set(default.nomenclature))
+        fail(f"nomenclature keys differ (missing {missing}, extra {extra})")
+    for key, name in theme.nomenclature.items():
+        if not (name.name.strip() and name.meaning.strip() and name.source.strip()):
+            fail(f"nomenclature {key!r} has an empty name, meaning or source")
+    spheres = [mascot.sphere for mascot in theme.mascots]
+    if len(set(spheres)) != len(spheres):
+        fail("duplicate mascot spheres")
+    if sorted(spheres) != sorted(AREAS + ["app"]):
+        fail(f"mascots must cover exactly {AREAS + ['app']}, got {sorted(spheres)}")
+    names = [mascot.name for mascot in theme.mascots]
+    if not all(name.strip() for name in names) or len(set(names)) != len(names):
+        fail("mascot names must be non-empty and unique")
+    if len(theme.quotes) < MIN_QUOTES:
+        fail(f"at least {MIN_QUOTES} quotes needed, got {len(theme.quotes)}")
+    texts = [quote.text for quote in theme.quotes]
+    if not all(text.strip() for text in texts) or len(set(texts)) != len(texts):
+        fail("quote texts must be non-empty and unique")
+    if not all(quote.author.strip() and quote.source.strip() for quote in theme.quotes):
+        fail("every quote needs an author and a source")
+
+
+def register_theme(theme: Theme) -> Theme:
+    """Validate and add a theme to the registry; return it."""
+    validate_theme(theme)
+    if theme.id in _THEMES:
+        raise ValueError(f"theme {theme.id!r}: already registered")
+    _THEMES[theme.id] = theme
+    return theme
+
+
+def list_themes() -> List[Theme]:
+    """All themes: the default first, then in registration order."""
+    ordered = [theme for theme in _THEMES.values() if theme.id == DEFAULT_THEME_ID]
+    return ordered + [theme for theme in _THEMES.values() if theme.id != DEFAULT_THEME_ID]
+
+
+def get_theme(theme_id: Optional[str]) -> Theme:
+    """Theme by id; unknown, empty or None falls back to the default."""
+    key = (theme_id or "").strip().lower()
+    return _THEMES.get(key) or _THEMES[DEFAULT_THEME_ID]
+
+
+def active_theme(settings: Optional[Mapping[str, Any]] = None) -> Theme:
+    """Theme chosen by env var, then by settings, then the default."""
+    chosen = os.environ.get(THEME_ENV_VAR) or (settings or {}).get(THEME_SETTING_KEY)
+    return get_theme(chosen if isinstance(chosen, str) else None)
+
+
+# * — the default theme: philosophy —
+FILOSOFIA = register_theme(Theme(
+    id=DEFAULT_THEME_ID,
+    label="Filosofia",
+    app_name="ZibaldOne",
+    app_tagline="il tuo zibaldone di pensieri, fatto a blocchi",
+    app_motto="Tutto in uno, un pensiero alla volta.",
+    nomenclature=_FILOSOFIA_NOMENCLATURE,
+    mascots=tuple(_FILOSOFIA_MASCOTS),
+    quotes=tuple(_FILOSOFIA_QUOTES),
+))
+
+# * — public aliases bound to the default theme (read at import by navigation.py) —
+APP_NAME = FILOSOFIA.app_name
+APP_TAGLINE = FILOSOFIA.app_tagline
+APP_MOTTO = FILOSOFIA.app_motto
+NOMENCLATURE: Dict[str, Name] = dict(FILOSOFIA.nomenclature)
+MASCOTS: List[Mascot] = list(FILOSOFIA.mascots)
+QUOTES: List[Quote] = list(FILOSOFIA.quotes)
+
+
+def mascot_for(sphere: str) -> Optional[Mascot]:
+    return FILOSOFIA.mascot_for(sphere)
+
+
 def quote_of_the_day(day: Optional[date] = None) -> Quote:
     """Same quote all day, a different one tomorrow."""
-    day = day or date.today()
-    return QUOTES[day.toordinal() % len(QUOTES)]
+    return FILOSOFIA.quote_of_the_day(day)

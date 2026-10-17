@@ -17,6 +17,7 @@ Ogni parte dell'app ha un nome filosofico accanto al nome semplice: l'interfacci
 | Voci | Pensieri | Leopardi, Zibaldone; Pascal, Pensieri |
 | Pacchetti | Scuole | Stoa, Accademia, Liceo, Giardino |
 | Oggi | Hic et nunc | locuzione latina |
+| Le 8 aree della vita | Eudaimonia | Aristotele, Etica Nicomachea |
 | Ricerca | Zetesis | Sesto Empirico |
 | Grafo | Rizoma | Deleuze e Guattari, Mille piani |
 | Statistiche | Theoria | greco *theorein*, contemplare |
@@ -52,6 +53,7 @@ Ogni parte dell'app ha un nome filosofico accanto al nome semplice: l'interfacci
 | **Museion · Collezioni** | Biblioteca di Babele (libri, Borges), Caverna (film, Platone), Eterno ritorno (serie, Nietzsche), Anima mundi (anime, Platone), Homo ludens (videogiochi, Huizinga), Alea (giochi da tavolo, Caillois), Mens sana (sport, Giovenale), Armonia delle sfere (musica, pitagorici), Maschera (guardaroba, Pirandello) |
 | **Delfi · Io** | Conosci te stesso, Arché (la mia filosofia), Confessioni (capitoli di vita, Agostino), Conatus (desideri, Spinoza), Hexis (abitudini, Aristotele) |
 | **Agorà · Persone** | L'Altro (persona, Levinas), Simposio (incontro, Platone) |
+| **Liceo · Aree** | Prosoché (check-in di un'area, l'attenzione a sé degli stoici), Telos (obiettivo, Aristotele), Opere e giorni (cose da fare, Esiodo) |
 
 ## Le mascotte
 Una per ogni area della vita, più una dell'app (da decidere quale sarà la principale).
@@ -62,10 +64,10 @@ Una per ogni area della vita, più una dell'app (da decidere quale sarà la prin
 | Hegy | nottola | Studio | Hegel: la nottola di Minerva vola al crepuscolo |
 | Archy | riccio | Lavoro | Archiloco: il riccio sa una sola cosa, ma grande |
 | Monty | gatta | Svago | Montaigne, *Saggi* II, 12 |
-| Diogy | cane | Salute | Diogene il cinico e la vita semplice |
+| Diggy | cane | Salute | Diogene il cinico e la vita semplice |
 | Mandy | ape | Finanze | Mandeville, *La favola delle api* |
-| Aristy | cicogna | Famiglia | Aristotele: la cicogna accudisce i genitori anziani |
-| Hobby | lupo | Sociale | Hobbes, *homo homini lupus* |
+| Ary | cicogna | Famiglia | Aristotele: la cicogna accudisce i genitori anziani |
+| Hobbsy | lupo | Sociale | Hobbes, *homo homini lupus* |
 | Zibby | chimera | l'app (proposta) | Platone, *Repubblica* IX: l'anima come creatura composta |
 
 Stile visivo: icone al tratto, luminose, sul tema neon scuro di Alex (sfondo `#0D0E15`, accento `#00E5FF`); ogni mascotte ha il suo colore della palette `CYBER_PALETTE`. I disegni sono da fare.

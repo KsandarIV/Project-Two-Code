@@ -4,6 +4,24 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-10-17
+### Aggiunto
+- **Le 8 aree della vita** (Eudaimonia) come concetto dell'app: ogni modello e ogni voce può appartenere a un'area (Personale, Salute, Finanze, Famiglia, Sociale, Lavoro, Studio, Svago). L'area della voce vince su quella del modello; un blocco etichette `aree` mette una voce in più aree.
+- Per ogni area: punteggio da 0 a 10 settimana per settimana con la tendenza, cose da fare (anche dalle liste delle sue voci), obiettivi, check-in, note e voci.
+- App: **Oggi → Aree** e la pagina di ogni area (`/aree`, `/aree/<area>`), con la mascotte, il grafico, le cose da spuntare e aggiungere, gli obiettivi; Check-in, Obiettivo e Nota con l'area già scelta. Filtro per area in Voci, aree nella pagina di una voce, area nell'editor dei modelli.
+- **«In arrivo»**: le pagine delle aree mostrano le funzioni delle prossime versioni (persone, albero genealogico, diario segreto, finanze, abitudini, la home su misura …) con la versione prevista.
+- Nuova Scuola **Liceo · Aree** (`aree`): Prosoché (check-in di un'area), Telos (obiettivo), Opere e giorni (cose da fare). Il primo avvio la installa con Stoa · Diario.
+- `zbone area` (le otto aree), `area show`, `area checkin`, `area todo`, `area fatto`; `--area` in `entry add/list/edit`, `template create` e `search`; `zbone template area`.
+- Esportazioni: `areas:` nelle proprietà Markdown e la colonna `area` nei CSV.
+- **Registro dei temi** in `core/brand.py` (dal team multi-thread): un tema è nomi, mascotte e citazioni; Filosofia è il tema di base e tutto funziona come prima. Aggiungere un tema è una sola `register_theme(...)`; l'app non sceglie ancora il tema.
+### Cambiato
+- Database, schema 3: colonna `area` nelle voci e indice `entry_areas`, riempiti da soli all'aggiornamento (con un backup prima).
+- Collezioni, Io e Persone 1.1.0: i loro modelli hanno un'area (Svago, Salute, Personale, Sociale).
+- Mascotte rinominate: Diggy (Salute), Ary (Famiglia), Hobbsy (Sociale).
+### Documentazione
+- [Le 8 aree](docs/tecnica/aree.md) e [ADR-0011](docs/decisioni/ADR-0011-aree-della-vita.md); guida rapida, roadmap, requisiti della fase 0.2, interfaccia e identità aggiornate.
+- Cartella `team/`: stato, compiti e consegne del team multi-thread.
+
 ## [0.1.5] — 2026-10-17
 ### Aggiunto
 - **Anonimizzatore** (Velo d'ignoranza), tutto locale: toglie nomi di persona (dalle voci Persona, con i soprannomi), email, telefoni, codice fiscale, partita IVA, IBAN, carte, URL, indirizzi IP e stradali, date di nascita, e mette segnaposto coerenti come `[PERSONA_1]`.

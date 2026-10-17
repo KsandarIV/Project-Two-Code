@@ -5,6 +5,7 @@ from typing import Dict, List, Optional, Sequence, Tuple
 import typer
 
 from zibaldone.cli.common import open_store
+from zibaldone.core.areas import parse_area
 from zibaldone.core.links import KIND_WIKI, LinkInfo
 from zibaldone.core.search import SearchHit
 from zibaldone.core.templates import Template
@@ -43,12 +44,15 @@ def search_command(
     since: Optional[str] = typer.Option(None, help="dal giorno (AAAA-MM-GG, GG/MM/AAAA, oggi, ieri)"),
     until: Optional[str] = typer.Option(None, help="al giorno"),
     limit: int = typer.Option(20, min=1, max=500, help="quanti risultati al massimo"),
+    area: Optional[str] = typer.Option(None, "--area", help="solo un'area della vita (personale, salute … svago)"),
 ) -> None:
     """Cerca tra le voci (Zetesis, la ricerca): parole, frasi, etichette e date."""
     with open_store() as store:
         if template:
             store.get_template(template)
-        result = store.search(" ".join(query or []), template=template, tags=tags, since=since, until=until, limit=limit)
+        result = store.search(
+            " ".join(query or []), template=template, tags=tags, since=since, until=until, limit=limit, area=parse_area(area) if area else None
+        )
         templates = {item.slug: item for item in store.list_templates()}
         if result.query.unusable:
             typer.echo("Nella ricerca non c'è nessuna parola da cercare: prova con lettere o numeri.")
