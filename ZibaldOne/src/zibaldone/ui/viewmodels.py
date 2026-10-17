@@ -144,7 +144,7 @@ def entry_row(entry: Entry, template: Template, today: date) -> EntryRow:
 
 @dataclass
 class EntryQuery:
-    """Filters of the Voci screen. Text matches titles only (full search arrives in 0.1.2)."""
+    """Filters of the Voci screen. Text goes to the full-text search (Zetesis, 0.1.2)."""
 
     template: str = ""
     day_from: str = ""
@@ -157,17 +157,23 @@ def list_entry_rows(store: Any, query: EntryQuery, today: date, limit: int = 300
     day_from, day_to = query.day_from or None, query.day_to or None
     if day_from and day_to and day_from > day_to:
         day_from, day_to = day_to, day_from
-    entries = store.list_entries(template=query.template or None, day_from=day_from, day_to=day_to)
-    wanted = _plain(query.text.strip())
+    text = query.text.strip()
     rows: List[EntryRow] = []
-    for entry in entries:
+    if text:
+        # every block, best match first; the summary becomes the piece of text that matched
+        found = store.search(text, template=query.template or None, since=day_from, until=day_to, limit=limit)
+        for hit in found.hits:
+            template = templates.get(hit.entry.template)
+            if template is None:
+                continue
+            row = entry_row(hit.entry, template, today)
+            rows.append(replace(row, summary=hit.snippet.text) if hit.snippet else row)
+        return rows
+    for entry in store.list_entries(template=query.template or None, day_from=day_from, day_to=day_to):
         template = templates.get(entry.template)
         if template is None:
             continue
-        row = entry_row(entry, template, today)
-        if wanted and wanted not in _plain(row.title):
-            continue
-        rows.append(row)
+        rows.append(entry_row(entry, template, today))
         if len(rows) >= limit:
             break
     return rows
@@ -337,13 +343,48 @@ class EntryDetail:
     created_label: str
     updated_label: str
     blocks: Tuple[DetailBlock, ...]
+    # 0.1.2: who links here and who names it without a link ("tutto su Marco")
+    backlinks: Tuple["RelatedEntry", ...] = ()
+    mentions: Tuple["RelatedEntry", ...] = ()
 
     @property
     def has_own_title(self) -> bool:
         return self.title != self.template.name
 
 
-def entry_detail(store: Any, entry_id: str, today: date) -> EntryDetail:
+@dataclass(frozen=True)
+class RelatedEntry:
+    """Another entry shown on an entry's page: id, title, and where or how it is related."""
+
+    id: str
+    title: str
+    detail: str
+    excerpt: str = ""
+
+
+def _related(store: Any, entry_id: str, templates: Mapping[str, Template], today: date, mentions: int) -> Tuple[Tuple[RelatedEntry, ...], Tuple[RelatedEntry, ...]]:
+    try:
+        about = store.about(entry_id, mentions=mentions)
+    except Exception:  # the page shows anyway, without the links
+        return (), ()
+    backlinks, seen = [], set()
+    for link in about.backlinks:
+        if link.source in seen:
+            continue
+        seen.add(link.source)
+        template = templates.get(link.source_template)
+        when = short_date(link.source_day, today) if link.source_day else ""
+        detail = " · ".join(part for part in (template.name if template else "", when, link.how) if part)
+        backlinks.append(RelatedEntry(link.source, link.source_title, detail))
+    named = []
+    for hit in about.mentions:
+        template = templates.get(hit.entry.template)
+        detail = " · ".join(part for part in (template.name if template else "", short_date(hit.entry.day, today)) if part)
+        named.append(RelatedEntry(hit.entry.id, hit.title, detail, hit.snippet.text if hit.snippet else ""))
+    return tuple(backlinks), tuple(named)
+
+
+def entry_detail(store: Any, entry_id: str, today: date, mentions: int = 10) -> EntryDetail:
     entry = store.get_entry(entry_id)
     template = store.get_template(entry.template)
     templates = {item.slug: item for item in store.list_templates()}
@@ -367,6 +408,7 @@ def entry_detail(store: Any, entry_id: str, today: date) -> EntryDetail:
             DetailBlock(spec.key, spec.label, spec.type, spec.block_type.to_text(value, spec.options), value, dict(spec.options), links)
         )
     created, updated = local_timestamp(entry.created_at), local_timestamp(entry.updated_at)
+    backlinks, named = _related(store, entry.id, templates, today, mentions)
     return EntryDetail(
         entry=entry,
         template=template,
@@ -375,6 +417,8 @@ def entry_detail(store: Any, entry_id: str, today: date) -> EntryDetail:
         created_label=created,
         updated_label=updated if updated != created else "",
         blocks=tuple(blocks),
+        backlinks=backlinks,
+        mentions=named,
     )
 
 

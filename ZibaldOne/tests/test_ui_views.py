@@ -366,3 +366,12 @@ def test_the_info_screen_checks_for_updates_on_request(ready: Path, monkeypatch)
     switch.value = False
     switch.on_change(SimpleNamespace(control=switch))
     assert services.update_check_enabled(ready) is False
+
+
+def test_an_entry_page_lists_who_cites_it(ready: Path) -> None:
+    with Store.open(ready) as store:
+        giulia = next(entry for entry in store.list_entries(template="persona"))
+    shell = Shell(FakePage(), ready)
+    shell.start(f"/voci/{giulia.id}")
+    shown = texts(shell.body.content)
+    assert "Citata da (1)" in shown and "Cena" in shown

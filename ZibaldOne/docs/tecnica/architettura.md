@@ -31,6 +31,11 @@ Diario, Collezioni, Documenti, Finanze, Password, Grafo, Raccomandazioni: ognuno
 - **Migrazioni**: una lista in `storage/database.py` che si può solo allungare; la versione dello schema è in `PRAGMA user_version`. Un database più nuovo dell'app viene rifiutato invece di rovinarlo.
 - `core/templates.py` definisce `BlockSpec`, `Template` ed `Entry`; tutti si trasformano in JSON e ritorno senza perdere nulla, e rifiutano i campi sconosciuti.
 
+## Ricerca e collegamenti (dalla 0.1.2)
+- Migrazione 2: indici derivati dalle voci (`search_index`, `entry_tags`, `entry_names`, `links`, `index_state`, e `search_fts` dove SQLite ha FTS5), scritti nella stessa transazione della voce e riparati da soli all'apertura se non corrispondono.
+- Le migrazioni possono avere un passo in Python dopo l'SQL (`BACKFILLS`), dentro la stessa transazione: la 2 riempie gli indici.
+- Dettagli: [ricerca e collegamenti](ricerca-e-collegamenti.md).
+
 ## Backup (dalla 0.0.6)
 - Istantanee complete in `backups/` nella cartella dati, una al giorno in automatico dopo un comando che salva dati, più quelle a mano. `cli/common.open_store()` le avvia: prima di un aggiornamento dello schema e dopo un comando che ha cambiato qualcosa.
 - Formato, durata e ripristino: [storia e backup](backup.md).

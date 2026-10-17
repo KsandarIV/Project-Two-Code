@@ -48,4 +48,5 @@ Le parti senza Flet (`navigation`, `forms`, `viewmodels`, `cloud_model`, `theme`
 - `tests/test_ui_views.py`: costruisce le schermate con una pagina finta (nessuna finestra), percorre il primo avvio, la navigazione e il salvataggio di una voce.
 
 ## Prossime versioni
-- 0.1.2: la ricerca nel testo; oggi la schermata Voci filtra per titolo, modello e intervallo di date.
+- 0.1.2 ✅: la casella di Voci cerca in tutti i blocchi ([ricerca e collegamenti](ricerca-e-collegamenti.md)); la pagina di una voce mostra chi la cita e chi la nomina.
+- 0.1.3: il grafo delle voci e dei collegamenti.

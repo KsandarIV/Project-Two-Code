@@ -4,6 +4,18 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.1.2] — 2026-10-17
+### Aggiunto
+- **Ricerca** (Zetesis) in tutti i blocchi delle voci: più parole insieme, "frase esatta", `parol*`, `-parola`; maiuscole e accenti non contano. Filtri per modello, etichetta e date. `zbone search`.
+- Con SQLite FTS5 i risultati sono ordinati per pertinenza (titolo ed etichette pesano di più); senza FTS5 (alcuni Android) la stessa ricerca gira in modo semplice e lo dice.
+- **Collegamenti** tra voci: dai blocchi "collegamento" e da `[[Titolo]]` nei testi (vale anche il soprannome di una persona). Un `[[Titolo]]` senza voce si collega da solo quando la voce nasce.
+- `zbone links <id>`: chi collega, chi la cita e chi la nomina senza collegarla ("tutto su Marco").
+- App: la casella di **Voci** cerca in tutti i blocchi e mostra il pezzo trovato; la pagina di una voce mostra **Citata da** e **La nominano senza collegamento**.
+### Cambiato
+- Database, schema 2: indici di ricerca, etichette, nomi e collegamenti, riempiti da soli all'aggiornamento (con un backup prima) e riparati all'apertura se non corrispondono alle voci.
+### Documentazione
+- [Ricerca e collegamenti](docs/tecnica/ricerca-e-collegamenti.md); guida rapida, architettura, blocchi e interfaccia aggiornate.
+
 ## [0.1.1] — 2026-10-17
 ### Aggiunto
 - **Prima versione per i tester**: GitHub Actions costruisce l'APK Android a ogni tag `zibaldone-v*` (test prima, firma con la chiave della repo, client Google dai segreti) e lo allega a una *pre-release*.
