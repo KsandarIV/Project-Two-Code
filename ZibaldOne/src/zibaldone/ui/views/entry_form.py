@@ -10,9 +10,11 @@ from typing import Any, Callable, Dict, List, Optional
 
 import flet as ft
 
+from zibaldone.core import secrets
 from zibaldone.core.brand import mascot_for
 from zibaldone.core.templates import BlockSpec, Entry, Template
 from zibaldone.storage.database import StoreError
+from zibaldone.ui import cloud_model as cm
 from zibaldone.ui import forms
 from zibaldone.ui import theme as T
 from zibaldone.ui import viewmodels as vm
@@ -20,6 +22,7 @@ from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route
 from zibaldone.ui.views.common import not_found, pick_date
+from zibaldone.ui.views.vault import unlock_secrets, vault_of
 
 AREA_KEY = "_area"
 
@@ -395,6 +398,65 @@ class LinkEditor(FieldEditor):
         self._redraw()
 
 
+class SecretEditor(FieldEditor):
+    """A secret (0.2.3): while closed an empty field keeps it; «Apri» shows it to change it."""
+
+    def build(self) -> ft.Control:
+        multiline = bool(self.spec.options.get("multiline"))
+        self.field = W.text_input(
+            self.state.get("text", ""),
+            hint_text=forms.field_hint(self.spec) or None,
+            password=not multiline,
+            can_reveal_password=not multiline,
+            multiline=multiline,
+            min_lines=3 if multiline else 1,
+            max_lines=12 if multiline else 1,
+            on_change=self.changed,
+            expand=True,
+        )
+        self.note = W.caption("")
+        self.open_button = W.text_button("Apri", self.open, icon="LOCK_OPEN")
+        self.remove_button = W.text_button("Togli", self.remove, icon="DELETE_OUTLINE", color=T.TEXT_DIM)
+        self._redraw(update=False)
+        actions = ft.Row([self.note, self.open_button, self.remove_button], wrap=True, spacing=8, vertical_alignment=ft.CrossAxisAlignment.CENTER)
+        return ft.Column([ft.Row([self.field]), actions], spacing=6)
+
+    def _redraw(self, update: bool = True) -> None:
+        closed = self.state.get("sealed") is not None and self.state.get("original") is None
+        if closed:
+            self.note.value = f"{secrets.LOCKED_TEXT}: se lasci vuoto resta com'è, quello che scrivi lo sostituisce"
+        else:
+            self.note.value = secrets.LEVEL_LABELS[secrets.level_of(self.spec.options)]
+        self.open_button.visible = closed
+        self.remove_button.visible = self.state.get("sealed") is not None
+        if update:
+            self.ctx.update(self.field, self.note, self.open_button, self.remove_button)
+
+    def changed(self, event: Any) -> None:
+        self.state = {**self.state, "text": event.control.value or ""}
+
+    def show(self, text: str) -> None:
+        self.form.states[self.spec.key] = forms.reveal_secret_state(self.state, text)  # seeing it is not a change
+        self.field.value = text
+        self._redraw()
+
+    def open(self, _: Any) -> None:
+        sealed = self.state.get("sealed")
+
+        def opened() -> None:
+            try:
+                self.show(vault_of(self.ctx).reveal(sealed, self.ctx.now()))
+            except secrets.SecretsError as error:
+                self.ctx.toast(cm.error_text(error), error=True)
+
+        unlock_secrets(self.ctx, [sealed], opened)
+
+    def remove(self, _: Any) -> None:
+        self.state = forms.removed_secret_state()
+        self.field.value = ""
+        self._redraw()
+
+
 EDITORS: Dict[str, Callable[["EntryForm", BlockSpec], FieldEditor]] = {
     "text": TextEditor,
     "longtext": TextEditor,
@@ -408,6 +470,7 @@ EDITORS: Dict[str, Callable[["EntryForm", BlockSpec], FieldEditor]] = {
     "choice": ChoiceEditor,
     "progress": ProgressEditor,
     "link": LinkEditor,
+    "secret": SecretEditor,
 }
 
 
@@ -418,11 +481,23 @@ class EntryForm:
         self.entry = entry
         self.area = entry.area if entry else area  # 0.2.0: '' = the template's area
         self.states: Dict[str, Any] = forms.initial_states(template, entry.values if entry else None)
+        self._show_open_secrets()
         self.day = entry.day if entry else ctx.now().date().isoformat()
         self.dirty = False
         self.errors: Dict[str, ft.Text] = {}
         self._entries: Optional[List[Entry]] = None
         self._templates: Optional[Dict[str, Template]] = None
+
+    def _show_open_secrets(self) -> None:
+        """Secrets the vault can open right now are shown in their fields, to change them."""
+        vault, now = vault_of(self.ctx), self.ctx.now()
+        for spec in secrets.secret_specs(self.template):
+            sealed = self.states[spec.key].get("sealed")
+            if sealed and vault.can_open(sealed, now):
+                try:
+                    self.states[spec.key] = forms.reveal_secret_state(self.states[spec.key], vault.reveal(sealed, now))
+                except secrets.SecretsError:
+                    continue  # stays closed; the field says so
 
     # — data the editors need —
 
@@ -575,7 +650,7 @@ class EntryForm:
                 else:
                     saved = store.add_entry(self.template.slug, result.values, day=result.day or None, area=self.area or None)
         except (StoreError, ValueError) as error:
-            self.show_errors({forms.FORM_KEY: str(error)})
+            self.show_errors({forms.FORM_KEY: cm.app_hint(str(error))})
             self.ctx.update()
             return
         self.dirty = False

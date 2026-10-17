@@ -17,6 +17,8 @@ LOOKALIKES = str.maketrans({"O": "0", "I": "1", "L": "1"})
 # Core messages name terminal commands; in the app the same thing is a button.
 APP_HINTS: Tuple[Tuple[str, str], ...] = (
     ("con `zbone cloud use google` o `zbone cloud use folder PERCORSO`", "in Le Nuvole, alla voce «Dove vanno le copie»"),
+    ("(Impostazioni → Mnemosyne, o `zbone backup setup`)", "(«Attiva la cifratura» in Impostazioni · Mnemosyne)"),
+    ("(`zbone segreti apri`, o nell'app)", "(«Apri i segreti» in Impostazioni · Mnemosyne)"),
     ("`zbone backup setup`", "«Attiva la cifratura» in Impostazioni · Mnemosyne"),
     ("`zbone account login`", "«Entra con Google» in Impostazioni · Le Nuvole"),
     ("`zbone cloud recovery on`", "Impostazioni · Le Nuvole"),

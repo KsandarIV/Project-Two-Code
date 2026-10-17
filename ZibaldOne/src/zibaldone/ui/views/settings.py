@@ -297,6 +297,10 @@ class MnemosyneScreen:
             return W.screen(controls, self.ctx.wide)
         self.api = api
         controls.append(self.encryption_panel())
+        if services.encryption_on(self.ctx.folder):
+            from zibaldone.ui.views.vault import secrets_panel
+
+            controls.append(secrets_panel(self.ctx))
         if self.ctx.wide:
             maker = ft.Row([self.note, self.button], spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER)
         else:

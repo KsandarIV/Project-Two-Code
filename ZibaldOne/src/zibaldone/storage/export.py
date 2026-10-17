@@ -27,6 +27,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Set, Tuple
 
 from zibaldone.core.areas import entry_areas, main_area
+from zibaldone.core.secrets import LOCKED_TEXT
 from zibaldone.core.templates import BlockSpec, Entry, Template
 from zibaldone.storage.database import Store
 
@@ -179,8 +180,13 @@ def template_csv(template: Template, entries: List[Entry]) -> str:
     buffer = io.StringIO()
     writer = csv.writer(buffer)
     writer.writerow(columns)
+    sealed = {block.key for block in template.blocks if block.type == "secret"}  # 0.2.3: only that a secret exists
+
+    def cell(entry: Entry, key: str) -> str:
+        return LOCKED_TEXT if key in sealed and key in entry.values else _csv_value(entry.values.get(key))
+
     for entry in entries:
-        writer.writerow([entry.id, entry.day, main_area(entry, template), entry.created_at, entry.updated_at, *(_csv_value(entry.values.get(key)) for key in keys)])
+        writer.writerow([entry.id, entry.day, main_area(entry, template), entry.created_at, entry.updated_at, *(cell(entry, key) for key in keys)])
     return buffer.getvalue()
 
 

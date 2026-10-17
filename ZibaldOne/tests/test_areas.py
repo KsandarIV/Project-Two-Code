@@ -255,7 +255,7 @@ def test_cli_check_in_to_do_and_done(cli_data) -> None:
     assert shown.exit_code == 0, shown.output
     assert "1. 5 km  (Correre 10 km," in shown.output and "2. prenotare il dentista  (" in shown.output
     assert "Correre 10 km · Non iniziato · 0% · 0/1 passi" in shown.output
-    assert "Note mediche protette (versione 0.2.3)" in shown.output
+    assert "Abitudini (versione 0.2.7)" in shown.output
     done = invoke("area", "fatto", "salute", "2")
     assert done.exit_code == 0 and "Fatto: prenotare il dentista. Ne restano 1." in done.output
     assert invoke("area", "fatto", "salute", "5").exit_code == 1

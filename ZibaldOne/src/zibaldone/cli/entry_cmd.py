@@ -1,6 +1,6 @@
 """`zbone entry …`: add, list, show, edit and delete entries."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import typer
 
@@ -75,7 +75,7 @@ def ask_values(store: Store, template: Template, current: Optional[Dict[str, Any
             shown = f" [ora: {spec.block_type.to_text(current[spec.key], spec.options)}]"
         prompt = f"{spec.label}{' *' if spec.required else ''}{f' ({hint})' if hint else ''}{shown}"
         while True:
-            raw = typer.prompt(prompt, default="", show_default=False).strip()
+            raw = typer.prompt(prompt, default="", show_default=False, hide_input=spec.type == "secret").strip()
             if not raw:
                 if spec.required and not (current and spec.key in current):
                     typer.echo("  questo blocco è obbligatorio")
@@ -109,7 +109,8 @@ def areas_text(entry: Entry, template: Template) -> str:
     return text if entry.area or not template.area else f"{text} (dal modello)"
 
 
-def print_entry(entry: Entry, template: Template) -> None:
+def print_entry(entry: Entry, template: Template, reveal: Optional[Callable[[str], str]] = None) -> None:
+    """`reveal` opens the secret blocks (0.2.3); without it they show only that they are encrypted."""
     typer.echo(f"{entry.title(template)}")
     typer.echo(f"  {template.name} · {entry.day} · id {entry.short_id}")
     areas = areas_text(entry, template)
@@ -118,7 +119,8 @@ def print_entry(entry: Entry, template: Template) -> None:
     for spec in template.blocks:
         if spec.key not in entry.values:
             continue
-        text = spec.block_type.to_text(entry.values[spec.key], spec.options)
+        value = entry.values[spec.key]
+        text = reveal(value) if reveal is not None and spec.type == "secret" else spec.block_type.to_text(value, spec.options)
         if "\n" in text:
             typer.echo(f"  {spec.label}:")
             for line in text.splitlines():

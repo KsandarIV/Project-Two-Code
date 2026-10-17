@@ -1,0 +1,21 @@
+# ADR-0012 — Blocchi segreti cifrati, due livelli e PIN
+
+- **Data**: 2026-10-17 · **Stato**: accettata (richiesta di Alex, fase 0.2, v0.2.3)
+- **Contesto**: la vecchia Journal App proteggeva i dati sensibili con un PIN ([requisiti della fase 0.2](../tecnica/requisiti-v0.2.md), conflitto 1): un PIN da solo non protegge i file. In ZibaldOne il database sul dispositivo è in chiaro e solo i backup sono cifrati ([ADR-0006](ADR-0006-storia-e-backup-cifrati.md)). Servono dati davvero cifrati (documenti, indirizzi, note mediche, il diario segreto) senza rendere scomodo scrivere ogni giorno, e fuori dalla ricerca e dall'IA.
+- **Decisione**:
+  - **Un tipo di blocco**, `secret`, non una voce o un database a parte: il resto della voce (giorno, tipo di visita, medico) resta cercabile, e i modelli tuoi possono avere segreti.
+  - **Cifratura a chiave pubblica**, la stessa dei backup: l'archivio cifra con le chiavi pubbliche salvate in `keys.json`, quindi **scrivere non chiede nulla**; leggere sì. L'ultimo controllo prima di salvare rifiuta qualsiasi segreto in chiaro.
+  - **Due livelli**: *massimo* cifrato con la chiave dei backup (solo passphrase o codice di recupero); *protetto* con una seconda chiave **ricavata** dalla prima con HKDF. Ricavata, non casuale: i backup non contengono `keys.json`, e su un dispositivo nuovo il codice di recupero deve bastare per riaprire tutto.
+  - **PIN** di 6–12 cifre che apre solo la chiave protetta, con scrypt più pesante (64 MiB), e che si toglie da solo dopo 5 errori di fila.
+  - **Fuori da tutto**: `to_text` di un segreto è «🔒 cifrato», e ricerca, collegamenti, statistiche, esportazioni e anonimizzatore leggono solo quello.
+  - Le chiavi aperte stanno solo in memoria (`Vault`) e si richiudono dopo 5 minuti senza usarle.
+- **Modello di minaccia**:
+  - Protegge da chi legge il database o una copia dei file senza la passphrase: i segreti sono illeggibili; dal livello massimo anche con `keys.json` in mano.
+  - Non protegge dal PIN provato fuori dall'app: chi copia `keys.json` può provare tutti i PIN (un milione con 6 cifre) su un altro computer, senza il limite dei 5 tentativi. Il PIN è una comodità per il livello protetto; quello che conta va al livello massimo.
+  - Non protegge da chi usa il dispositivo sbloccato mentre i segreti sono aperti, né da un dispositivo compromesso.
+  - Il resto del database resta in chiaro: chi vuole cifrare tutto usa la cifratura del disco del sistema (BitLocker, Android).
+- **Conseguenze**:
+  - Senza la cifratura dei backup attiva non si possono scrivere segreti: l'app e la CLI dicono come attivarla.
+  - Chi aveva la cifratura da prima apre i segreti una volta con la passphrase, per salvare la chiave pubblica del livello protetto.
+  - Cambiare passphrase non cambia le chiavi: i segreti restano leggibili. Perdere passphrase e codice di recupero li perde per sempre.
+- **Alternative scartate**: cifrare tutto il database con SQLCipher (una dipendenza nativa in più su Android e Windows, e ogni apertura chiederebbe la passphrase); il solo PIN come in passato (non cifra niente); una chiave protetta casuale (si perderebbe ripristinando un backup su un dispositivo nuovo); l'impronta subito (Flet 1.0 non sa chiederla: resta «In arrivo»).

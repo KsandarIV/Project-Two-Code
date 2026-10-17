@@ -2,15 +2,16 @@
   "format": 1,
   "id": "zibaldone.persone",
   "name": "Agorà · Persone",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "author": "ZibaldOne",
   "license": "CC0-1.0",
-  "description": "La piazza dove ci si incontra: le persone della tua vita, i loro ruoli, contatti e legami, e i momenti con loro. Niente dati sensibili come documenti o salute.",
+  "description": "La piazza dove ci si incontra: le persone della tua vita, i loro ruoli, contatti e legami, e i momenti con loro. Indirizzi, documenti e salute delle persone solo in blocchi cifrati.",
   "required_blocks": [
     "choice",
     "date",
     "link",
     "longtext",
+    "secret",
     "tags",
     "text"
   ],
@@ -160,6 +161,35 @@
           "type": "tags",
           "label": "Social",
           "help": "per esempio instagram: @marco"
+        },
+        {
+          "key": "indirizzo",
+          "type": "secret",
+          "label": "Indirizzo",
+          "options": {
+            "multiline": true,
+            "level": "protetto"
+          }
+        },
+        {
+          "key": "documenti",
+          "type": "secret",
+          "label": "Documenti",
+          "options": {
+            "multiline": true,
+            "level": "massimo",
+            "placeholder": "carta d'identità, codice fiscale …"
+          }
+        },
+        {
+          "key": "salute",
+          "type": "secret",
+          "label": "Salute",
+          "options": {
+            "multiline": true,
+            "level": "massimo",
+            "placeholder": "allergie, terapie, contatti per le emergenze"
+          }
         },
         {
           "key": "compleanno",

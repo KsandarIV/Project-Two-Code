@@ -453,8 +453,6 @@ class Upcoming:
 
 # Remove an item when its version ships: a test checks that none is older than the app.
 UPCOMING: Tuple[Upcoming, ...] = (
-    Upcoming("Diario segreto", "voci cifrate con la tua chiave, aperte da PIN o impronta, mai nella ricerca né nell'IA", "0.2.3", ("personale",)),
-    Upcoming("Note mediche protette", "visite, terapie e documenti sanitari solo in blocchi cifrati", "0.2.3", ("salute",)),
     Upcoming("Foto, audio e documenti", "allegati alle voci e alle persone, dentro i backup cifrati", "0.2.4"),
     Upcoming("Svago su misura", "date di inizio e fine automatiche, voti con mezzo punto, recensioni con avviso spoiler, preferiti e lista dei desideri", "0.2.5", ("svago",)),
     Upcoming("Import da Goodreads, Letterboxd, MyAnimeList e Steam", "porta i libri, i film, gli anime e i giochi che hai già segnato altrove, da file", "0.2.5", ("svago",)),
@@ -465,6 +463,7 @@ UPCOMING: Tuple[Upcoming, ...] = (
     Upcoming("Ore di studio e abitudini", "le sessioni di studio contate giorno per giorno, con la loro serie", "0.2.7", ("studio",)),
     Upcoming("Abitudini di lavoro", "ore di lavoro concentrato, pause, giorni di fila: il tracker delle abitudini anche qui", "0.2.7", ("lavoro",)),
     Upcoming("Obiettivi con traguardi", "tappe, scadenze e avanzamento calcolato da solo", "0.2.7"),
+    Upcoming("Sblocco con l'impronta", "aprire i segreti con l'impronta o il volto, quando l'app potrà chiederli al telefono", "più avanti", ("personale",)),
     Upcoming("Una home su misura", "i riquadri che scegli tu e le ricerche salvate, come «tutti i libri in corso»", "0.2.8"),
     Upcoming("I tuoi vecchi diari", "i file della vecchia Journal App diventano voci di ZibaldOne", "0.2.9"),
     Upcoming("Maieutica", "un'IA che ti fa domande sulle tue aree («le mie azioni riflettono i miei valori?»), sempre dietro il Velo d'ignoranza", "dopo la 1.0"),

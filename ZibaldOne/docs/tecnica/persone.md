@@ -15,6 +15,7 @@ L'*agorà* era la piazza dove ci si incontrava. Una persona è una voce del mode
 | Social, Compleanno, Note | come prima |
 | Ogni quanto sentirvi (`frequenza`) | ogni settimana … ogni anno |
 | Genitori, Fratelli e sorelle, Colleghi, Conosce (`genitori`, `fratelli`, `colleghi`, `conosce`) | le altre persone a cui è legata (dalla 0.2.2, Agorà 1.3.0) |
+| Indirizzo, Documenti, Salute (`indirizzo`, `documenti`, `salute`) | blocchi segreti, cifrati: l'indirizzo al livello protetto, documenti e salute al livello massimo (dalla 0.2.3, Agorà 1.4.0; [i segreti](segreti.md)) |
 
 ## In quali aree sta
 Legame e ruoli di base mettono la persona nell'area giusta da soli: la madre in Famiglia, il capo in Lavoro, il medico in Salute, il commercialista in Finanze (l'elenco è in `core/roles.py`). I ruoli tuoi non danno un'area: per quelli c'è il blocco Aree. Sociale, l'area del modello, vale solo per chi non ne ha un'altra. Questa regola vale dalla 0.2.1 e l'indice delle aree si ricostruisce da solo all'apertura ([ADR-0011](../decisioni/ADR-0011-aree-della-vita.md)).
@@ -46,5 +47,5 @@ La pagina di una persona raccoglie ogni voce che la collega (blocchi collegament
 
 ## Codice
 - `core/roles.py` (ruoli e aree), `core/people.py` (persone, contatti, ritmo, pagina, `log_contact`), `core/relations.py` (legami, albero, rete, contatti in comune, forza del legame, `add_tie`), `core/areas.py` (`entry_areas` con i ruoli), `storage/database.py` (`AREA_RULES`).
-- `ui/views/people.py` (persona, albero, rete), `ui/viewmodels.py` (`person_view`, `people_rows`, `family_tree_rows`, `network_view`), `cli/person_cmd.py`, `packs/persone.zbpack.json` (Agorà 1.3.0).
+- `ui/views/people.py` (persona, albero, rete), `ui/viewmodels.py` (`person_view`, `people_rows`, `family_tree_rows`, `network_view`), `cli/person_cmd.py`, `packs/persone.zbpack.json` (Agorà 1.4.0).
 - Test: `tests/test_people.py`, `tests/test_relations.py`, `tests/test_ui_views.py`.

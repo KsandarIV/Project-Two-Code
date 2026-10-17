@@ -152,6 +152,8 @@ class Template:
             block.validate()
         if self.title_block and self.title_block not in keys:
             raise ValueError(f"il blocco titolo '{self.title_block}' non esiste")
+        if self.title_block and self.blocks[keys.index(self.title_block)].type == "secret":
+            raise ValueError("un blocco segreto non può fare da titolo: il titolo si vede negli elenchi e nella ricerca")
         if isinstance(self.version, bool) or not isinstance(self.version, int) or self.version < 1:
             raise ValueError("la versione del modello è un intero da 1 in su")
         _check_keys(self.origin, ORIGIN_FIELDS, "provenienza")

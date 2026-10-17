@@ -4,6 +4,20 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.2.3] — 2026-10-17
+### Aggiunto
+- **Blocco Segreto** (*Echemythia*): un testo cifrato con la tua chiave prima di essere salvato, con la stessa cifratura dei backup. Due livelli: *protetto* (si apre con il PIN o la passphrase) e *massimo* (solo con la passphrase o il codice di recupero).
+- **PIN** dei segreti (6–12 cifre): apre solo il livello protetto e si toglie da solo dopo 5 errori di fila.
+- App: i segreti chiusi con **Apri** nella pagina della voce, che si richiudono da soli dopo 5 minuti; nel modulo un campo segreto lasciato vuoto resta com'è; il riquadro **Segreti · Arcana** in Impostazioni · Mnemosyne (PIN, apri e chiudi).
+- Nuova Scuola **Adyton · Segreti** (`segreti`): *A se stesso*, il diario segreto, e *Ippocrate*, le note mediche.
+- `zbone segreti` (stato), `segreti pin [--togli]`, `segreti apri [ID]`.
+### Cambiato
+- Agorà · Persone 1.4.0: L'Altro ha Indirizzo (protetto), Documenti e Salute (massimo). Le voci di prima restano valide.
+- I segreti restano fuori da ricerca, collegamenti, statistiche, esportazioni e anonimizzatore: ovunque si legge «🔒 cifrato». `zbone entry show` non li mostra; `entry add` li chiede senza farli vedere.
+- «In arrivo» in Personale: lo sblocco con l'impronta, più avanti.
+### Documentazione
+- [I segreti](docs/tecnica/segreti.md) e [ADR-0012](docs/decisioni/ADR-0012-blocchi-segreti.md); guida rapida, blocchi, persone, aree, privacy, interfaccia, roadmap e requisiti aggiornati.
+
 ## [0.2.2] — 2026-10-17
 ### Aggiunto
 - **Legami tra persone**: Genitori, Fratelli e sorelle, Colleghi e Conosce nella Persona; ogni legame vale nei due sensi (i genitori di Luca hanno Luca tra i figli). Chi incontri nello stesso Simposio si lega da solo.

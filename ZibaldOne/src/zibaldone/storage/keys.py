@@ -12,6 +12,12 @@ key-encryption keys, one per "slot":
 
 The passphrase, the recovery code and the plain private key are never
 written to disk or logs: they exist only in memory while a command runs.
+
+0.2.3, secret blocks (`core/secrets.py`): the `secrets` section keeps the
+public half of the "everyday" key (derived from the backup key, so it needs
+no backup of its own) and, when the user chose one, that key wrapped by the
+PIN. Five wrong PINs in a row remove the PIN wrap: then only the passphrase
+or the recovery code open the secrets.
 """
 
 import json
@@ -40,6 +46,12 @@ SECRET_NAME = re.compile(r"^[a-z][a-z0-9_-]{0,31}$")
 SECRET_SIZE = 32
 WRAP_AAD = "zibaldone/keywrap/v1|{key_id}|{slot}"
 KDF_INFO = "zibaldone/kek/v1/{slot}"
+
+SECRETS_FIELD = "secrets"
+PIN_SLOT = "pin"
+PIN_MIN, PIN_MAX = 6, 12
+PIN_ATTEMPTS = 5
+PIN_SCRYPT_PARAMS = ScryptParams(n=2**16)  # 64 MiB: slow to try every PIN; tests may lower it
 
 
 class KeysError(Exception):
@@ -228,6 +240,9 @@ def create_keys(passphrase: str, scrypt_params: Optional[ScryptParams] = None) -
     recovery_code = crypto.generate_recovery_code()
     recovery_raw = crypto.parse_recovery_code(recovery_code)
     created = _now()
+    from zibaldone.core.secrets import everyday_key
+
+    everyday = everyday_key(private_key).public_key()
     document = {
         "format": KEYS_FORMAT,
         "format_version": KEYS_FORMAT_VERSION,
@@ -239,6 +254,7 @@ def create_keys(passphrase: str, scrypt_params: Optional[ScryptParams] = None) -
             PASSPHRASE_SLOT: _passphrase_wrap(private_key, new_key_id, passphrase, scrypt_params),
             RECOVERY_SLOT: _secret_wrap(private_key, new_key_id, RECOVERY_SLOT, recovery_raw),
         },
+        SECRETS_FIELD: {"key_id": crypto.key_fingerprint(everyday), "public_key": crypto.b64encode(crypto.public_key_bytes(everyday))},
     }
     return NewKeys(key_id=new_key_id, document=document, recovery_code=recovery_code, private_key=private_key)
 
@@ -347,3 +363,120 @@ def remove_secret_wrap(folder: Path, name: str) -> bool:
 
 def secret_names(folder: Path) -> List[str]:
     return sorted(slot[len(SECRET_PREFIX) :] for slot in _load(folder)["wraps"] if slot.startswith(SECRET_PREFIX))
+
+
+# * — 0.2.3: the keys of the secret blocks —
+
+
+def _secrets_section(document: Dict[str, Any]) -> Dict[str, Any]:
+    section = document.get(SECRETS_FIELD)
+    return section if isinstance(section, dict) else {}
+
+
+def secret_public_keys(folder: Path) -> Dict[str, X25519PublicKey]:
+    """Level → public key that seals it. 'protetto' is missing until the everyday key is known."""
+    from zibaldone.core.secrets import MAXIMUM, PROTECTED
+
+    document = _load(folder)
+    found = {MAXIMUM: crypto.load_public_key(crypto.b64decode(document["public_key"], "chiave pubblica", crypto.KEY_SIZE))}
+    section = _secrets_section(document)
+    if section.get("public_key"):
+        try:
+            everyday = crypto.load_public_key(crypto.b64decode(section["public_key"], "chiave dei segreti", crypto.KEY_SIZE))
+        except CryptoError as error:
+            raise KeysError(f"{keys_path(folder)}: {error}") from None
+        if crypto.key_fingerprint(everyday) == section.get("key_id"):
+            found[PROTECTED] = everyday
+    return found
+
+
+def remember_everyday_key(folder: Path, main_private: X25519PrivateKey) -> X25519PrivateKey:
+    """The everyday key of this backup key; its public half is saved for writing without unlocking."""
+    from zibaldone.core.secrets import everyday_key
+
+    document = _load(folder)
+    _check_matches(document, main_private)
+    everyday = everyday_key(main_private)
+    public = everyday.public_key()
+    section = _secrets_section(document)
+    if section.get("key_id") != crypto.key_fingerprint(public):
+        document[SECRETS_FIELD] = {"key_id": crypto.key_fingerprint(public), "public_key": crypto.b64encode(crypto.public_key_bytes(public))}
+        _save(folder, document)
+    return everyday
+
+
+def unlock_secrets_with_passphrase(folder: Path, passphrase: str) -> List[X25519PrivateKey]:
+    """Both keys of the secrets: the backup key ('massimo') and the everyday key ('protetto')."""
+    main = unlock_with_passphrase(folder, passphrase)
+    return [main, remember_everyday_key(folder, main)]
+
+
+def unlock_secrets_with_recovery_code(folder: Path, recovery_code: str) -> List[X25519PrivateKey]:
+    main = unlock_with_recovery_code(folder, recovery_code)
+    return [main, remember_everyday_key(folder, main)]
+
+
+def check_pin(pin: str) -> None:
+    if not isinstance(pin, str) or not pin.isdigit() or not PIN_MIN <= len(pin) <= PIN_MAX:
+        raise KeysError(f"il PIN è fatto di cifre, da {PIN_MIN} a {PIN_MAX}")
+
+
+def has_pin(folder: Path) -> bool:
+    try:
+        return PIN_SLOT in _secrets_section(_load(folder))
+    except KeysError:
+        return False
+
+
+def set_pin(folder: Path, main_private: X25519PrivateKey, pin: str, scrypt_params: Optional[ScryptParams] = None) -> None:
+    """Let the PIN open the everyday key (the 'protetto' secrets), never the backup key."""
+    check_pin(pin)
+    everyday = remember_everyday_key(folder, main_private)
+    document = _load(folder)
+    section = _secrets_section(document)
+    kdf = {"name": "scrypt", **(scrypt_params or PIN_SCRYPT_PARAMS).validate().to_dict(), "salt": crypto.b64encode(crypto.new_salt())}
+    section[PIN_SLOT] = _wrap(everyday, section["key_id"], PIN_SLOT, _passphrase_kek(pin, kdf), kdf)
+    section["pin_failures"] = 0
+    document[SECRETS_FIELD] = section
+    _save(folder, document)
+
+
+def remove_pin(folder: Path) -> bool:
+    document = _load(folder)
+    section = _secrets_section(document)
+    if section.pop(PIN_SLOT, None) is None:
+        return False
+    section.pop("pin_failures", None)
+    document[SECRETS_FIELD] = section
+    _save(folder, document)
+    return True
+
+
+def unlock_with_pin(folder: Path, pin: str) -> X25519PrivateKey:
+    """The everyday key. After PIN_ATTEMPTS wrong PINs in a row the PIN is removed."""
+    document = _load(folder)
+    section = _secrets_section(document)
+    wrap = section.get(PIN_SLOT)
+    if not isinstance(wrap, dict):
+        raise KeysError("non hai ancora scelto un PIN: apri i segreti con la passphrase")
+    try:
+        kek = _passphrase_kek(pin, _kdf_of(wrap, "scrypt"))
+    except CryptoError as error:
+        raise KeysError(f"PIN protetto rovinato: {error}") from None
+    try:
+        everyday = unwrap_private_key(wrap, section["key_id"], PIN_SLOT, kek, "PIN sbagliato")
+    except WrongSecretError:
+        failures = int(section.get("pin_failures", 0)) + 1
+        if failures >= PIN_ATTEMPTS:
+            section.pop(PIN_SLOT, None)
+            section.pop("pin_failures", None)
+            _save(folder, document)
+            raise WrongSecretError(f"PIN sbagliato {PIN_ATTEMPTS} volte: l'ho tolto. Apri i segreti con la passphrase e scegline uno nuovo.") from None
+        section["pin_failures"] = failures
+        _save(folder, document)
+        left = PIN_ATTEMPTS - failures
+        raise WrongSecretError(f"PIN sbagliato: ancora {left} tentativ{'o' if left == 1 else 'i'}") from None
+    if section.get("pin_failures"):
+        section["pin_failures"] = 0
+        _save(folder, document)
+    return everyday
