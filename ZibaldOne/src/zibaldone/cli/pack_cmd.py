@@ -1,6 +1,8 @@
-"""`zbone pack …`: the built-in packs and pack files."""
+"""`zbone pack …`: built-in packs, sharing templates with other people."""
 
 from pathlib import Path
+from typing import List, Optional
+
 import typer
 
 from zibaldone.cli.common import ask_yes_no, fail, open_store
@@ -8,11 +10,14 @@ from zibaldone.core.packs import (
     PACK_SUFFIX,
     Pack,
     apply_install,
+    build_pack,
     builtin_packs,
     find_builtin_pack,
     plan_install,
     read_pack_file,
+    write_pack_file,
 )
+from zibaldone.core.templates import slugify
 
 pack_app = typer.Typer(help="Pacchetti di modelli: quelli pronti dell'app e quelli da condividere.", no_args_is_help=True)
 
@@ -94,3 +99,32 @@ def install_pack(
         installed = apply_install(plan, store)
         typer.echo(f"Installati {len(installed)} modelli. Vedi: zbone template list")
 
+
+@pack_app.command("import")
+def import_pack(
+    path: Path = typer.Argument(..., metavar="FILE", help="file .zbpack.json ricevuto da qualcuno"),
+    yes: bool = typer.Option(False, "--yes", "-y", help="non chiedere conferma"),
+) -> None:
+    """Importa un pacchetto da file (come install)."""
+    install_pack(str(path), yes)
+
+
+@pack_app.command("export")
+def export_pack(
+    slugs: List[str] = typer.Argument(..., metavar="MODELLI", help="nomi tecnici dei modelli da condividere"),
+    output: Optional[Path] = typer.Option(None, "--output", "-o", help="file di destinazione"),
+    name: Optional[str] = typer.Option(None, help="nome del pacchetto"),
+    author: str = typer.Option("", help="il tuo nome o nickname"),
+    description: str = typer.Option("", help="a cosa serve"),
+    version: str = typer.Option("1.0.0", help="versione X.Y.Z del pacchetto"),
+    license_name: str = typer.Option("CC-BY-4.0", "--license", help="licenza (CC-BY-4.0, CC0-1.0 …)"),
+) -> None:
+    """Esporta dei modelli in un file da condividere: solo la struttura, nessuna voce."""
+    with open_store() as store:
+        templates = [store.get_template(slug) for slug in slugs]
+        pack_name = name or (templates[0].name if len(templates) == 1 else "I miei modelli")
+        pack_id = f"{slugify(author) if author else 'utente'}.{slugify(pack_name)}".replace("_", "-")
+        pack = build_pack(templates, pack_id, pack_name, version, author, license_name, description)
+        path = write_pack_file(pack, output or Path(f"{slugify(pack_name)}{PACK_SUFFIX}"))
+        typer.echo(f"Pacchetto salvato in {path}")
+        typer.echo("Contiene solo i modelli: nessuna delle tue voci è stata esportata.")

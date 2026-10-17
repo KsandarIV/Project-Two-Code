@@ -112,7 +112,7 @@ def test_export_contains_structure_only(tmp_path) -> None:
     assert "origin" not in text
 
 
-def test_cli_list_and_install(tmp_path) -> None:
+def test_cli_install_export_import(tmp_path) -> None:
     runner.invoke(app, ["privacy", "accept"])
     listed = runner.invoke(app, ["pack", "list"])
     assert "diario" in listed.output and "da installare" in listed.output
@@ -124,6 +124,17 @@ def test_cli_list_and_install(tmp_path) -> None:
 
     added = runner.invoke(app, ["entry", "add", "sera", "--set", "umore=buono", "--set", "voto=8", "--set", "domani=palestra; [x] spesa"])
     assert added.exit_code == 0, added.output
+
+    target = tmp_path / "serate"
+    exported = runner.invoke(app, ["pack", "export", "sera", "mattina", "-o", str(target), "--author", "Alex", "--name", "Le mie giornate"])
+    assert exported.exit_code == 0, exported.output
+    file = tmp_path / "serate.zbpack.json"
+    assert file.exists()
+    shown = runner.invoke(app, ["pack", "show", str(file)])
+    assert "Le mie giornate 1.0.0 (alex.le-mie-giornate) di Alex" in shown.output
+    imported = runner.invoke(app, ["pack", "import", str(file), "--yes"])
+    assert imported.exit_code == 0, imported.output
+    assert "installato come copia" in imported.output
 
 
 def test_cli_unknown_pack() -> None:

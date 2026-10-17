@@ -65,19 +65,26 @@ def write_version(source: str, version: str) -> str:
     return VERSION_LINE.sub(f'__version__ = "{version}"', source, count=1)
 
 
-def release_changelog(changelog: str, version: str, day: str) -> str:
+EMPTY_NOTES = "- Nessuna nota scritta per questa versione."
+
+
+def release_changelog(changelog: str, version: str, day: str, allow_empty: bool = False) -> str:
     """Move the [Unreleased] entries under a new [version] heading.
 
-    If the version already has its own section, only an empty [Unreleased]
-    heading is kept on top.
+    If the version already has its own section, nothing changes. With
+    allow_empty=True (automatic commits) a missing note becomes a placeholder.
     """
     heading = f"## [{version}]"
     unreleased = re.search(r"^## \[Unreleased\]\n(.*?)(?=^## \[|\Z)", changelog, re.MULTILINE | re.DOTALL)
     if heading in changelog:
         return changelog
-    if not unreleased or not unreleased.group(1).strip():
-        raise ReleaseError("il CHANGELOG non ha voci in [Unreleased] né una sezione per questa versione")
+    if not unreleased:
+        raise ReleaseError("il CHANGELOG non ha la sezione [Unreleased]")
     body = unreleased.group(1).strip()
+    if not body:
+        if not allow_empty:
+            raise ReleaseError("il CHANGELOG non ha voci in [Unreleased] né una sezione per questa versione")
+        body = EMPTY_NOTES
     replacement = f"## [Unreleased]\n\n{heading} — {day}\n{body}\n\n"
     return changelog[: unreleased.start()] + replacement + changelog[unreleased.end():]
 
@@ -106,17 +113,42 @@ def git_root() -> Path:
     return Path(output.stdout.strip())
 
 
-def release(requested: str, dry_run: bool, run_tests: bool, push: bool, assume_yes: bool) -> str:
-    source = VERSION_FILE.read_text(encoding="utf-8")
-    current = read_version(source)
-    version = next_version(current, requested)
+def tag_exists(root: Path, tag: str) -> bool:
+    output = subprocess.run(["git", "tag", "--list", tag], cwd=root, capture_output=True, text=True).stdout
+    return bool(output.strip())
+
+
+def commit_release(version: str, dry_run: bool = False, push: bool = False, allow_empty: bool = False) -> str:
+    """Changelog, version note, commit and tag for a version already written in __init__.py."""
     day = date.today().isoformat()
     tag = f"{TAG_PREFIX}{version}"
     root = git_root()
     project = PROJECT_DIR.relative_to(root).as_posix() or "."
+    if tag_exists(root, tag):
+        raise ReleaseError(f"il tag {tag} esiste già")
+    changelog = release_changelog(CHANGELOG_FILE.read_text(encoding="utf-8"), version, day, allow_empty)
+    notes = NOTES_DIR / f"v{version}.md"
+    if not dry_run:
+        CHANGELOG_FILE.write_text(changelog, encoding="utf-8")
+        if not notes.exists():
+            notes.write_text(notes_stub(version, day), encoding="utf-8")
+    run(["git", "add", "--", project], dry_run, cwd=root)
+    run(["git", "commit", "-m", f"release: ZibaldOne v{version}"], dry_run, cwd=root)
+    run(["git", "tag", "-a", tag, "-m", f"ZibaldOne v{version}"], dry_run, cwd=root)
+    if push:
+        run(["git", "push", "origin", "HEAD"], dry_run, cwd=root)
+        run(["git", "push", "origin", tag], dry_run, cwd=root)
+    return tag
 
-    existing_tags = subprocess.run(["git", "tag", "--list", tag], cwd=root, capture_output=True, text=True).stdout
-    if existing_tags.strip():
+
+def release(requested: str, dry_run: bool, run_tests: bool, push: bool, assume_yes: bool) -> str:
+    source = VERSION_FILE.read_text(encoding="utf-8")
+    current = read_version(source)
+    version = next_version(current, requested)
+    tag = f"{TAG_PREFIX}{version}"
+    root = git_root()
+    project = PROJECT_DIR.relative_to(root).as_posix() or "."
+    if tag_exists(root, tag):
         raise ReleaseError(f"il tag {tag} esiste già")
 
     print(f"ZibaldOne {current} -> {version} (tag {tag}){' [prova, non cambio nulla]' if dry_run else ''}")
@@ -125,25 +157,12 @@ def release(requested: str, dry_run: bool, run_tests: bool, push: bool, assume_y
     if not dry_run and not assume_yes:
         if input("Procedo? (sì/no) ").strip().lower() not in ("s", "si", "sì", "y", "yes"):
             raise ReleaseError("annullato")
-
     if run_tests:
         print("Lancio i test…")
         run([sys.executable, "-m", "pytest", "-q"], dry_run)
-
-    changelog = release_changelog(CHANGELOG_FILE.read_text(encoding="utf-8"), version, day)
-    notes = NOTES_DIR / f"v{version}.md"
     if not dry_run:
         VERSION_FILE.write_text(write_version(source, version), encoding="utf-8")
-        CHANGELOG_FILE.write_text(changelog, encoding="utf-8")
-        if not notes.exists():
-            notes.write_text(notes_stub(version, day), encoding="utf-8")
-
-    run(["git", "add", "--", project], dry_run, cwd=root)
-    run(["git", "commit", "-m", f"release: ZibaldOne v{version}"], dry_run, cwd=root)
-    run(["git", "tag", "-a", tag, "-m", f"ZibaldOne v{version}"], dry_run, cwd=root)
-    if push:
-        run(["git", "push", "origin", "HEAD"], dry_run, cwd=root)
-        run(["git", "push", "origin", tag], dry_run, cwd=root)
+    commit_release(version, dry_run, push)
     print(f"Fatto: v{version}" + ("" if push else f". Per pubblicare: git push origin HEAD; git push origin {tag}"))
     return version
 

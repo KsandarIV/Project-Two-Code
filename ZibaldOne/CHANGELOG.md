@@ -4,6 +4,16 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.0.5] — 2026-10-17
+### Aggiunto
+- `zbone pack export`: salva uno o più modelli in un file `.zbpack.json` da condividere, con nome, autore, versione e licenza. Contiene solo la struttura, mai le voci.
+- `zbone pack import`: installa un pacchetto ricevuto, con lo stesso piano e la stessa conferma di `pack install`.
+- File di pacchetto controllati prima di tutto: massimo 1 MB, formato 1, campi conosciuti, blocchi esistenti.
+- `scripts/version_watch.py`: resta acceso e, quando cambia `__version__`, aggiorna CHANGELOG e nota, fa commit e tag da solo. Il push si attiva con `--push`.
+### Documentazione
+- [Versionamento automatico](docs/sviluppo/versionamento.md): il watcher, il rilascio a mano, le regole.
+- [Guida rapida](docs/utente/guida-rapida.md): condividere i modelli.
+
 ## [0.0.4] — 2026-10-17
 ### Aggiunto
 - **Pacchetti integrati** con nomi di scuole filosofiche: `diario` (Stoa, 8 modelli), `collezioni` (Museion, 9), `io` (Delfi, 5), `persone` (Agorà, 2). Riprendono le idee della vecchia Journal App come modelli modificabili.
