@@ -72,6 +72,20 @@ zbone entry add libro --set "titolo=Il nome della rosa" --set autore=Eco --set v
 
 Le date si scrivono `2026-10-17`, `17/10/2026`, `oggi` oppure `ieri`.
 
+## Cercare e collegare · Zetesis
+| Comando | Cosa fa |
+|---|---|
+| `zbone search cena lago` | le voci con tutte le parole, in tutti i blocchi; maiuscole e accenti non contano |
+| `zbone search "cena al lago"` | la frase esatta |
+| `zbone search perch* -lavoro` | parole che cominciano con "perch", senza "lavoro" |
+| `zbone search marco --template sera --since 2026-10-01` | solo un modello, solo da un giorno (`--until` fino a un giorno) |
+| `zbone search --tag viaggi` | le voci con un'etichetta, dalla più recente |
+| `zbone links b29f` | i collegamenti di una voce: chi collega, chi la cita, chi la nomina senza collegarla |
+
+Per collegare una voce a un'altra scrivi il suo titolo tra doppie quadre in un testo, per esempio `Cena con [[Marco]]`: vale il titolo o, per una persona, un soprannome. Se la voce non esiste ancora, il collegamento si fa da solo quando la scrivi. Anche il blocco "collegamento" dei modelli (per esempio "Con chi" nell'incontro) crea un collegamento.
+
+Nell'app: la casella di ricerca in **Voci** usa le stesse regole, e la pagina di una voce mostra chi la cita. Come funziona dentro: [ricerca e collegamenti](../tecnica/ricerca-e-collegamenti.md).
+
 ## Modelli pronti
 ZibaldOne ha quattro **pacchetti** di modelli già pronti, ognuno con il nome di una scuola filosofica. Installarli non tocca le tue voci e puoi modificarli come i tuoi.
 

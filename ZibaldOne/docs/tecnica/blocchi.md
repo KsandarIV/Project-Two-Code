@@ -22,7 +22,7 @@ Un **blocco** è un tipo di campo con le sue regole. Ogni modello è una lista o
 - Le opzioni sconosciute sono rifiutate: un modello con un errore di battitura non viene salvato a metà.
 - Gli stati di `progress` sono: lista dei desideri, da iniziare, in corso, in pausa, completato, abbandonato. "Completato" porta il contatore al totale.
 - `choice` con `values` dà un punteggio a ogni scelta (per esempio l'umore da 1 a 5), che userà la v0.1.4 per le statistiche.
-- `link` salva gli id delle voci collegate. Dalla v0.1.2 i collegamenti diventeranno anche ricerca e grafo.
+- `link` salva gli id delle voci collegate. Dalla v0.1.2 ogni collegamento (anche `[[Titolo]]` in un testo) è nella tabella `links`: chi cita chi, "tutto su Marco" ([ricerca e collegamenti](ricerca-e-collegamenti.md)); dalla 0.1.3 diventa il grafo.
 
 ## Aggiungere un tipo nuovo
 1. Una classe in `blocks.py` che estende `BlockType`, con `name`, `label`, `description`, `options` e i metodi `normalize`, `parse`, `to_text`.

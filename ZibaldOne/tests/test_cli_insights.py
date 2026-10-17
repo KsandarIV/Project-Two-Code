@@ -1,0 +1,88 @@
+"""CLI of search and links (0.1.2), registered like in cli/app.py."""
+
+from datetime import date, timedelta
+
+import pytest
+import typer
+from typer.testing import CliRunner
+
+from zibaldone.cli.search_cmd import SEARCH_CONTEXT, links_command, search_command
+from zibaldone.core.packs import apply_install, find_builtin_pack, plan_install
+from zibaldone.core.privacy import NOTICE_VERSION
+from zibaldone.storage.database import Store
+from zibaldone.storage.paths import data_dir
+from zibaldone.storage.settings import record_consent
+
+app = typer.Typer()
+app.command("search", context_settings=SEARCH_CONTEXT)(search_command)
+app.command("links")(links_command)
+runner = CliRunner()
+TODAY = date.today()
+
+
+def invoke(*args: str):
+    return runner.invoke(app, list(args))
+
+
+def day(offset: int) -> str:
+    return (TODAY - timedelta(days=offset)).isoformat()
+
+
+@pytest.fixture
+def data():
+    record_consent(data_dir(), accepted=True, notice_version=NOTICE_VERSION)
+    with Store.open(data_dir()) as store:
+        for name in ("diario", "persone", "collezioni"):
+            apply_install(plan_install(find_builtin_pack(name), store), store)
+        marco = store.add_entry("persona", {"nome": "Marco Rossi", "soprannomi": ["Marco"]}, day="2026-01-01")
+        dinner = store.add_entry("incontro", {"titolo": "Cena al lago", "con": [marco.id], "cosa": "Si parla di perché."}, day=day(1))
+        evening = store.add_entry("sera", {"umore": "🙂 Buono", "voto": 7, "fatto": "Visto [[Marco]] e [[Giulia]].", "domani": ["comprare pane"]}, day=day(0))
+        mention = store.add_entry("riflessione", {"titolo": "Pensieri", "testo": "Marco ha ragione."}, day=day(2))
+        store.add_entry("aree", {"salute": 8, "finanze": 3, "lavoro": 6}, day=day(0))
+        store.add_entry("libro", {"titolo": "Dune", "stato": {"status": "ongoing", "current": 10, "total": 100}}, day=day(3))
+    return {"marco": marco, "dinner": dinner, "evening": evening, "mention": mention}
+
+
+def test_search(data) -> None:
+    result = invoke("search", "perche")
+    assert result.exit_code == 0, result.output
+    assert "Zetesis · 1 voce per «perche»" in result.output
+    assert "Cena al lago" in result.output and "Si parla di perché." in result.output
+    assert "\x1b[" not in result.output  # colours only on a real terminal
+    marco = invoke("search", "marco", "--template", "sera")
+    assert "Esame serale" in marco.output and "Cena al lago" not in marco.output
+    limited = invoke("search", "marco", "--limit", "1")
+    assert "Mostro 1 voci su" in limited.output
+    assert "nessuna parola da cercare" in invoke("search", "🙂 ***").output
+    assert "Nessuna voce trovata" in invoke("search", "zzzz").output
+    unquoted = invoke("search", "cena", "lago", "-tutto", "-perch*")
+    assert unquoted.exit_code == 0 and "Nessuna voce trovata" in unquoted.output
+    assert "Cena al lago" in invoke("search", "cena", "-tutto").output
+    listed = invoke("search", "--tag", "nessuna")
+    assert listed.exit_code == 0 and "Nessuna voce trovata" in listed.output
+    missing = invoke("search", "x", "--template", "nessuno")
+    assert missing.exit_code == 1 and "non esiste un modello" in missing.output
+    bad_day = invoke("search", "x", "--since", "domani l'altro")
+    assert bad_day.exit_code == 1 and "data non valida" in bad_day.output
+
+
+def test_search_fallback_says_so(data, monkeypatch) -> None:
+    monkeypatch.setenv("ZIBALDONE_NO_FTS", "1")
+    result = invoke("search", "perche")
+    assert "Cena al lago" in result.output and "ricerca semplice" in result.output
+
+
+def test_links(data) -> None:
+    result = invoke("links", data["marco"].id[:6])
+    assert result.exit_code == 0, result.output
+    assert result.output.startswith("Marco Rossi\n")
+    assert "Citata da (2):" in result.output
+    assert "← Cena al lago" in result.output and "nel blocco «Con chi»" in result.output
+    assert "citato in «Cosa ho fatto»" in result.output
+    assert "La nominano senza collegamento (1):" in result.output and "Pensieri" in result.output
+    outgoing = invoke("links", data["evening"].id)
+    assert "Collega (2):" in outgoing.output and "→ Marco Rossi" in outgoing.output
+    assert "→ [[Giulia]]" in outgoing.output and "si collegherà da solo" in outgoing.output
+    quiet = invoke("links", data["marco"].id, "--no-mentions")
+    assert "senza collegamento" not in quiet.output
+    assert invoke("links", "zzzz").exit_code == 1

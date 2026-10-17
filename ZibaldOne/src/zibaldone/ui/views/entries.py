@@ -16,7 +16,7 @@ from zibaldone.ui.navigation import Route, section
 from zibaldone.ui.views.common import choose_template, not_found, pick_date
 
 ALL = "*"
-SEARCH_NOTE = "Per ora il filtro guarda i titoli; la ricerca dentro tutti i blocchi arriva nella 0.1.2."
+SEARCH_NOTE = "Cerca in tutti i blocchi. Più parole: le voci che le hanno tutte; «\"frase esatta\"», parol* per l'inizio, -parola per escluderla."
 
 
 class EntryList:
@@ -35,7 +35,7 @@ class EntryList:
             templates = store.list_templates()
         options = [(ALL, "Tutti i modelli")] + [(template.slug, template.name) for template in templates]
         template_menu = W.dropdown(options, self.query.template or ALL, label="Modello", on_select=self.template_changed, expand=True)
-        search = W.text_input(self.query.text, hint_text="Cerca nei titoli", prefix_icon=ft.Icons.SEARCH, on_change=self.text_changed)
+        search = W.text_input(self.query.text, hint_text="Cerca nelle voci", prefix_icon=ft.Icons.SEARCH, on_change=self.text_changed)
         filters = W.panel(
             ft.Column(
                 [
@@ -160,10 +160,30 @@ def build_detail(ctx: AppContext, route: Route) -> ft.Control:
                 ],
             ),
             W.panel(ft.Column(blocks, spacing=18)),
+            *_related_panels(ctx, detail),
             W.caption(meta),
         ],
         ctx.wide,
     )
+
+
+def _related_panels(ctx: AppContext, detail: vm.EntryDetail) -> List[ft.Control]:
+    """Who links to this entry and who names it without a link (0.1.2)."""
+    panels: List[ft.Control] = []
+    groups = [
+        ("Citata da", detail.backlinks, "LINK", ""),
+        ("La nominano senza collegamento", detail.mentions, "FORMAT_QUOTE", f"Per collegarle scrivi [[{detail.title}]] nel loro testo."),
+    ]
+    for label, related, icon, note in groups:
+        if not related:
+            continue
+        rows: List[ft.Control] = [W.body(f"{label} ({len(related)})", size=16, weight=ft.FontWeight.W_600)]
+        for item in related:
+            rows.append(W.entry_tile(item.title, item.detail, item.excerpt, icon, T.ACCENT, lambda _, linked=item.id: ctx.go(f"/voci/{linked}")))
+        if note:
+            rows.append(W.caption(note))
+        panels.append(W.panel(ft.Column(rows, spacing=10)))
+    return panels
 
 
 def _block_view(ctx: AppContext, block: vm.DetailBlock) -> ft.Control:

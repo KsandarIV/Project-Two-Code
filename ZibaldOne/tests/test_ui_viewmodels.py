@@ -75,6 +75,10 @@ def test_entry_list_filters(store: Store) -> None:
     assert rows[0].day_label == "ieri"
     assert [row.title for row in vm.list_entry_rows(store, vm.EntryQuery(template="libro"), TODAY)] == ["Le città invisibili", "Il nome della rosa"]
     assert [row.title for row in vm.list_entry_rows(store, vm.EntryQuery(text="citta"), TODAY)] == ["Le città invisibili"]
+    add(store, "riflessione", {"titolo": "Appunti", "testo": "Calvino racconta Venezia attraverso altre città."}, day="2026-10-05")
+    found = vm.list_entry_rows(store, vm.EntryQuery(text="venezia"), TODAY)
+    assert [row.title for row in found] == ["Appunti"] and "Venezia" in found[0].summary  # every block, not only titles
+    assert vm.list_entry_rows(store, vm.EntryQuery(text="venezia", template="libro"), TODAY) == []
     reversed_range = vm.EntryQuery(day_from="2026-10-15", day_to="2026-10-11")
     assert [row.day for row in vm.list_entry_rows(store, reversed_range, TODAY)] == ["2026-10-15"]
 
@@ -92,6 +96,19 @@ def test_entry_detail_resolves_links_and_titles(store: Store) -> None:
     assert link_block.links == ((giulia.id, "Giulia"),)
     untitled = add(store, "sera", {})
     assert not vm.entry_detail(store, untitled.id, TODAY).has_own_title
+
+
+def test_entry_detail_shows_who_links_and_who_names_it(store: Store) -> None:
+    giulia = add(store, "persona", {"nome": "Giulia"})
+    incontro = store.get_template("incontro")
+    link_key = next(spec.key for spec in incontro.blocks if spec.type == "link")
+    add(store, "incontro", {incontro.title_key: "Cena a Trastevere", link_key: [giulia.id]}, day="2026-10-16")
+    add(store, "riflessione", {"titolo": "Pensieri", "testo": "Oggi ho chiamato Giulia."}, day="2026-10-15")
+    detail = vm.entry_detail(store, giulia.id, TODAY)
+    assert [item.title for item in detail.backlinks] == ["Cena a Trastevere"]
+    assert "ieri" in detail.backlinks[0].detail and "nel blocco" in detail.backlinks[0].detail
+    assert [item.title for item in detail.mentions] == ["Pensieri"] and "Giulia" in detail.mentions[0].excerpt
+    assert vm.entry_detail(store, giulia.id, TODAY, mentions=0).mentions == ()
 
 
 def test_collections_show_progress_and_stars(store: Store) -> None:

@@ -14,6 +14,7 @@ from zibaldone.cli.export_cmd import export_app
 from zibaldone.cli.pack_cmd import pack_app
 from zibaldone.cli.privacy_cmd import data_app, privacy_app
 from zibaldone.cli.remind_cmd import remind_app
+from zibaldone.cli.search_cmd import SEARCH_CONTEXT, links_command, search_command
 from zibaldone.cli.template_cmd import template_app
 from zibaldone.cli.update_cmd import check_updates
 
@@ -35,6 +36,8 @@ app.add_typer(account_app, name="account")
 app.add_typer(cloud_app, name="cloud")
 app.add_typer(remind_app, name="remind")
 app.command("update")(check_updates)
+app.command("search", context_settings=SEARCH_CONTEXT)(search_command)
+app.command("links")(links_command)
 
 
 def _first_line(callback: Optional[Callable]) -> str:
