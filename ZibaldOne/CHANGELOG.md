@@ -4,6 +4,24 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.0.6] — 2026-10-17
+### Aggiunto
+- **Storia e backup** (Mnemosyne): istantanee complete dei dati come commit, in `backups/` nella cartella dati.
+- Un'istantanea automatica al giorno, dopo il primo comando che salva qualcosa, e una prima di ogni aggiornamento del database. Se non riesce, un avviso giallo; il comando che hai lanciato non fallisce.
+- `zbone backup create/list/restore/verify/prune/config`. Il ripristino salva prima lo stato attuale, così si può annullare.
+- Durata a tempo come restic: di base 7 giornaliere, 4 settimanali, 12 mensili.
+- Verifica: impronta SHA-256, integrità di SQLite, versione dello schema.
+- `zbone export markdown` (un file per voce, per Obsidian) e `zbone export csv` (un foglio per modello), dentro uno zip.
+- Il motore di cifratura è già nel codice (`core/crypto.py`, `storage/keys.py`) ma si attiva con i comandi della 0.0.7.
+### Cambiato
+- **Nuova numerazione** ([ADR-0010](docs/decisioni/ADR-0010-numerazione-delle-versioni.md)): tutto scende di un livello (0.N → 0.0.N, 1.N → 0.1.N, "v2" → 0.2) e la 1.0 è l'app davvero usabile. Commit, tag e note delle versioni già fatte sono stati rinumerati.
+- Avviso privacy versione 2: dice che le istantanee conservano anche le voci cancellate finché non scadono. Chi aveva accettato lo rivede una volta.
+- Nuova dipendenza: `cryptography`.
+### Corretto
+- Nella guida rapida mancava il titolo della sezione sul pensiero del giorno.
+### Documentazione
+- [Storia e backup](docs/tecnica/backup.md); guida rapida con backup ed export; roadmap con la [strada verso la 1.0](docs/tecnica/roadmap.md#verso-la-10).
+
 ## [0.0.5] — 2026-10-17
 ### Aggiunto
 - `zbone pack export`: salva uno o più modelli in un file `.zbpack.json` da condividere, con nome, autore, versione e licenza. Contiene solo la struttura, mai le voci.

@@ -15,6 +15,7 @@
 - Perdita del dispositivo o del disco senza backup.
 - Altre persone con accesso al PC possono leggere i file, se non sono cifrati.
 - Se la cartella è dentro Google Drive, i dati sono anche sui server di Google, alle condizioni dell'account Google dell'utente.
+- Le istantanee conservano anche le voci cancellate finché non scadono (di base fino a circa 12 mesi). Dalla 0.0.6 l'avviso lo dice, e per questo `NOTICE_VERSION` è passato a 2: chi aveva già accettato lo rivede una volta.
 
 ## Google Drive (opzionale)
 - **Windows, prima fase**: l'utente sceglie una cartella dati dentro la cartella sincronizzata di *Google Drive per desktop*. L'app non gestisce credenziali né API: sincronizza Google.

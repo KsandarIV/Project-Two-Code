@@ -1,6 +1,6 @@
 # ADR-0006 — Storia dei dati e backup cifrati, anche fuori dal dispositivo
 
-- **Data**: 2026-10-17 · **Stato**: proposta (idea di Alex, dettagli da confermare alla v0.0.6)
+- **Data**: 2026-10-17 · **Stato**: accettata; istantanee, durata e ripristino nella 0.0.6, cifratura nella 0.0.7 ([dettagli tecnici](../tecnica/backup.md))
 - **Contesto**: Alex vuole poter **tornare indietro** come con i commit di git, con backup **cifrati** che **durano un certo tempo** e possono stare **anche fuori** dal dispositivo, senza che nessuno (né lui come sviluppatore né un servizio esterno) possa leggerli.
 - **Decisione**:
   - **Istantanee** (*snapshot*): l'app salva periodicamente una copia completa e coerente dei dati (con l'API di backup di SQLite), con data, versione dell'app e `schema_version`. Ogni istantanea è come un commit: si elencano, si confrontano e si ripristinano.

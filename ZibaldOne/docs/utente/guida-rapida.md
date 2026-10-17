@@ -98,8 +98,29 @@ zbone pack import le_mie_letture.zbpack.json                        # e lo insta
 
 Un file più grande di 1 MB, scritto male o con blocchi sconosciuti viene rifiutato prima di toccare qualsiasi cosa. Un pacchetto non contiene codice: non può fare nulla oltre ad aggiungere modelli.
 
+## Storia e backup · Mnemosyne
+ZibaldOne salva da solo una copia completa dei tuoi dati una volta al giorno, la prima volta che salvi qualcosa. Ogni copia (un'**istantanea**) è come una foto: puoi tornarci quando vuoi.
+
+| Comando | Cosa fa |
+|---|---|
+| `zbone backup create --note "prima del trasloco"` | salva subito un'istantanea, con una nota |
+| `zbone backup list` | le istantanee, dalla più recente |
+| `zbone backup restore fd8a31` | torna a quell'istantanea; prima salva lo stato attuale, così puoi annullare |
+| `zbone backup verify` | controlla che l'ultima istantanea sia integra (`--all` tutte) |
+| `zbone backup config` | backup automatico e durata (di base 7 giornaliere, 4 settimanali, 12 mensili) |
+| `zbone backup prune` | cancella le istantanee scadute (`--dry-run` per vedere prima) |
+
+Le istantanee stanno nella cartella `backups` dentro la cartella dati. Una voce che cancelli resta nelle istantanee finché non scadono. Dettagli: [storia e backup](../tecnica/backup.md).
+
+## Esportare
+- `zbone export markdown`: uno zip con un file per voce, da aprire in Obsidian.
+- `zbone export csv`: uno zip con un foglio per modello, da aprire in Excel.
+
+Il file esportato non è cifrato: chi lo apre legge le tue voci.
+
+## Il pensiero del giorno e i nomi
 - `zbone pensiero`: una frase di un filosofo, diversa ogni giorno, con la fonte.
 - `zbone about`: da dove viene il nome, le mascotte delle 8 aree e i nomi filosofici di ogni parte dell'app ([identità](../brand/identita.md)).
 
 ## Dove finiscono i dati
-Tutto va nel file `zibaldone.db` nella tua cartella dati (`zbone data path`). È un database SQLite: puoi copiarlo per farne una copia di sicurezza a mano, finché non arrivano i backup automatici della v0.0.6.
+Tutto va nel file `zibaldone.db` nella tua cartella dati (`zbone data path`), un database SQLite. Le istantanee stanno nella sottocartella `backups`.

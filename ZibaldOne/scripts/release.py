@@ -1,10 +1,13 @@
 """Release ZibaldOne: bump the version, update the changelog, commit and tag.
 
 Usage (PowerShell, from the ZibaldOne folder):
-    py scripts/release.py 0.3.0          # explicit version
-    py scripts/release.py minor          # 0.2.0 -> 0.3.0 (also: patch, major)
-    py scripts/release.py minor --dry-run
-    py scripts/release.py minor --push   # also push the commit and the tag
+    py scripts/release.py patch          # 0.0.5 -> 0.0.6: the next capability
+    py scripts/release.py minor          # 0.0.9 -> 0.1.0: the next phase
+    py scripts/release.py 0.1.0          # explicit version
+    py scripts/release.py patch --dry-run
+    py scripts/release.py patch --push   # also push the commit and the tag
+
+Numbering (ADR-0010): before 1.0, 0.Y.Z adds capability Z inside phase Y.
 
 The commit contains every change inside the ZibaldOne folder. Tags are named
 `zibaldone-vX.Y.Z` because the repository can hold other projects too.

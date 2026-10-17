@@ -22,9 +22,13 @@ Regola: `cli/` e `ui/` chiamano `core/` e `storage/`, mai il contrario.
 ## Moduli funzionali
 Diario, Collezioni, Documenti, Finanze, Password, Grafo, Raccomandazioni: ognuno sarà un sottopacchetto in `src/zibaldone/modules/` che usa solo il cuore. Dettagli in [visione](visione.md).
 
-## Dati (dalla v0.0.3)
+## Dati (dalla 0.0.3)
 - Un file SQLite, `zibaldone.db`, nella cartella dati. Due tabelle: `templates` (chiave `slug`, il modello in JSON) e `entries` (id di 32 caratteri esadecimali, modello, giorno, valori in JSON, date di creazione e modifica).
 - Modelli e voci sono salvati come JSON perché ogni modello ha blocchi diversi: niente colonne da aggiungere quando l'utente inventa un modello nuovo.
 - Non si può eliminare un modello che ha voci (chiave esterna `RESTRICT`).
 - **Migrazioni**: una lista in `storage/database.py` che si può solo allungare; la versione dello schema è in `PRAGMA user_version`. Un database più nuovo dell'app viene rifiutato invece di rovinarlo.
 - `core/templates.py` definisce `BlockSpec`, `Template` ed `Entry`; tutti si trasformano in JSON e ritorno senza perdere nulla, e rifiutano i campi sconosciuti.
+
+## Backup (dalla 0.0.6)
+- Istantanee complete in `backups/` nella cartella dati, una al giorno in automatico dopo un comando che salva dati, più quelle a mano. `cli/common.open_store()` le avvia: prima di un aggiornamento dello schema e dopo un comando che ha cambiato qualcosa.
+- Formato, durata e ripristino: [storia e backup](backup.md).
