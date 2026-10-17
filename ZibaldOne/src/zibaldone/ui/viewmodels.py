@@ -5,6 +5,7 @@ the views turn into controls. Dates are Italian; `now`/`today` are always
 passed in, so tests choose the clock.
 """
 
+import math
 import unicodedata
 from dataclasses import dataclass, field, replace
 from datetime import date, datetime, timezone
@@ -1038,3 +1039,117 @@ def mascot_cards() -> List[MascotCard]:
         )
         for mascot in MASCOTS
     ]
+
+
+# * — Rizoma: the graph (0.1.3) —
+
+GRAPH_LABEL_CHARS = 18
+GRAPH_ALL_LABELS_UP_TO = 30  # with more nodes, only the most connected ones get a name
+GRAPH_HUB_LABELS = 12
+GRAPH_EDGE_COLORS = {"block": "#3B6E8F", "wiki": "#5C5F8A", "shared_tag": "#4A4D66", "tag": "#4A4D66", "template": "#4A4D66"}
+
+
+@dataclass
+class GraphQuery:
+    """Filters of the Rizoma screen (kept between visits)."""
+
+    template: str = ""
+    isolated: bool = True
+    unresolved: bool = False
+    depth: int = 1
+
+
+def load_graph(store: Any, query: GraphQuery, around: str = "") -> Any:
+    """The graph for the screen; `around` (an entry id) keeps only its neighbourhood."""
+    from zibaldone.core.graph import GraphFilters, graph_from_store
+
+    filters = GraphFilters(
+        templates=(query.template,) if query.template else (),
+        around=around or None,
+        depth=max(1, min(int(query.depth), 3)),
+        unresolved=query.unresolved,
+        isolated=query.isolated,
+    )
+    return graph_from_store(store, filters)
+
+
+@dataclass(frozen=True)
+class DrawnNode:
+    id: str
+    kind: str
+    x: float
+    y: float
+    radius: float
+    color: str
+    label: str  # "" when the name would clutter the picture
+    title: str  # always the full name, for taps and lists
+    center: bool = False
+
+
+@dataclass(frozen=True)
+class DrawnEdge:
+    x1: float
+    y1: float
+    x2: float
+    y2: float
+    color: str
+    width: float
+
+
+@dataclass(frozen=True)
+class GraphDrawing:
+    width: float
+    height: float
+    nodes: Tuple[DrawnNode, ...]
+    edges: Tuple[DrawnEdge, ...]
+
+
+def _short(text: str, limit: int = GRAPH_LABEL_CHARS) -> str:
+    text = " ".join((text or "").split())
+    return text if len(text) <= limit else text[: limit - 1].rstrip() + "…"
+
+
+def draw_graph(graph: Any, width: float, height: float, around: str = "", margin: float = 26) -> GraphDrawing:
+    """Pixel positions for a canvas of this size (the layout itself is in 0..1)."""
+    width, height = max(float(width), 2 * margin + 1), max(float(height), 2 * margin + 1)
+    usable_w, usable_h = width - 2 * margin, height - 2 * margin
+    labelled = {node.id for node in graph.nodes} if len(graph.nodes) <= GRAPH_ALL_LABELS_UP_TO else {
+        node.id for node in sorted(graph.nodes, key=lambda node: (-node.degree, node.label))[:GRAPH_HUB_LABELS] if node.degree > 0
+    }
+    labelled.add(around)
+    nodes, where = [], {}
+    for node in graph.nodes:
+        x, y = margin + node.x * usable_w, margin + node.y * usable_h
+        where[node.id] = (x, y)
+        radius = min(14.0, 5.0 + 2.0 * math.sqrt(max(node.degree, 0)))
+        color = TEXT_DIM if node.kind == "missing" else (node.color or ACCENT)
+        nodes.append(
+            DrawnNode(node.id, node.kind, x, y, radius + (3 if node.id == around else 0), color, _short(node.label) if node.id in labelled else "", node.label, node.id == around)
+        )
+    edges = []
+    for edge in graph.edges:
+        if edge.source not in where or edge.target not in where:
+            continue
+        (x1, y1), (x2, y2) = where[edge.source], where[edge.target]
+        edges.append(DrawnEdge(x1, y1, x2, y2, GRAPH_EDGE_COLORS.get(edge.kind, "#4A4D66"), min(4.0, 1.0 + 0.5 * (edge.weight - 1))))
+    return GraphDrawing(width, height, tuple(nodes), tuple(edges))
+
+
+def nearest_node(drawing: GraphDrawing, x: float, y: float, slack: float = 14) -> Optional[DrawnNode]:
+    """The node under a tap, with some room for fingers; None when the tap is on empty space."""
+    best, best_distance = None, None
+    for node in drawing.nodes:
+        distance = math.hypot(node.x - x, node.y - y)
+        if distance <= node.radius + slack and (best_distance is None or distance < best_distance):
+            best, best_distance = node, distance
+    return best
+
+
+def graph_summary(graph: Any) -> str:
+    facts = graph.facts
+    if not facts.entries:
+        return "nessuna voce"
+    parts = ["1 voce" if facts.entries == 1 else f"{facts.entries} voci", "1 collegamento" if facts.edges == 1 else f"{facts.edges} collegamenti"]
+    if facts.components > 1:
+        parts.append(f"{facts.components} gruppi")
+    return ", ".join(parts)

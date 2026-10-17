@@ -11,6 +11,7 @@ from zibaldone.cli.backup_cmd import backup_app
 from zibaldone.cli.common import fail
 from zibaldone.cli.entry_cmd import entry_app
 from zibaldone.cli.export_cmd import export_app
+from zibaldone.cli.graph_cmd import graph_command
 from zibaldone.cli.pack_cmd import pack_app
 from zibaldone.cli.privacy_cmd import data_app, privacy_app
 from zibaldone.cli.remind_cmd import remind_app
@@ -38,6 +39,7 @@ app.add_typer(remind_app, name="remind")
 app.command("update")(check_updates)
 app.command("search", context_settings=SEARCH_CONTEXT)(search_command)
 app.command("links")(links_command)
+app.command("graph")(graph_command)
 
 
 def _first_line(callback: Optional[Callable]) -> str:

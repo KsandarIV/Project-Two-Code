@@ -49,4 +49,5 @@ Le parti senza Flet (`navigation`, `forms`, `viewmodels`, `cloud_model`, `theme`
 
 ## Prossime versioni
 - 0.1.2 ✅: la casella di Voci cerca in tutti i blocchi ([ricerca e collegamenti](ricerca-e-collegamenti.md)); la pagina di una voce mostra chi la cita e chi la nomina.
-- 0.1.3: il grafo delle voci e dei collegamenti.
+- 0.1.3 ✅: **Rizoma**, il grafo su una tela toccabile (`/grafo`, `/grafo/<id>`), da Voci e dalla pagina di una voce ([il grafo](grafo.md)).
+- 0.1.4: statistiche e revisione della settimana.

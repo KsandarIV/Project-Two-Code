@@ -91,6 +91,8 @@ def test_sections_have_a_plain_and_a_philosophical_name() -> None:
         ("/modelli/nuovo", "modello", "modelli", ""),
         ("/modelli/libro", "modello", "modelli", "libro"),
         ("/scuole", "scuole", "modelli", ""),
+        ("/grafo", "grafo", "voci", ""),
+        ("/grafo/abc123", "grafo", "voci", "abc123"),
         ("/organon/daimon", "parte", "organon", "daimon"),
         ("/benvenuto/consenso", "consenso", "", ""),
         ("/benvenuto/copie", "copie", "", ""),
@@ -102,13 +104,13 @@ def test_parse_route(path: str, screen: str, section_key: str, arg: str) -> None
     assert (route.screen, route.section, route.arg) == (screen, section_key, arg)
 
 
-@pytest.mark.parametrize("path", ["/nulla", "/organon/segreti", "/voci/a/b/c", "/benvenuto/altro", None, ""])
+@pytest.mark.parametrize("path", ["/nulla", "/organon/segreti", "/voci/a/b/c", "/benvenuto/altro", "/grafo/a/b", None, ""])
 def test_unknown_routes_go_home(path) -> None:
     assert parse_route(path) == HOME
 
 
 def test_route_paths_round_trip() -> None:
-    for path in ["/oggi", "/voci/x1", "/voci/x1/modifica", "/scrivi/aree", "/modelli/nuovo", "/modelli/sera", "/scuole", "/organon/info", "/benvenuto/diario"]:
+    for path in ["/oggi", "/voci/x1", "/voci/x1/modifica", "/scrivi/aree", "/modelli/nuovo", "/modelli/sera", "/scuole", "/grafo", "/grafo/x1", "/organon/info", "/benvenuto/diario"]:
         assert parse_route(path).path == path
     assert route_path("modello") == "/modelli/nuovo"
     assert parse_route("/oggi").is_top_level and not parse_route("/voci/x").is_top_level

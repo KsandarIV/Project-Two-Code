@@ -57,7 +57,7 @@ class EntryList:
         self.reload(update=False)
         return W.screen(
             [
-                W.screen_header(info.label, info.nickname, "tutto ciò che hai scritto, dal più recente", actions=[W.primary_button("Nuova voce", lambda _: choose_template(self.ctx), icon="ADD")]),
+                W.screen_header(info.label, info.nickname, "tutto ciò che hai scritto, dal più recente", actions=[W.primary_button("Nuova voce", lambda _: choose_template(self.ctx), icon="ADD"), W.secondary_button("Grafo", lambda _: self.ctx.go("/grafo"), icon="HUB")]),
                 filters,
                 self.count,
                 self.list_column,
@@ -156,6 +156,7 @@ def build_detail(ctx: AppContext, route: Route) -> ft.Control:
                 on_back=ctx.back,
                 actions=[
                     W.primary_button("Modifica", lambda _: ctx.go(f"/voci/{entry_id}/modifica"), icon="EDIT"),
+                    W.secondary_button("Nel grafo", lambda _: ctx.go(f"/grafo/{entry_id}"), icon="HUB"),
                     W.secondary_button("Cancella", ask_delete, icon="DELETE_OUTLINE"),
                 ],
             ),
