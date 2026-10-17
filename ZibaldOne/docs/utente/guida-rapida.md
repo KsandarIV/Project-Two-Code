@@ -112,6 +112,17 @@ ZibaldOne salva da solo una copia completa dei tuoi dati una volta al giorno, la
 
 Le istantanee stanno nella cartella `backups` dentro la cartella dati. Una voce che cancelli resta nelle istantanee finché non scadono. Dettagli: [storia e backup](../tecnica/backup.md).
 
+### Cifrare i backup · Anello di Gige
+```powershell
+zbone backup setup
+```
+Scegli una passphrase (almeno 10 caratteri) e scrivi su carta il **codice di recupero** che ZibaldOne ti mostra una volta sola. Da quel momento ogni istantanea è cifrata, anche quelle che c'erano già. I backup automatici non ti chiedono nulla: la passphrase serve solo per ripristinare o verificare.
+
+- `zbone backup passphrase`: cambia la passphrase.
+- `zbone backup recover`: hai dimenticato la passphrase? Ne scegli una nuova con il codice di recupero.
+
+Senza passphrase e senza codice di recupero nessuno può aprire i backup, nemmeno chi ha creato l'app.
+
 ## Esportare
 - `zbone export markdown`: uno zip con un file per voce, da aprire in Obsidian.
 - `zbone export csv`: uno zip con un foglio per modello, da aprire in Excel.

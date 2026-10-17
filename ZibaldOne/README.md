@@ -2,7 +2,7 @@
 
 Un **tutto in uno personale**, componibile e local-first: diario, collezioni, appunti, documenti, finanze e altro, costruiti a blocchi (testo, slider, voti, tag, segnalibri…) come vuoi tu. Per Windows e Android, in futuro Linux. Vedi la [visione](docs/tecnica/visione.md).
 
-> Stato: **v0.0.6**, modelli a blocchi, voci in SQLite, modelli pronti, pacchetti da condividere, storia e backup. Vedi la [roadmap](docs/tecnica/roadmap.md) e il [CHANGELOG](CHANGELOG.md).
+> Stato: **v0.0.7**, modelli a blocchi, voci in SQLite, modelli pronti, pacchetti da condividere, storia e backup cifrati. Vedi la [roadmap](docs/tecnica/roadmap.md) e il [CHANGELOG](CHANGELOG.md).
 
 ## Avvio rapido (Windows, PowerShell)
 
@@ -17,7 +17,7 @@ pytest
 ```
 
 ## Privacy in una riga
-Tutto ciò che scrivi resta **sul tuo PC**. Nessun dato viene inviato a noi o a terzi. Dettagli: [privacy e sicurezza](docs/tecnica/privacy-e-sicurezza.md).
+Tutto ciò che scrivi resta **sul tuo PC**. Nessun dato viene inviato a noi o a terzi. I backup si cifrano con `zbone backup setup`. Dettagli: [privacy e sicurezza](docs/tecnica/privacy-e-sicurezza.md).
 
 ## Documentazione
 - [docs/](docs/README.md): indice di tutta la documentazione.

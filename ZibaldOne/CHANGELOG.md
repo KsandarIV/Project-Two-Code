@@ -4,6 +4,18 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.0.7] — 2026-10-17
+### Aggiunto
+- **Cifratura dei backup** (Anello di Gige): `zbone backup setup` con passphrase e codice di recupero; da lì ogni istantanea è cifrata (X25519 + AES-256-GCM) e quelle già fatte vengono cifrate al loro posto.
+- I backup automatici non chiedono la passphrase: cifrano con la chiave pubblica.
+- `zbone backup passphrase` (cambia passphrase) e `zbone backup recover` (nuova passphrase con il codice di recupero).
+- `zbone backup list --details` mostra note e contenuto delle istantanee cifrate, dopo la passphrase.
+- Un'istantanea cifrata copiata altrove si apre con il solo codice di recupero, anche senza `keys.json`.
+### Cambiato
+- L'avviso privacy dice che il database resta in chiaro e che i backup si cifrano con `zbone backup setup`. È un rischio che si riduce, quindi non serve accettarlo di nuovo.
+### Documentazione
+- [Cifratura](docs/tecnica/backup.md#cifratura--anello-di-gige-dalla-007): chiavi, formato dei file, codice di recupero, limiti noti; ADR-0006 aggiornato.
+
 ## [0.0.6] — 2026-10-17
 ### Aggiunto
 - **Storia e backup** (Mnemosyne): istantanee complete dei dati come commit, in `backups/` nella cartella dati.
