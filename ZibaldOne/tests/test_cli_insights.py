@@ -1,4 +1,4 @@
-"""CLI of search, links (0.1.2) and graph (0.1.3), registered like in cli/app.py."""
+"""CLI of search, links, graph, stats and reviews (0.1.2–0.1.4), registered like in cli/app.py."""
 
 import json
 from datetime import date, timedelta
@@ -9,6 +9,7 @@ from typer.testing import CliRunner
 
 from zibaldone.cli.graph_cmd import graph_command
 from zibaldone.cli.search_cmd import SEARCH_CONTEXT, links_command, search_command
+from zibaldone.cli.stats_cmd import review_command, stats_command
 from zibaldone.core.packs import apply_install, find_builtin_pack, plan_install
 from zibaldone.core.privacy import NOTICE_VERSION
 from zibaldone.storage.database import Store
@@ -19,6 +20,8 @@ app = typer.Typer()
 app.command("search", context_settings=SEARCH_CONTEXT)(search_command)
 app.command("links")(links_command)
 app.command("graph")(graph_command)
+app.command("stats")(stats_command)
+app.command("review")(review_command)
 runner = CliRunner()
 TODAY = date.today()
 
@@ -106,3 +109,41 @@ def test_graph_exports(data, tmp_path) -> None:
     nowhere = invoke("graph", "--html", str(tmp_path / "manca" / "g.html"))
     assert nowhere.exit_code == 1 and "non esiste" in nowhere.output
     assert "Nessuna voce" in invoke("graph", "--template", "anno").output
+
+
+def test_stats(data, tmp_path) -> None:
+    result = invoke("stats")
+    assert result.exit_code == 0, result.output
+    assert result.output.startswith("Theoria · settimana")
+    for text in ("Scrittura", "Umore (da 1 a 5)", "Aree della vita", "Voto alla giornata (Esame serale): 7 su 10", "Dune", "comprare pane"):
+        assert text in result.output
+    month = invoke("stats", "--month", "--date", TODAY.isoformat(), "--html", str(tmp_path / "theoria.html"))
+    assert month.exit_code == 0 and "sett." in month.output
+    assert (tmp_path / "theoria.html").exists()
+    assert invoke("stats", "--week", "--month").exit_code == 1
+    empty = invoke("stats", "--date", "2020-01-01")
+    assert "Nessuna voce in questo periodo." in empty.output
+
+
+def test_review_proposes_and_saves_once(data) -> None:
+    result = invoke("review", "week", "--save")
+    assert result.exit_code == 0, result.output
+    assert "Hypomnemata · revisione della settimana" in result.output
+    assert "Proposta per «Hypomnemata»" in result.output and "Area su cui concentrarmi: Finanze" in result.output
+    assert "Revisione salvata" in result.output
+    with Store.open(data_dir()) as store:
+        saved = store.list_entries(template="settimana")
+        assert len(saved) == 1 and saved[0].values["obiettivi"] == [{"text": "comprare pane", "done": False}]
+    again = invoke("review", "settimana", "--save")
+    assert "C'è già una revisione per questo periodo" in again.output
+    month = invoke("review", "mese")
+    assert "Lettera a Lucilio" in month.output and "Proposta per «Lettera a Lucilio»" in month.output
+    wrong = invoke("review", "anno")
+    assert wrong.exit_code == 1 and "week" in wrong.output
+
+
+def test_review_without_review_templates(tmp_path) -> None:
+    record_consent(data_dir(), accepted=True, notice_version=NOTICE_VERSION)
+    result = invoke("review", "week")
+    assert result.exit_code == 0, result.output
+    assert "zbone pack install diario" in result.output

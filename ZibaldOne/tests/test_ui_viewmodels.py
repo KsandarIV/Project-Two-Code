@@ -335,3 +335,24 @@ def test_graph_drawing_and_taps(store: Store) -> None:
     centered = vm.draw_graph(around, 400, 300, around=giulia.id)
     assert next(node for node in centered.nodes if node.center).id == giulia.id
     assert vm.graph_summary(vm.load_graph(store, vm.GraphQuery(template="libro"))) == "nessuna voce"
+
+
+def test_stats_periods_and_the_review(store: Store) -> None:
+    add(store, "sera", {"umore": "🙂 Buono", "voto": 7, "domani": ["comprare pane"]}, day="2026-10-16")
+    add(store, "sera", {"umore": "😐 Così così", "voto": 5}, day="2026-10-14")
+    add(store, "libro", {"titolo": "Dune", "stato": {"status": "ongoing", "current": 10, "total": 100}}, day="2026-10-13")
+    query = vm.StatsQuery()
+    result = vm.load_stats(store, query, TODAY)
+    assert result.period.kind == "week" and result.period.contains(TODAY)
+    assert vm.writing_line(result) == "3 voci in 3 giorni su 7 (la settimana prima: 0)."
+    assert [vm.mood_point_label(point) for point in result.mood_points][:2] == ["lun 12", "mar 13"]
+    assert not vm.move_period(query, TODAY, +1)  # never past the current week
+    assert vm.move_period(query, TODAY, -1) and query.day == "2026-10-05"
+    assert vm.writing_line(vm.load_stats(store, query, TODAY)) == "Nessuna voce in questo periodo."
+    assert vm.move_period(query, TODAY, +1) and query.day == ""
+    month = vm.load_stats(store, vm.StatsQuery(kind="month"), TODAY)
+    assert month.period.label == "ottobre 2026" and vm.mood_point_label(month.mood_points[0]).startswith("sett. ")
+    entry, created = vm.prepare_review(store, "week", TODAY, TODAY)
+    assert created and entry.template == "settimana" and entry.values["obiettivi"] == [{"text": "comprare pane", "done": False}]
+    again, created_again = vm.prepare_review(store, "week", TODAY, TODAY)
+    assert again.id == entry.id and not created_again

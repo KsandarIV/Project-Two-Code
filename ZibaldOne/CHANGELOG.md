@@ -4,6 +4,15 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.1.4] — 2026-10-17
+### Aggiunto
+- **Statistiche** (Theoria) di una settimana o di un mese: scrittura e giorni di fila, umore da 1 a 5 giorno per giorno con la tendenza, medie delle 8 aree e degli altri punteggi, collezioni in corso e completate, persone più presenti, cose ancora aperte. Tutto riconosciuto dal tipo di blocco, quindi anche nei modelli fatti da te.
+- **Revisione già compilata** della settimana (Hypomnemata) o del mese (Lettera a Lucilio): voto, area su cui concentrarsi, obiettivi dalle cose aperte, momenti belli e cose imparate dalle voci del periodo. Una bozza da rileggere, una per periodo.
+- App: **Oggi → Statistiche**, settimana o mese con le frecce per i periodi passati, e il pulsante per preparare la revisione e completarla.
+- `zbone stats` e `zbone review week|month` (`--save`, `--html` per una pagina con i grafici).
+### Documentazione
+- [Statistiche e revisioni](docs/tecnica/statistiche.md); guida rapida, blocchi e interfaccia aggiornati.
+
 ## [0.1.3] — 2026-10-17
 ### Aggiunto
 - **Grafo** (Rizoma) delle voci e dei collegamenti, come in Obsidian: punti colorati per modello e grandi quanto i loro collegamenti, disposizione sempre uguale per gli stessi dati.
