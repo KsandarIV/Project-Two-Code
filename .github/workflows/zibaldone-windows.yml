@@ -24,6 +24,10 @@ jobs:
   windows:
     runs-on: windows-latest
     timeout-minutes: 60
+    # Il runner Windows scrive in cp1252: l'output di flet (rich) con le emoji andrebbe in UnicodeEncodeError.
+    env:
+      PYTHONUTF8: "1"
+      PYTHONIOENCODING: utf-8
     defaults:
       run:
         shell: bash
