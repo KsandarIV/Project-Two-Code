@@ -4,9 +4,10 @@ Every screen has a route, so the app can start on any of them (handy for
 tests and screenshots): `/oggi`, `/voci`, `/voci/<id>`, `/voci/<id>/modifica`,
 `/scrivi/<modello>`, `/scrivi/<modello>/<area>`, `/collezioni`, `/modelli`,
 `/modelli/nuovo`, `/modelli/<modello>`, `/scuole`, `/aree`, `/aree/<area>`,
-`/persone/<id>`, `/albero`, `/rete`, `/rete/<area>`, `/organon`, `/organon/<parte>`.
+`/persone/<id>`, `/finanze`, `/finanze/<AAAA-MM>`, `/albero`, `/rete`, `/rete/<area>`, `/organon`, `/organon/<parte>`.
 """
 
+import re
 from dataclasses import dataclass
 from typing import Optional, Tuple
 
@@ -14,6 +15,7 @@ from zibaldone.core.brand import AREAS, NOMENCLATURE
 from zibaldone.ui.theme import WIDE_MIN_WIDTH
 
 START_ROUTE_ENV = "ZIBALDONE_UI_START"
+MONTH_ROUTE = re.compile(r"^\d{4}-(0[1-9]|1[0-2])$")
 
 
 @dataclass(frozen=True)
@@ -131,6 +133,7 @@ def route_path(screen: str, arg: str = "", extra: str = "") -> str:
         "scuole": "/scuole",
         "grafo": f"/grafo/{arg}" if arg else "/grafo",
         "theoria": "/theoria",
+        "finanze": f"/finanze/{arg}" if arg else "/finanze",
         "parte": f"/organon/{arg}",
         "consenso": "/benvenuto/consenso",
         "accesso": "/benvenuto/accesso",
@@ -178,6 +181,8 @@ def parse_route(path: Optional[str]) -> Route:
         return Route("grafo", "voci", rest[0] if rest else "")
     if head == "theoria" and not rest:
         return Route("theoria", "oggi")
+    if head == "finanze" and (not rest or (len(rest) == 1 and MONTH_ROUTE.match(rest[0]))):
+        return Route("finanze", "oggi", rest[0] if rest else "")
     if head == "organon" and len(rest) == 1 and rest[0] in SETTINGS_KEYS:
         return Route("parte", "organon", rest[0])
     if head == "benvenuto" and len(rest) == 1 and rest[0] in ("consenso", "accesso", "copie", "diario"):

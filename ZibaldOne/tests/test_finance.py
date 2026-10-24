@@ -4,7 +4,9 @@ from datetime import date, datetime
 from decimal import Decimal
 
 import pytest
+from typer.testing import CliRunner
 
+from zibaldone.cli.app import app
 from zibaldone.core import finance as F
 from zibaldone.core import secrets as A
 from zibaldone.core.blocks import BLOCK_TYPES
@@ -12,11 +14,15 @@ from zibaldone.core.crypto import ScryptParams
 from zibaldone.core.templates import Template
 from zibaldone.core.packs import apply_install, find_builtin_pack, plan_install
 from zibaldone.storage import keys
+from zibaldone.core.privacy import NOTICE_VERSION
 from zibaldone.storage.database import Store
+from zibaldone.storage.paths import data_dir
+from zibaldone.storage.settings import record_consent
 
 PASSPHRASE = "cavallo batteria graffetta"
 NOW = datetime(2026, 10, 24, 10, 0)
 D = Decimal
+runner = CliRunner()
 
 
 @pytest.fixture(autouse=True)
@@ -155,3 +161,30 @@ def test_without_the_pack_nothing_is_written(isolated_data_dir) -> None:
         assert not F.installed(bare) and F.sealed_values(bare) == []
         with pytest.raises(F.FinanceError, match="installa"):
             F.add_movement(bare, F.SPENT, "1", "x")
+
+
+def test_cli_quick_add_summary_debts_and_shared_expenses(isolated_data_dir) -> None:
+    record_consent(data_dir(), accepted=True, notice_version=NOTICE_VERSION)
+    keys.setup_keys(data_dir(), PASSPHRASE)
+    with Store.open(data_dir()) as opened:
+        for name in ("persone", "finanze"):
+            apply_install(plan_install(find_builtin_pack(name), opened), opened)
+        marco = opened.add_entry("persona", {"nome": "Marco"})
+        opened.add_entry("spesa_ricorrente", {"descrizione": "Internet", "importo": "90", "frequenza": "Ogni mese", "dal": date.today().replace(day=1).isoformat(), "con": [marco.id]})  # one due day, whatever today is
+    assert runner.invoke(app, ["segreti", "pin"], input=f"{PASSPHRASE}\n135790\n135790\n").exit_code == 0
+    added = runner.invoke(app, ["finanze", "spesa", "12,50", "Pizza", "--categoria", "Cibo", "--giorno", "2026-10-03"])  # no PIN to write
+    assert added.exit_code == 0 and "Spesa registrata (2026-10-03): Pizza" in added.output, added.output
+    assert runner.invoke(app, ["finanze", "entrata", "tanto", "x"]).exit_code == 1
+    shown = runner.invoke(app, ["finanze", "--mese", "2026-10"], input="135790\n")
+    assert shown.exit_code == 0 and "Saldo: -12,50 €" in shown.output and "Cibo: 12,50 €" in shown.output, shown.output
+    assert runner.invoke(app, ["finanze", "--mese", "ottobre"]).exit_code == 1
+    assert runner.invoke(app, ["finanze", "debiti"], input="999999\n").exit_code == 1  # a wrong PIN opens nothing
+    listed = runner.invoke(app, ["finanze", "ricorrenti"], input="135790\n")
+    assert "Internet · ogni mese · 90,00 € con Marco · da registrare:" in listed.output, listed.output
+    done = runner.invoke(app, ["finanze", "ricorrenti", "--registra"], input="135790\n")
+    assert done.exit_code == 0 and "Registrate 1 scadenze." in done.output, done.output
+    debts = runner.invoke(app, ["finanze", "debiti"], input="135790\n")
+    assert "Marco ti deve 45,00 €" in debts.output, debts.output
+    loan_id = next(line.split()[0] for line in debts.output.splitlines() if line.startswith("  "))
+    assert runner.invoke(app, ["finanze", "salda", loan_id]).exit_code == 0
+    assert "Nessun debito o credito aperto." in runner.invoke(app, ["finanze", "debiti"], input="135790\n").output
