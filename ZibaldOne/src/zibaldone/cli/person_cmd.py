@@ -8,7 +8,7 @@ import typer
 from zibaldone.cli.common import fail, open_store
 from zibaldone.core.areas import area_info, area_label
 from zibaldone.core.blocks import parse_day
-from zibaldone.core.people import CONTACT_KINDS, PeopleError, Person, due_people, find_person, load_people, log_contact, person_page, people_in_area
+from zibaldone.core.people import CONTACT_KINDS, PeopleError, Person, due_people, occasions, find_person, load_people, log_contact, person_page, people_in_area
 from zibaldone.core.relations import TIE_HOW, TIE_WORDS, Connection, add_tie, family_tree, network, parse_tie, strength_line, strongest
 
 person_app = typer.Typer(help="Agorà: le persone della tua vita, i contatti e tutto quello che le riguarda.", no_args_is_help=False)
@@ -189,3 +189,18 @@ def people_network(
     for person, score in ranked:
         known = len(net.neighbours(person.id))
         typer.echo(f"  {score:>2}/10  {person.name}" + (f" · conosce {known} delle tue persone" if known else ""))
+
+
+def occasions_command(days: int = typer.Option(30, "--giorni", help="quanti giorni guardare avanti")) -> None:
+    """Le ricorrenze (compleanni) dei prossimi giorni."""
+    if days < 0:
+        fail("i giorni non possono essere meno di zero")
+    today = date.today()
+    with open_store() as store:
+        found = occasions(load_people(store), today, days)
+    if not found:
+        typer.echo(f"Nessuna ricorrenza nei prossimi {days} giorni.")
+    for item in found:
+        when = "oggi" if item.in_days == 0 else "domani" if item.in_days == 1 else f"tra {item.in_days} giorni"
+        age = f", {item.turning} anni" if item.turning else ""
+        typer.echo(f"  {item.day.day}/{item.day.month}  {item.name} · {item.kind}{age} · {when}")

@@ -14,6 +14,7 @@ Pure functions over entries and templates, with `today` always passed in;
 the helpers at the end write through a Store.
 """
 
+import calendar
 from dataclasses import dataclass, field
 from datetime import date
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
@@ -323,6 +324,41 @@ def due_people(people: Iterable[Person], today: date) -> List[Person]:
 
 
 # * — "tutto di Marco" —
+
+
+@dataclass(frozen=True)
+class Occasion:
+    """A date to remember: for now the birthday, `kind` leaves room for anniversaries."""
+
+    person_id: str
+    name: str
+    kind: str
+    day: date
+    in_days: int  # 0 = today
+    turning: Optional[int]  # the age reached, when the birth year is a believable one
+
+
+def _on_year(day: date, year: int) -> date:
+    """The same day in `year`; 29 February falls on the 28th in a year that is not a leap one."""
+    if day.month == 2 and day.day == 29 and not calendar.isleap(year):
+        return date(year, 2, 28)
+    return date(year, day.month, day.day)
+
+
+def occasions(people: Iterable[Person], today: date, days: int = 30) -> List[Occasion]:
+    """The birthdays from today to `days` days ahead, soonest first."""
+    found = []
+    for person in people:
+        if person.birthday is None:
+            continue
+        coming = _on_year(person.birthday, today.year)
+        if coming < today:
+            coming = _on_year(person.birthday, today.year + 1)
+        if (coming - today).days > days:
+            continue
+        age = coming.year - person.birthday.year
+        found.append(Occasion(person.id, person.name, "compleanno", coming, (coming - today).days, age if 0 < age <= 130 else None))
+    return sorted(found, key=lambda item: (item.day, item.name.casefold(), item.person_id))
 
 
 @dataclass(frozen=True)
