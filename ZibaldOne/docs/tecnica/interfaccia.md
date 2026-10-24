@@ -60,4 +60,5 @@ Le parti senza Flet (`navigation`, `forms`, `viewmodels`, `cloud_model`, `theme`
 - 0.2.5 ✅: **Collezioni** con i riquadri Preferiti, Lista dei desideri e Tempo speso, la finestra **Importa da un file** (`ui/views/import_dialog.py`), le stelle a metà, il cuore del preferito (`FavoriteEditor`) e la recensione con spoiler nascosta nella pagina della voce ([svago avanzato](svago.md)).
 - 0.2.6 ✅: il **bilancio** (`/finanze`, `/finanze/AAAA-MM`, da Aree → Finanze, `ui/views/finance.py`): chiede il PIN con `unlock_secrets`, somma in memoria, `Spesa`/`Entrata` rapide in un dialogo ([le finanze](finanze.md)).
 - 0.2.7 ✅: **Abitudini** (`/abitudini`, `ui/views/habits.py`): riquadro in Oggi, schermata con serie e ultimi 7 giorni, riga nella pagina dell'area ([le abitudini](abitudini.md)).
-- 0.2.8–0.2.9: il resto dello sprint delle 8 aree ([requisiti](requisiti-v0.2.md)).
+- 0.2.8 ✅: **Viste e home su misura** (`/viste`, `ui/views/saved_views.py`, `home_layout.py`, `tiles.py`): Oggi segue il layout scelto in Impostazioni → La tua home ([viste e home](viste-e-home.md)).
+- 0.2.9: il resto dello sprint delle 8 aree ([requisiti](requisiti-v0.2.md)).

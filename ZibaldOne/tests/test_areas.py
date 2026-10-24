@@ -161,9 +161,8 @@ def test_coming_soon_is_announced_per_area_and_never_for_a_shipped_version() -> 
         assert all(area in AREAS for area in item.areas), item.title
         if item.version[:1].isdigit():
             assert parts(item.version) > parts(__version__), f"«{item.title}» è già uscito con la {item.version}: toglilo da UPCOMING"
-    assert all(A.upcoming_for(area) for area in AREAS)  # every area has something to look forward to
     assert "Maieutica" in [item.title for item in A.upcoming_for()]
-    assert A.upcoming_for("finanze")[0].when.startswith("versione ")
+    assert A.upcoming_for("personale")[0].when == "più avanti"
 
 
 # * — storage —
@@ -255,7 +254,6 @@ def test_cli_check_in_to_do_and_done(cli_data) -> None:
     assert shown.exit_code == 0, shown.output
     assert "1. 5 km  (Correre 10 km," in shown.output and "2. prenotare il dentista  (" in shown.output
     assert "Correre 10 km · Non iniziato · 0% · 0/1 passi" in shown.output
-    assert "Obiettivi con traguardi (versione 0.2.8)" in shown.output
     done = invoke("area", "fatto", "salute", "2")
     assert done.exit_code == 0 and "Fatto: prenotare il dentista. Ne restano 1." in done.output
     assert invoke("area", "fatto", "salute", "5").exit_code == 1

@@ -4,6 +4,18 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.2.8] — 2026-10-24
+### Aggiunto
+- **Theoria · Viste**: ricerche salvate con un nome (modello, area, testo e un filtro su un blocco, per esempio «tutti i libri in corso»), ordinate per data o titolo. Schermata `/viste` e `zbone viste` (`mostra`, `salva`, `togli`). Le voci segrete non compaiono mai.
+- **Home su misura**: Oggi si compone dei riquadri che scegli (promemoria, citazione, aree, abitudini, ricorrenze, obiettivi, bilancio e le tue viste), in questo ordine. Impostazioni → «La tua home» per riordinare, nascondere e ripristinare; `zbone home`.
+- **Ricorrenze**: i compleanni dei prossimi 30 giorni in Oggi (`zbone ricorrenze`).
+- **Obiettivi** di tutte le aree con avanzamento e giorni alla scadenza, in Oggi e nella pagina dell'area (`zbone area obiettivi`).
+- **Il bilancio in Oggi**: saldo e mese in corso con il PIN; a conti chiusi solo «Apri con il PIN».
+### Cambiato
+- «In arrivo»: escono le righe della 0.2.8; le aree senza novità previste non mostrano l'elenco.
+### Documentazione
+- [Viste e home](docs/tecnica/viste-e-home.md); roadmap, requisiti, interfaccia, aree e README aggiornati; contratto in `team/handoffs/0.2.8-api.md`.
+
 ## [0.2.7] — 2026-10-24
 ### Aggiunto
 - **Askesis · Abitudini**: pacchetto con i rituali (*Askesis*: ogni giorno o più volte a settimana, con quantità e traguardo facoltativi) e le pratiche (*Praxis*: un giorno segnato). Hexis, l'abitudine a testo libero di Delfi · Io, resta com'è.
