@@ -13,7 +13,7 @@ Fonte: i documenti della vecchia Journal App in `GitHubRepository/Personal Proje
 | v0.2.5 ✅ | **Svago avanzato** ([svago avanzato](svago.md)): date di inizio e fine automatiche, voto con mezzo punto (8,5/10), recensione con avviso spoiler, preferiti, lista dei desideri, tempo speso per categoria, import da file esportati da Goodreads, Letterboxd, MyAnimeList, Steam | Recreation guide, Manifest "Recreation" |
 | v0.2.6 ✅ | **Finanze** ([le finanze](finanze.md)) (modulo delicato, cifrato): saldo, spese e entrate per categoria, budget e obiettivi di risparmio, lista della spesa, debiti e crediti con le persone, spese condivise ricorrenti | Checklist 5.1, Finance_Person |
 | v0.2.7 ✅ | **Abitudini** ([le abitudini](abitudini.md)): tracker (meditazione, esercizio, acqua) con serie di giorni; gli obiettivi per area con avanzamento passano alla 0.2.8 | Checklist 7.1.3, Manifest fase 5 |
-| v0.2.8 | **Viste componibili**: filtri e ricerche salvate, home fatta di widget scelti dall'utente, query come "tutti i libri in corso" | Manifest fase 4 |
+| v0.2.8 ✅ | **Viste componibili** ([viste e home](viste-e-home.md)): filtri e ricerche salvate, home fatta di widget scelti dall'utente, query come "tutti i libri in corso" | Manifest fase 4 |
 | v0.2.9 | **Import dalla vecchia Journal App**: i file JSON di allora diventano voci di ZibaldOne | Struttura `data/Journalv1_*.json` |
 
 Le query "di scoperta di sé" del manifest ("Chi sono secondo i miei dati?", "Le mie azioni riflettono i miei valori?") e i consigli incrociati tra categorie vanno nella parte IA, dopo l'anonimizzatore.

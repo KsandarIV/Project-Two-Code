@@ -476,12 +476,7 @@ class Upcoming:
 
 # Remove an item when its version ships: a test checks that none is older than the app.
 UPCOMING: Tuple[Upcoming, ...] = (
-    Upcoming("Ricerche salvate", "«tutti i libri in corso» o «i film da vedere» sempre a portata di mano", "0.2.8", ("svago",)),
-    Upcoming("Il bilancio nella tua home", "il saldo e il mese in corso tra i riquadri di Oggi, senza aprire Finanze", "0.2.8", ("finanze",)),
-    Upcoming("Ricorrenze di famiglia e amici", "compleanni, anniversari e cene tra i riquadri della home, con il promemoria", "0.2.8", ("famiglia", "sociale")),
-    Upcoming("Obiettivi con traguardi", "tappe, scadenze e avanzamento calcolato da solo", "0.2.8", ("salute", "studio", "lavoro")),
     Upcoming("Sblocco con l'impronta", "aprire i segreti con l'impronta o il volto, quando l'app potrà chiederli al telefono", "più avanti", ("personale",)),
-    Upcoming("Una home su misura", "i riquadri che scegli tu e le ricerche salvate, come «tutti i libri in corso»", "0.2.8"),
     Upcoming("I tuoi vecchi diari", "i file della vecchia Journal App diventano voci di ZibaldOne", "0.2.9"),
     Upcoming("Maieutica", "un'IA che ti fa domande sulle tue aree («le mie azioni riflettono i miei valori?»), sempre dietro il Velo d'ignoranza", "dopo la 1.0"),
 )
