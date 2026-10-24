@@ -1,0 +1,94 @@
+# ZibaldOne: controlli automatici a ogni pull request e a ogni push su main.
+# Piano: ZibaldOne/team/piano-ci-cd.md. I rilasci (tag) stanno in zibaldone-apk.yml, per ora.
+name: ZibaldOne CI
+
+on:
+  pull_request:
+    paths: ["ZibaldOne/**", ".github/workflows/ci.yml"]
+  push:
+    branches: [main]
+    paths: ["ZibaldOne/**", ".github/workflows/ci.yml"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: zibaldone-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: ZibaldOne
+
+jobs:
+  lint:
+    name: Errori gravi (ruff)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      # Solo errori di sintassi e nomi non definiti: il resto non blocca (ci sono vecchi import inutilizzati).
+      - run: |
+          python -m pip install ruff
+          ruff check --select E9,F63,F7,F82 --output-format github src tests scripts
+
+  test:
+    name: Test (${{ matrix.os }}, Python ${{ matrix.python }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    # Windows non è mai stato provato qui: finché non è verde non blocca la pull request.
+    continue-on-error: ${{ matrix.os == 'windows-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+          cache: pip
+          cache-dependency-path: ZibaldOne/pyproject.toml
+      - name: Installa (con la UI, per i test delle schermate)
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev,ui]"
+      - name: Test
+        run: python -m pytest -q
+
+  terminal:
+    name: Prova del terminale
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Installa come lo farebbe un utente e prova i comandi
+        run: |
+          python -m pip install --upgrade pip
+          pip install .
+          zbone --help
+          zbone finanze --help
+          zbone importa --help
+          python -c "from zibaldone.core.packs import find_builtin_pack; assert find_builtin_pack('finanze'), 'pacchetti non inclusi'"
+
+  audit:
+    name: Dipendenze (pip-audit, solo avviso)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: |
+          python -m pip install pip-audit
+          pip-audit -r <(python -c "import tomllib;print('\n'.join(tomllib.load(open('pyproject.toml','rb'))['project']['dependencies']))")
