@@ -4,6 +4,17 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.2.7] — 2026-10-24
+### Aggiunto
+- **Askesis · Abitudini**: pacchetto con i rituali (*Askesis*: ogni giorno o più volte a settimana, con quantità e traguardo facoltativi) e le pratiche (*Praxis*: un giorno segnato). Hexis, l'abitudine a testo libero di Delfi · Io, resta com'è.
+- **Serie** di giorni di fila (o di settimane che raggiungono le volte volute); oggi non ancora segnato non spezza la serie. Il tono è neutro: numeri, mai rimproveri.
+- Riquadro «Abitudini di oggi» in Oggi, schermata `/abitudini` (serie attuale e più lunga, ultimi 7 giorni, nuovo rituale) e riga nella pagina dell'area.
+- `zbone abitudini` (da fare oggi e serie), `abitudini segna NOME [QUANTITÀ] [--giorno]`, `togli`, `serie`.
+### Cambiato
+- «In arrivo»: le abitudini escono; gli **obiettivi con traguardi** slittano alla 0.2.8.
+### Documentazione
+- [Le abitudini](docs/tecnica/abitudini.md); roadmap, requisiti, interfaccia e aree aggiornati; contratto Backend↔Frontend in `team/handoffs/`.
+
 ## [0.2.6] — 2026-10-24
 ### Aggiunto
 - **Oikonomia · Finanze**: pacchetto con conti (*Oikos*), movimenti (*Chrematistica*), budget (*Giusto mezzo*), obiettivi di risparmio (*Formica*), debiti e crediti con le persone (*Schuld*), spese ricorrenti condivise (*Koinonia*) e liste della spesa (*Emporio*).
