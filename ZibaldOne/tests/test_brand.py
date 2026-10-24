@@ -117,3 +117,13 @@ def test_active_theme_priority(clean_registry, monkeypatch) -> None:
         assert active_theme(settings) is FILOSOFIA
     monkeypatch.setenv(brand.THEME_ENV_VAR, "prova")
     assert active_theme({"theme": "filosofia"}) is other
+
+
+def test_every_area_mascot_has_a_drawing_and_the_avatar_uses_it() -> None:
+    from zibaldone.ui import widgets as W
+
+    for mascot in MASCOTS:
+        if mascot.sphere != "app":
+            assert W.mascot_svg(mascot.name), mascot.name
+            assert isinstance(W.mascot_avatar(mascot).content, W.ft.Image)
+    assert W.mascot_svg("Zibby") is None  # no drawing yet: the avatar falls back to the initial
