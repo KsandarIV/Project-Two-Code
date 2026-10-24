@@ -558,6 +558,14 @@ def _level_option(value: Any, name: str) -> str:
     return value
 
 
+def _amount_format_option(value: Any, name: str) -> str:
+    from zibaldone.core.finance import FORMATS
+
+    if value not in FORMATS:
+        raise ValueError(f"l'opzione '{name}' è uno tra: {', '.join(FORMATS)}")
+    return value
+
+
 class SecretBlock(BlockType):
     """Text sealed with the user's key (`core/secrets.py`): the Store seals it before saving."""
 
@@ -566,7 +574,7 @@ class SecretBlock(BlockType):
     description = "testo cifrato con la tua chiave: documenti, indirizzi, note mediche, il diario segreto"
     nickname = "Echemythia"
     nickname_source = "il silenzio dei pitagorici: quello che si impara nella scuola non esce dalla scuola"
-    options = {"level": _level_option, "multiline": _bool_option, "placeholder": _str_option}
+    options = {"level": _level_option, "multiline": _bool_option, "placeholder": _str_option, "format": _amount_format_option}
 
     def normalize(self, value: Any, options: Dict[str, Any]) -> str:
         """A sealed secret stays as it is; a text written in clear is checked, and the Store seals it."""
@@ -578,6 +586,10 @@ class SecretBlock(BlockType):
             if not is_sealed_value(value):
                 raise ValueError("testo cifrato rovinato")
             return value
+        if options.get("format"):  # 0.2.6: an amount of money, stored as «1234.50»
+            from zibaldone.core.finance import canonical_amount
+
+            return canonical_amount(value, negative=options["format"] == "saldo")
         text = value.replace("\r\n", "\n").strip() if options.get("multiline") else " ".join(value.split())
         if len(text) > MAX_SECRET_CHARS:
             raise ValueError(f"testo troppo lungo (massimo {MAX_SECRET_CHARS} caratteri)")
