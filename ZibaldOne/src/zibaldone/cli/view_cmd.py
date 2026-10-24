@@ -30,7 +30,7 @@ def list_views(ctx: typer.Context) -> None:
     with open_store() as store:
         views = _views(store)
     if not views:
-        typer.echo("Nessuna vista. Salvane una: zbone viste salva NOME --modello libro --campo stato=\"In corso\"")
+        typer.echo("Nessuna vista. Salvane una: zbone viste salva NOME --testo PAROLA (altri filtri: zbone viste salva --help)")
         return
     for view in views:
         typer.echo(f"  {view.name} · {_filters(view)} · {view.order.lower()}")
@@ -57,7 +57,7 @@ def show(name: str = typer.Argument(..., metavar="NOME", help="anche solo le pri
 @view_app.command("salva")
 def save(
     name: str = typer.Argument(..., metavar="NOME"),
-    template: str = typer.Option("", "--modello", help="il nome tecnico del modello, per esempio libro"),
+    template: str = typer.Option("", "--modello", help="il nome tecnico di un modello che hai (zbone template list)"),
     area: str = typer.Option("", "--area"),
     text: str = typer.Option("", "--testo", help="come nella ricerca"),
     field: Optional[str] = typer.Option(None, "--campo", metavar="CAMPO=VALORE", help="un filtro su un blocco, per esempio stato=\"In corso\""),

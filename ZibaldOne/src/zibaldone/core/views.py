@@ -10,6 +10,7 @@ from typing import Any, Dict, List, Sequence
 
 from zibaldone.core.areas import parse_area
 from zibaldone.core.blocks import PROGRESS_STATUSES
+from zibaldone.core.packs import builtin_packs
 from zibaldone.storage.database import MAX_SEARCH_LIMIT, StoreError
 
 TEMPLATE = "vista"
@@ -44,6 +45,14 @@ def _template_check(store: Any) -> None:
         raise ViewError(f"manca il modello '{TEMPLATE}': installa la Scuola «Theoria · Viste» (`zbone pack install {PACK_NAME}`)")
 
 
+def _no_template(slug: str) -> ViewError:
+    """«nessun modello 'libro'», with the pack that would bring it when one of ours has it."""
+    for pack in builtin_packs():
+        if any(template.slug == slug for template in pack.templates):
+            return ViewError(f"nessun modello '{slug}': installa il pacchetto che lo contiene (`zbone pack install {pack.short_name}`)")
+    return ViewError(f"nessun modello '{slug}': guarda quelli che hai con `zbone template list`")
+
+
 def load_views(store: Any) -> List[View]:
     if store.find_template(TEMPLATE) is None:
         return []
@@ -75,7 +84,7 @@ def save_view(store: Any, name: str, template: str = "", area: str = "", text: s
         raise ViewError(f"esiste già una vista chiamata «{name}»")
     template, text, field, value = template.strip(), text.strip(), field.strip(), value.strip()
     if template and store.find_template(template) is None:
-        raise ViewError(f"nessun modello '{template}'")
+        raise _no_template(template)
     if area.strip():
         try:
             area = parse_area(area)
