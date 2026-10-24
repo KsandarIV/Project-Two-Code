@@ -10,6 +10,7 @@ from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route, section
+from zibaldone.ui.views import habits
 from zibaldone.ui.views.common import choose_template
 
 
@@ -20,6 +21,7 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     with ctx.store() as store:
         streak = services.streak_days(store, now.date())
         model = vm.build_today(store, now, reminder, streak, config)
+        habit_block = habits.today_panel(ctx, store, now.date())
 
     info = section("oggi")
     actions: List[ft.Control] = [
@@ -50,6 +52,8 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     if model.areas.installed:
         controls.append(W.section_label("Le otto aree", "Eudaimonia"))
         controls.append(_areas(ctx, model.areas))
+    if habit_block is not None:
+        controls.append(habit_block)
     controls.append(W.section_label("Le voci di oggi"))
     if model.entries:
         for row in model.entries:

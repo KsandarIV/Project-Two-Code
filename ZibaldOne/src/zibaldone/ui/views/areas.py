@@ -13,6 +13,7 @@ from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route
+from zibaldone.ui.views import habits
 from zibaldone.ui.views.common import not_found
 
 CHART_HEIGHT = 84
@@ -135,6 +136,10 @@ class AreaScreen:
         if page.missing:
             controls.append(_pack_panel(ctx))
         controls.append(self._score(page))
+        with ctx.store() as store:
+            habit_block = habits.area_panel(ctx, store, self.key, ctx.now().date())
+        if habit_block is not None:
+            controls.append(habit_block)
         controls.append(self._todos(page))
         controls.append(self._goals(page))
         if page.people:
