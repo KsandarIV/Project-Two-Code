@@ -1,0 +1,119 @@
+{
+  "format": 1,
+  "id": "zibaldone.askesis",
+  "name": "Askesis · Abitudini",
+  "version": "1.0.0",
+  "author": "ZibaldOne",
+  "license": "CC0-1.0",
+  "description": "Askesis, l'esercizio quotidiano: rituali da segnare giorno per giorno, con la serie di giorni (o di settimane) che si calcola da sola. Nessun dato cifrato e nessuna frase che colpevolizza.",
+  "required_blocks": [
+    "choice",
+    "link",
+    "number",
+    "text"
+  ],
+  "templates": [
+    {
+      "slug": "rituale",
+      "name": "Askesis",
+      "blocks": [
+        {
+          "key": "nome",
+          "type": "text",
+          "label": "Rituale",
+          "required": true
+        },
+        {
+          "key": "ogni",
+          "type": "choice",
+          "label": "Ogni quanto",
+          "options": {
+            "choices": [
+              "Ogni giorno",
+              "Più volte a settimana"
+            ]
+          }
+        },
+        {
+          "key": "volte",
+          "type": "number",
+          "label": "Volte a settimana (solo con «Più volte»; di base 3)",
+          "options": {
+            "min": 1,
+            "max": 7,
+            "integer": true
+          }
+        },
+        {
+          "key": "unita",
+          "type": "text",
+          "label": "Unità (bicchieri, minuti… vuoto = fatto sì/no)"
+        },
+        {
+          "key": "traguardo",
+          "type": "number",
+          "label": "Traguardo del giorno (vuoto = basta segnare)",
+          "options": {
+            "min": 0
+          }
+        },
+        {
+          "key": "promemoria",
+          "type": "choice",
+          "label": "Promemoria (di base No)",
+          "options": {
+            "choices": [
+              "Sì",
+              "No"
+            ]
+          }
+        },
+        {
+          "key": "attivo",
+          "type": "choice",
+          "label": "Attivo (di base Sì)",
+          "options": {
+            "choices": [
+              "Sì",
+              "No"
+            ]
+          }
+        }
+      ],
+      "description": "Un'abitudine da coltivare, ogni giorno o qualche volta a settimana. Askesis è l'esercizio con cui i Greci formavano il carattere.",
+      "icon": "REPEAT",
+      "color": "#74EE15",
+      "category": "abitudini",
+      "area": "salute",
+      "title_block": "nome"
+    },
+    {
+      "slug": "pratica",
+      "name": "Praxis",
+      "blocks": [
+        {
+          "key": "rituale",
+          "type": "link",
+          "label": "Rituale",
+          "required": true,
+          "options": {
+            "template": "rituale",
+            "multiple": false
+          }
+        },
+        {
+          "key": "quantita",
+          "type": "number",
+          "label": "Quantità",
+          "options": {
+            "min": 0
+          }
+        }
+      ],
+      "description": "Un giorno in cui hai praticato un rituale. Il giorno della voce è il giorno segnato; al più una per rituale e giorno.",
+      "icon": "CHECK_CIRCLE_OUTLINE",
+      "color": "#74EE15",
+      "category": "abitudini"
+    }
+  ]
+}
