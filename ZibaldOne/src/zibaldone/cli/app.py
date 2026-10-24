@@ -15,6 +15,7 @@ from zibaldone.cli.entry_cmd import entry_app
 from zibaldone.cli.export_cmd import export_app
 from zibaldone.cli.graph_cmd import graph_command
 from zibaldone.cli.finance_cmd import finance_app
+from zibaldone.cli.habit_cmd import habit_app
 from zibaldone.cli.import_cmd import import_command
 from zibaldone.cli.media_cmd import media_app
 from zibaldone.cli.pack_cmd import pack_app
@@ -50,6 +51,7 @@ app.add_typer(person_app, name="persona")
 app.add_typer(secret_app, name="segreti")
 app.add_typer(media_app, name="allegati")
 app.add_typer(finance_app, name="finanze")
+app.add_typer(habit_app, name="abitudini")
 app.command("update")(check_updates)
 app.command("importa")(import_command)
 app.command("search", context_settings=SEARCH_CONTEXT)(search_command)
