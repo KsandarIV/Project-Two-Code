@@ -41,7 +41,6 @@ Le richieste della vecchia Journal App: [requisiti della fase 0.2](requisiti-v0.
 | v0.2.6 | **Finanze** cifrate: bilancio, budget, obiettivi, debiti, spese condivise ([le finanze](finanze.md), [ADR-0013](../decisioni/ADR-0013-importi-come-segreti.md)) | ✅ |
 | v0.2.7 | **Abitudini**: rituali con serie di giorni o di settimane ([le abitudini](abitudini.md)); gli obiettivi con avanzamento slittano alla 0.2.8 | ✅ |
 | v0.2.8 | **Viste componibili**, home su misura, ricorrenze e obiettivi con avanzamento ([viste e home](viste-e-home.md)) | ✅ |
-| v0.2.9 | **Import dalla vecchia Journal App** | |
 
 ## Verso la 1.0
 La **1.0** è l'app davvero usabile, non un traguardo di calendario. Arriva dopo la fase 0.2, quando tutte queste cose sono vere:
