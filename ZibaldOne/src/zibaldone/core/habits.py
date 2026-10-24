@@ -46,6 +46,16 @@ class Streak:
     done_today: bool
 
 
+def plural(count: int, one: str, many: str) -> str:
+    """'1 giorno', '3 giorni'."""
+    return f"{count} {one if count == 1 else many}"
+
+
+def run_text(every: str, count: int) -> str:
+    """'1 giorno di fila', '5 settimane di fila'."""
+    return plural(count, *(("settimana", "settimane") if every == "week" else ("giorno", "giorni"))) + " di fila"
+
+
 def _decimal(value: Any) -> Optional[Decimal]:
     return None if value is None else Decimal(str(value))
 
