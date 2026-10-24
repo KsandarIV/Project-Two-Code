@@ -35,6 +35,11 @@ def store(isolated_data_dir):
         yield opened
 
 
+def test_plurals() -> None:
+    assert H.plural(1, "giorno", "giorni") == "1 giorno" and H.plural(0, "giorno", "giorni") == "0 giorni"
+    assert [H.run_text("day", 1), H.run_text("day", 5), H.run_text("week", 1), H.run_text("week", 2)] == ["1 giorno di fila", "5 giorni di fila", "1 settimana di fila", "2 settimane di fila"]
+
+
 def test_a_run_of_days_with_a_gap_and_today_still_open() -> None:
     result = H.streak(habit(), days(1, 2, 3, 5, 6, 7, 8), TODAY)  # today not marked yet: it does not break the run
     assert (result.current, result.longest, result.done_today) == (3, 4, False)
@@ -132,7 +137,7 @@ def test_cli_today_mark_series_and_undo(isolated_data_dir) -> None:
     assert runner.invoke(app, ["abitudini", "segna", "acq", "8", "--giorno", "domani"]).exit_code == 1
     assert "giorno nel futuro" in runner.invoke(app, ["abitudini", "segna", "acq", "--giorno", (date.today() + timedelta(days=1)).isoformat()]).output
     after = runner.invoke(app, ["abitudini"])
-    assert "Da fare oggi: 1 su 2." in after.output and "✓ Acqua" in after.output and "1 giorni di fila" in after.output, after.output
-    assert "attuale 1 giorni, la più lunga 1 giorni" in runner.invoke(app, ["abitudini", "serie"]).output
+    assert "Da fare oggi: 1 su 2." in after.output and "✓ Acqua" in after.output and "1 giorno di fila, 1 giorno su 7 questa settimana" in after.output, after.output
+    assert "attuale 1 giorno, la più lunga 1 giorno" in runner.invoke(app, ["abitudini", "serie"]).output
     assert "Tolto «Acqua»" in runner.invoke(app, ["abitudini", "togli", "acq"]).output
     assert "non era segnato" in runner.invoke(app, ["abitudini", "togli", "acq"]).output

@@ -28,9 +28,10 @@ def _goal(habit: H.Habit) -> str:
 
 
 def _run(habit: H.Habit, result: H.Streak) -> str:
+    this_week = f"{result.done_this_week} su {result.target_week} questa settimana"
     if habit.every == "week":
-        return f"{result.current} settimane di fila, {result.done_this_week} su {result.target_week} questa settimana"
-    return f"{result.current} giorni di fila, {result.done_this_week} giorni su 7 questa settimana"
+        return f"{H.run_text('week', result.current)}, {this_week}"
+    return f"{H.run_text('day', result.current)}, {H.plural(result.done_this_week, 'giorno', 'giorni')} su 7 questa settimana"
 
 
 def _load() -> Tuple[List[H.Habit], Dict[str, Dict[date, Any]]]:
@@ -104,5 +105,5 @@ def series() -> None:
     now = date.today()
     for habit in habits:
         result = H.streak(habit, practices[habit.id], now)
-        unit = "settimane" if habit.every == "week" else "giorni"
-        typer.echo(f"{habit.name}: attuale {result.current} {unit}, la più lunga {result.longest} {unit}")
+        unit = ("settimana", "settimane") if habit.every == "week" else ("giorno", "giorni")
+        typer.echo(f"{habit.name}: attuale {H.plural(result.current, *unit)}, la più lunga {H.plural(result.longest, *unit)}")

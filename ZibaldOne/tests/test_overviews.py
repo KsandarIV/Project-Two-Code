@@ -85,6 +85,8 @@ def test_cli_occasions_and_goals(isolated_data_dir) -> None:
         opened.add_entry("persona", {"nome": "Marco", "compleanno": f"1986-{today.month:02d}-{today.day:02d}" if (today.month, today.day) != (2, 29) else "1986-02-28"})
         opened.add_entry("obiettivo", {"titolo": "Correre 10 km", "scadenza": (today + timedelta(days=9)).isoformat()}, area="salute")
         opened.add_entry("obiettivo", {"titolo": "Leggere di più"}, area="svago")
+        opened.add_entry("obiettivo", {"titolo": "Domani", "scadenza": (today + timedelta(days=1)).isoformat()}, area="lavoro")
+        opened.add_entry("obiettivo", {"titolo": "Ieri", "scadenza": (today - timedelta(days=1)).isoformat()}, area="studio")
     shown = runner.invoke(app, ["ricorrenze"])
     assert shown.exit_code == 0 and "Marco · compleanno" in shown.output, shown.output
     assert "Nessuna ricorrenza nei prossimi 0 giorni" not in shown.output and runner.invoke(app, ["ricorrenze", "--giorni", "-1"]).exit_code == 1
@@ -92,5 +94,6 @@ def test_cli_occasions_and_goals(isolated_data_dir) -> None:
     assert listed.exit_code == 0 and listed.output.index("Correre 10 km") < listed.output.index("Leggere di più") and "9 giorni alla scadenza" in listed.output, listed.output
     one = runner.invoke(app, ["area", "obiettivi", "svago"])
     assert "Leggere di più" in one.output and "Correre" not in one.output
-    assert "Nessun obiettivo aperto." in runner.invoke(app, ["area", "obiettivi", "lavoro"]).output
+    assert "1 giorno alla scadenza" in listed.output and "scaduto da 1 giorno\n" in listed.output, listed.output
+    assert "Nessun obiettivo aperto." in runner.invoke(app, ["area", "obiettivi", "famiglia"]).output
     assert runner.invoke(app, ["area", "obiettivi", "marte"]).exit_code == 1

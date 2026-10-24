@@ -23,6 +23,7 @@ from zibaldone.core.areas import (
     upcoming_for,
 )
 from zibaldone.core.blocks import parse_day
+from zibaldone.core.habits import plural
 from zibaldone.core.stats import bar, long_date
 from zibaldone.core.templates import Entry, Template
 
@@ -94,7 +95,7 @@ def goals(area: Optional[str] = typer.Argument(None, metavar="[AREA]", help=AREA
         if goal.steps_total:
             parts.append(f"{goal.steps_done}/{goal.steps_total} passi")
         if line.days_left is not None:
-            parts.append(f"{line.days_left} giorni alla scadenza" if line.days_left >= 0 else f"scaduto da {-line.days_left} giorni")
+            parts.append(f"{plural(line.days_left, 'giorno', 'giorni')} alla scadenza" if line.days_left >= 0 else f"scaduto da {plural(-line.days_left, 'giorno', 'giorni')}")
         typer.echo(f"  {area_info(line.area).label if line.area else 'Senza area':<10} {goal.title}" + (f" · {' · '.join(parts)}" if parts else ""))
 
 
