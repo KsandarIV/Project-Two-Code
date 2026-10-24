@@ -1,5 +1,7 @@
 """Small building blocks shared by every view, in the ZibaldOne look."""
 
+from functools import lru_cache
+from pathlib import Path
 from typing import Any, Callable, List, Optional, Sequence
 
 import flet as ft
@@ -8,6 +10,7 @@ from zibaldone.core.brand import Mascot
 from zibaldone.ui import theme as T
 
 Handler = Optional[Callable[..., Any]]
+MASCOT_DIR = Path(__file__).parent / "mascots"
 
 
 def fade(color: str, opacity: float) -> str:
@@ -290,9 +293,24 @@ def template_badge(icon: str, color: str, size: int = 40) -> ft.Container:
     )
 
 
+@lru_cache(maxsize=None)
+def mascot_svg(name: str) -> Optional[bytes]:
+    """The drawing of a mascot (`ui/mascots/<Name>.svg`); None when it has none yet (Zibby)."""
+    path = MASCOT_DIR / f"{name}.svg"
+    return path.read_bytes() if path.is_file() else None
+
+
 def mascot_avatar(mascot: Optional[Mascot], size: int = 34) -> ft.Control:
     if mascot is None:
         return ft.Container(width=size, height=size)
+    svg = mascot_svg(mascot.name)
+    if svg is not None:
+        return ft.Container(
+            ft.Image(src=svg, width=size, height=size, fit=ft.BoxFit.CONTAIN),
+            width=size,
+            height=size,
+            tooltip=f"{mascot.name}, {mascot.animal}",
+        )
     return ft.Container(
         ft.Text(mascot.name[0], size=round(size * 0.45), weight=ft.FontWeight.W_700, color=T.readable_on(mascot.color)),
         width=size,

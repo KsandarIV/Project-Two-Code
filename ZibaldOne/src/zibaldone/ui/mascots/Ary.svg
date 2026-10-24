@@ -1,0 +1,33 @@
+<svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <mask id="mask-ary-cohesive">
+      <rect width="100" height="100" fill="white" />
+      
+      <!-- Sagoma minimalista della cicogna -->
+      <!-- Corpo -->
+      <path d="M 30 55 C 30 40, 65 42, 65 55 C 65 65, 35 65, 30 55 Z" fill="black" />
+      
+      <!-- Collo curvo essenziale -->
+      <path d="M 55 48 Q 65 35 58 24" fill="none" stroke="black" stroke-width="7" stroke-linecap="round" />
+      
+      <!-- Testa -->
+      <circle cx="58" cy="22" r="5" fill="black" />
+      
+      <!-- Becco dritto e geometrico -->
+      <polygon points="60,20 85,24 60,24" fill="black" />
+      
+      <!-- Zampe dritte e sottili -->
+      <rect x="42" y="60" width="3" height="25" fill="black" />
+      <rect x="52" y="60" width="3" height="25" fill="black" />
+      
+      <!-- Dettagli in bianco (scavati nella maschera) -->
+      <!-- Curva dell'ala -->
+      <path d="M 38 54 Q 48 60 60 52" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" />
+      <!-- Occhio -->
+      <circle cx="57" cy="21" r="1.5" fill="white" />
+    </mask>
+  </defs>
+  
+  <!-- Sfondo col colore di riferimento (#FF007F) e angoli smussati -->
+  <rect width="100" height="100" rx="20" fill="#FF007F" mask="url(#mask-ary-cohesive)" />
+</svg>
