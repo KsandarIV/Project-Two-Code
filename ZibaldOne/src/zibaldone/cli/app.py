@@ -19,7 +19,7 @@ from zibaldone.cli.habit_cmd import habit_app
 from zibaldone.cli.import_cmd import import_command
 from zibaldone.cli.media_cmd import media_app
 from zibaldone.cli.pack_cmd import pack_app
-from zibaldone.cli.person_cmd import person_app
+from zibaldone.cli.person_cmd import occasions_command, person_app
 from zibaldone.cli.secret_cmd import secret_app
 from zibaldone.cli.privacy_cmd import data_app, privacy_app
 from zibaldone.cli.remind_cmd import remind_app
@@ -55,6 +55,7 @@ app.add_typer(finance_app, name="finanze")
 app.add_typer(habit_app, name="abitudini")
 app.add_typer(view_app, name="viste")
 app.command("update")(check_updates)
+app.command("ricorrenze")(occasions_command)
 app.command("importa")(import_command)
 app.command("search", context_settings=SEARCH_CONTEXT)(search_command)
 app.command("links")(links_command)

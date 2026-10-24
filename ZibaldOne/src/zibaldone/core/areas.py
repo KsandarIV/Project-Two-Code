@@ -329,6 +329,29 @@ def area_goals(entries: Iterable[Entry], templates: Mapping[str, Template], area
     return sorted(goals, key=lambda goal: (not goal.active, goal.deadline or far, -goal.day.toordinal(), goal.title.lower()))
 
 
+@dataclass(frozen=True)
+class GoalLine:
+    area: str
+    goal: AreaGoal
+    days_left: Optional[int]  # negative once the deadline is gone; None without a deadline
+
+
+def goals_overview(store: Any, today: date, area: str = "") -> List[GoalLine]:
+    """The goals still open, one line each under the goal's main area, nearest deadline first; those with no deadline come last."""
+    key = parse_area(area) if area else ""
+    templates = {template.slug: template for template in store.list_templates()}
+    lines = []
+    for entry in store.list_entries(newest_first=False):
+        template = templates.get(entry.template)
+        if not is_goal_template(template) or (key and not in_area(entry, template, key)):
+            continue
+        goal = goal_of(entry, template)
+        if goal.active:
+            lines.append(GoalLine(key or main_area(entry, template), goal, (goal.deadline - today).days if goal.deadline else None))
+    far = date.max
+    return sorted(lines, key=lambda line: (line.goal.deadline or far, line.goal.title.casefold(), line.goal.entry_id))
+
+
 # * — overview and detail —
 
 

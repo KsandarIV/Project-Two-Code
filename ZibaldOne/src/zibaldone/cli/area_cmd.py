@@ -16,6 +16,7 @@ from zibaldone.core.areas import (
     area_detail,
     area_info,
     area_overview,
+    goals_overview,
     check_in,
     score_text,
     set_todo,
@@ -75,6 +76,26 @@ def areas_overview(ctx: typer.Context) -> None:
         for item in coming:
             typer.echo(f"  {item.title} ({item.when}): {item.teaser}")
     typer.echo("\nI dettagli di un'area: zbone area show salute")
+
+
+@area_app.command("obiettivi")
+def goals(area: Optional[str] = typer.Argument(None, metavar="[AREA]", help=AREA_HELP)) -> None:
+    """Gli obiettivi ancora aperti, per scadenza (di una sola area, se la scrivi)."""
+    chosen = pick_area(area).key if area else ""
+    today = date.today()
+    with open_store() as store:
+        lines = goals_overview(store, today, chosen)
+    if not lines:
+        typer.echo("Nessun obiettivo aperto." + ("" if chosen else " Aggiungine uno: zbone entry add obiettivo --area salute"))
+        return
+    for line in lines:
+        goal = line.goal
+        parts = [f"{goal.percent}%"] if goal.percent is not None else []
+        if goal.steps_total:
+            parts.append(f"{goal.steps_done}/{goal.steps_total} passi")
+        if line.days_left is not None:
+            parts.append(f"{line.days_left} giorni alla scadenza" if line.days_left >= 0 else f"scaduto da {-line.days_left} giorni")
+        typer.echo(f"  {area_info(line.area).label if line.area else 'Senza area':<10} {goal.title}" + (f" · {' · '.join(parts)}" if parts else ""))
 
 
 @area_app.command("list")
