@@ -557,10 +557,11 @@ CATEGORY_LABELS: Dict[str, str] = {
     "collezioni": "Collezioni · Museion",
     "io": "Io · Delfi",
     "persone": "Persone · Agorà",
+    "finanze": "Finanze · Oikonomia",
     "aree": "Aree · Liceo",
     "": "I tuoi modelli",
 }
-CATEGORY_ORDER = ("diario", "aree", "collezioni", "io", "persone")
+CATEGORY_ORDER = ("diario", "aree", "collezioni", "io", "persone", "finanze")
 
 
 @dataclass(frozen=True)
@@ -651,6 +652,7 @@ OPTION_FIELDS: Dict[str, Tuple[OptionField, ...]] = {
         OptionField("level", "Livello", "text", "protetto (PIN o passphrase) o massimo (solo passphrase)"),
         OptionField("multiline", "Più righe", "bool"),
         OptionField("placeholder", "Esempio da mostrare", "text"),
+        OptionField("format", "Importo di denaro", "text", "importo o saldo (anche negativo); vuoto = testo libero"),
     ),
     "media": (OptionField("max_items", "File al massimo", "int", "50 di base"),),
     "favorite": (),

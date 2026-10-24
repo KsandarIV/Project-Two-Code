@@ -22,7 +22,7 @@ runner = CliRunner()
 
 def test_builtin_packs_are_valid_and_cover_journal_app_ideas() -> None:
     packs = {pack.short_name: pack for pack in builtin_packs()}
-    assert set(packs) == {"diario", "aree", "collezioni", "io", "persone", "segreti"}
+    assert set(packs) == {"diario", "aree", "collezioni", "io", "persone", "segreti", "finanze"}
     diario = {template.slug for template in packs["diario"].templates}
     assert {"mattina", "meta_giornata", "sera", "aree", "settimana", "mese", "anno"} <= diario
     aree = next(template for template in packs["diario"].templates if template.slug == "aree")

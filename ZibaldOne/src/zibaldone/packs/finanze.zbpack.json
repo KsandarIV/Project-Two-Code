@@ -1,0 +1,383 @@
+{
+  "format": 1,
+  "id": "zibaldone.finanze",
+  "name": "Oikonomia · Finanze",
+  "version": "1.0.0",
+  "author": "ZibaldOne",
+  "license": "CC0-1.0",
+  "description": "Oikonomia, l'amministrazione della casa: conti, spese e entrate, budget, obiettivi di risparmio, debiti e crediti con le persone, spese condivise e la lista della spesa. Ogni importo è cifrato con la tua chiave: ricerca, esportazioni e IA non lo vedono mai.",
+  "required_blocks": [
+    "checklist",
+    "choice",
+    "date",
+    "link",
+    "longtext",
+    "secret",
+    "text"
+  ],
+  "templates": [
+    {
+      "slug": "conto",
+      "name": "Oikos",
+      "blocks": [
+        {
+          "key": "nome",
+          "type": "text",
+          "label": "Nome",
+          "required": true
+        },
+        {
+          "key": "tipo",
+          "type": "choice",
+          "label": "Tipo",
+          "options": {
+            "choices": [
+              "Contanti",
+              "Conto corrente",
+              "Carta",
+              "Risparmi",
+              "Altro"
+            ]
+          }
+        },
+        {
+          "key": "saldo",
+          "type": "secret",
+          "label": "Saldo iniziale",
+          "options": {
+            "level": "protetto",
+            "format": "saldo",
+            "placeholder": "es. 12,50"
+          }
+        }
+      ],
+      "description": "Un conto: contanti, carta, risparmi. Oikos è la «casa» da cui viene l'economia.",
+      "icon": "ACCOUNT_BALANCE_WALLET_OUTLINED",
+      "color": "#7DD3A8",
+      "category": "finanze",
+      "area": "finanze"
+    },
+    {
+      "slug": "movimento",
+      "name": "Chrematistica",
+      "blocks": [
+        {
+          "key": "descrizione",
+          "type": "text",
+          "label": "Che cosa",
+          "required": true
+        },
+        {
+          "key": "tipo",
+          "type": "choice",
+          "label": "Tipo",
+          "required": true,
+          "options": {
+            "choices": [
+              "Spesa",
+              "Entrata"
+            ]
+          }
+        },
+        {
+          "key": "importo",
+          "type": "secret",
+          "label": "Importo",
+          "required": true,
+          "options": {
+            "level": "protetto",
+            "format": "importo",
+            "placeholder": "es. 12,50"
+          }
+        },
+        {
+          "key": "categoria",
+          "type": "choice",
+          "label": "Categoria",
+          "options": {
+            "choices": [
+              "Casa",
+              "Cibo",
+              "Trasporti",
+              "Salute",
+              "Svago",
+              "Studio",
+              "Lavoro",
+              "Regali",
+              "Stipendio",
+              "Altro"
+            ]
+          }
+        },
+        {
+          "key": "conto",
+          "type": "link",
+          "label": "Conto",
+          "options": {
+            "template": "conto",
+            "multiple": false
+          }
+        },
+        {
+          "key": "note",
+          "type": "longtext",
+          "label": "Note"
+        }
+      ],
+      "description": "Una spesa o un'entrata. Per Aristotele la chrematistica è l'arte di accumulare denaro, da tenere in equilibrio con l'economia della casa.",
+      "icon": "PAYMENTS_OUTLINED",
+      "color": "#F2C879",
+      "category": "finanze",
+      "area": "finanze"
+    },
+    {
+      "slug": "budget",
+      "name": "Giusto mezzo",
+      "blocks": [
+        {
+          "key": "categoria",
+          "type": "choice",
+          "label": "Categoria",
+          "required": true,
+          "options": {
+            "choices": [
+              "Casa",
+              "Cibo",
+              "Trasporti",
+              "Salute",
+              "Svago",
+              "Studio",
+              "Lavoro",
+              "Regali",
+              "Stipendio",
+              "Altro"
+            ]
+          }
+        },
+        {
+          "key": "importo",
+          "type": "secret",
+          "label": "Importo al mese",
+          "required": true,
+          "options": {
+            "level": "protetto",
+            "format": "importo",
+            "placeholder": "es. 12,50"
+          }
+        }
+      ],
+      "description": "Quanto vuoi spendere al mese in una categoria. Aristotele cerca la virtù nel giusto mezzo, tra il troppo e il troppo poco.",
+      "icon": "DONUT_SMALL",
+      "color": "#9CC7F2",
+      "category": "finanze",
+      "area": "finanze",
+      "title_block": "categoria"
+    },
+    {
+      "slug": "obiettivo_risparmio",
+      "name": "Formica",
+      "blocks": [
+        {
+          "key": "nome",
+          "type": "text",
+          "label": "Obiettivo",
+          "required": true
+        },
+        {
+          "key": "obiettivo",
+          "type": "secret",
+          "label": "Da raggiungere",
+          "required": true,
+          "options": {
+            "level": "protetto",
+            "format": "importo",
+            "placeholder": "es. 12,50"
+          }
+        },
+        {
+          "key": "messo_da_parte",
+          "type": "secret",
+          "label": "Messo da parte",
+          "options": {
+            "level": "protetto",
+            "format": "importo",
+            "placeholder": "es. 12,50"
+          }
+        },
+        {
+          "key": "scadenza",
+          "type": "date",
+          "label": "Entro il"
+        }
+      ],
+      "description": "Un obiettivo di risparmio con il suo traguardo. La formica della favola mette da parte d'estate per l'inverno.",
+      "icon": "SAVINGS_OUTLINED",
+      "color": "#B8E08A",
+      "category": "finanze",
+      "area": "finanze"
+    },
+    {
+      "slug": "prestito",
+      "name": "Schuld",
+      "blocks": [
+        {
+          "key": "motivo",
+          "type": "text",
+          "label": "Motivo",
+          "required": true
+        },
+        {
+          "key": "con",
+          "type": "link",
+          "label": "Con",
+          "required": true,
+          "options": {
+            "template": "persona",
+            "multiple": false
+          }
+        },
+        {
+          "key": "direzione",
+          "type": "choice",
+          "label": "Chi deve",
+          "required": true,
+          "options": {
+            "choices": [
+              "Mi deve",
+              "Gli devo"
+            ]
+          }
+        },
+        {
+          "key": "importo",
+          "type": "secret",
+          "label": "Importo",
+          "required": true,
+          "options": {
+            "level": "protetto",
+            "format": "importo",
+            "placeholder": "es. 12,50"
+          }
+        },
+        {
+          "key": "stato",
+          "type": "choice",
+          "label": "Stato",
+          "options": {
+            "choices": [
+              "Aperto",
+              "Saldato"
+            ]
+          }
+        }
+      ],
+      "description": "Un debito o un credito con una persona. In tedesco «Schuld» vuol dire insieme colpa e debito: Nietzsche le lega nella Genealogia della morale.",
+      "icon": "HANDSHAKE_OUTLINED",
+      "color": "#F29C9C",
+      "category": "finanze",
+      "area": "finanze"
+    },
+    {
+      "slug": "spesa_ricorrente",
+      "name": "Koinonia",
+      "blocks": [
+        {
+          "key": "descrizione",
+          "type": "text",
+          "label": "Che cosa",
+          "required": true
+        },
+        {
+          "key": "importo",
+          "type": "secret",
+          "label": "Totale",
+          "required": true,
+          "options": {
+            "level": "protetto",
+            "format": "importo",
+            "placeholder": "es. 12,50"
+          }
+        },
+        {
+          "key": "frequenza",
+          "type": "choice",
+          "label": "Ogni quanto",
+          "required": true,
+          "options": {
+            "choices": [
+              "Ogni settimana",
+              "Ogni mese",
+              "Ogni anno"
+            ]
+          }
+        },
+        {
+          "key": "dal",
+          "type": "date",
+          "label": "Dal",
+          "required": true
+        },
+        {
+          "key": "con",
+          "type": "link",
+          "label": "Con chi la divido",
+          "options": {
+            "template": "persona",
+            "multiple": true
+          }
+        },
+        {
+          "key": "categoria",
+          "type": "choice",
+          "label": "Categoria",
+          "options": {
+            "choices": [
+              "Casa",
+              "Cibo",
+              "Trasporti",
+              "Salute",
+              "Svago",
+              "Studio",
+              "Lavoro",
+              "Regali",
+              "Stipendio",
+              "Altro"
+            ]
+          }
+        },
+        {
+          "key": "ultima",
+          "type": "date",
+          "label": "Ultima registrata"
+        }
+      ],
+      "description": "Una spesa che si ripete e si divide con altre persone, come l'affitto o le bollette. Koinonia è la comunione, il mettere in comune.",
+      "icon": "AUTORENEW",
+      "color": "#C9A8F2",
+      "category": "finanze",
+      "area": "finanze"
+    },
+    {
+      "slug": "lista_spesa",
+      "name": "Emporio",
+      "blocks": [
+        {
+          "key": "titolo",
+          "type": "text",
+          "label": "Lista",
+          "required": true
+        },
+        {
+          "key": "voci",
+          "type": "checklist",
+          "label": "Da comprare"
+        }
+      ],
+      "description": "La lista di quello che serve, da spuntare mentre fai la spesa. L'emporio era il mercato del porto nell'antica Grecia.",
+      "icon": "SHOPPING_CART_OUTLINED",
+      "color": "#F2A86B",
+      "category": "finanze",
+      "area": "finanze"
+    }
+  ]
+}
