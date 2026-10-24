@@ -221,3 +221,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Chiavi di firma Android e certificati: mai su GitHub (vanno nei Secrets)
+*.jks
+*.keystore
+*.p12
+*.pfx
+*.pem
