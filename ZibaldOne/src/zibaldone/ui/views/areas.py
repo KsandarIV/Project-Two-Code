@@ -107,6 +107,8 @@ class AreaScreen:
             page = vm.area_page(store, self.key, ctx.now().date())
         self.page = page
         actions: List[ft.Control] = []
+        if self.key == "finanze":
+            actions.append(W.primary_button("Apri il bilancio", lambda _: ctx.go("/finanze"), icon="SAVINGS_OUTLINED"))
         if not page.missing:
             actions.append(W.primary_button("Check-in", lambda _: ctx.go(f"/scrivi/checkin_area/{page.key}"), icon="CENTER_FOCUS_STRONG"))
             actions.append(W.secondary_button("Obiettivo", lambda _: ctx.go(f"/scrivi/obiettivo/{page.key}"), icon="FLAG_OUTLINED"))

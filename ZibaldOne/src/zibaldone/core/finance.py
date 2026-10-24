@@ -13,7 +13,7 @@ Money is a `Decimal` with two decimals; the stored form is `1234.50`, shown as
 
 import calendar
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 from decimal import ROUND_HALF_UP, Decimal, InvalidOperation
 from typing import Any, Callable, Dict, List, Mapping, Optional, Sequence
 
@@ -412,5 +412,7 @@ def add_movement(store: Any, kind: str, amount: str, text: str, category: str = 
     return store.add_entry(MOVEMENT, values, day=day)
 
 
-def today_of(now: datetime) -> date:
-    return now.date()
+def add_to_goal(store: Any, goal: Goal, amount: str) -> None:
+    """Put more money aside for a goal: the new total is sealed by the Store."""
+    _template_check(store, GOAL)
+    store.update_entry(goal.id, {"messo_da_parte": f"{goal.saved + parse_amount(amount):.2f}"})

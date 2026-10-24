@@ -149,7 +149,7 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
         "/grafo", f"/grafo/{known['persona']}", "/grafo/nonesiste", "/theoria",
         "/aree", "/aree/salute", "/aree/svago", "/scrivi/checkin_area/salute", "/scrivi/riflessione/lavoro",
         f"/persone/{known['persona']}", f"/persone/{known['libro']}", "/persone/nonesiste",
-        "/albero", "/rete", "/rete/famiglia",
+        "/albero", "/rete", "/rete/famiglia", "/finanze", "/finanze/2026-09",
     ]
     paths += [f"/scrivi/{slug}" for slug in ("sera", "aree", "mattina", "libro", "serie", "incontro", "persona", "desiderio")]
     paths += [f"/organon/{part}" for part in ("parresia", "daimon", "mnemosyne", "nuvole", "velo", "info")]
@@ -162,7 +162,7 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
 
 def test_screens_cover_every_route_kind() -> None:
     assert ONBOARDING_SCREENS <= set(SCREENS)
-    assert {"oggi", "voci", "voce", "scrivi", "modifica", "collezioni", "modelli", "modello", "scuole", "grafo", "theoria", "aree", "area", "persona", "albero", "rete", "organon", "parte"} <= set(SCREENS)
+    assert {"oggi", "voci", "voce", "scrivi", "modifica", "collezioni", "modelli", "modello", "scuole", "grafo", "theoria", "finanze", "aree", "area", "persona", "albero", "rete", "organon", "parte"} <= set(SCREENS)
 
 
 def test_missing_entry_and_template_say_so_gently(ready: Path) -> None:
@@ -747,3 +747,39 @@ def test_collections_show_favorites_wishes_time_and_import_from_a_file(ready: Pa
     click(button(shell.body.content, "Importa da un file"))
     click(next(item for item in walk(shell.ctx.page.dialogs[-1]) if isinstance(item, ft.Container) and "Goodreads · libri" in texts(item) and item.on_click))
     assert any("mancano le colonne Title" in toast for toast in shell.ctx.toasts)
+
+
+def test_finance_screen_installs_asks_the_pin_and_adds_up(ready: Path, monkeypatch) -> None:
+    from decimal import Decimal
+
+    from zibaldone.core import finance as F
+    from zibaldone.core import secrets as A
+    from zibaldone.core.crypto import ScryptParams
+    from zibaldone.storage import keys
+    from zibaldone.ui.views.vault import vault_of
+
+    monkeypatch.setattr(keys, "DEFAULT_SCRYPT_PARAMS", ScryptParams(n=2**10))
+    shell = Shell(FakePage(), ready)
+    shell.start("/finanze")
+    click(button(shell.body.content, "Installa «Oikonomia · Finanze»"))
+    assert "Gli importi si cifrano con la chiave dei backup, che non è ancora attiva." in texts(shell.body.content)
+    new_keys = keys.setup_keys(ready, "cavallo batteria graffetta")
+    with Store.open(ready) as store:
+        store.add_entry("conto", {"nome": "Carta", "saldo": "1000"})
+    shell.ctx.refresh()
+    assert any("I conti sono chiusi" in text for text in texts(shell.body.content))
+    vault_of(shell.ctx).unlock([A.everyday_key(new_keys.private_key)], shell.ctx.now())
+    shell.ctx.refresh()
+    assert "1.000,00 €" in texts(shell.body.content)
+    click(button(shell.body.content, "Spesa"))
+    dialog = shell.ctx.page.dialogs[-1]
+    fields = [item for item in walk(dialog) if isinstance(item, ft.TextField)]
+    fields[0].value, fields[1].value = "12,50", "Pizza"
+    click(button(dialog, "Salva"))
+    assert "Spesa registrata." in shell.ctx.toasts
+    shown = texts(shell.body.content)
+    assert "987,50 €" in shown and "Cibo" in shown and any("Spese 12,50 €" in text for text in shown)
+    with Store.open(ready) as store:
+        assert F.load(store, lambda value: vault_of(shell.ctx).reveal(value, shell.ctx.now())).movements[0].amount == Decimal("12.50")
+    click(button(shell.body.content, "Richiudi"))
+    assert any("I conti sono chiusi" in text for text in texts(shell.body.content))
