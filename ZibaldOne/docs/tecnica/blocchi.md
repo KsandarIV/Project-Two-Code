@@ -18,7 +18,7 @@ Un **blocco** è un tipo di campo con le sue regole. Ogni modello è una lista o
 | `link` | collegamento ad altre voci | `template` (solo voci di quel modello), `multiple` | il titolo della voce o le prime lettere del suo id |
 | `favorite` | un cuore: preferito o no (dalla 0.2.5) | nessuna | `sì`, `no` |
 | `media` | foto, video, audio e documenti allegati (dalla 0.2.4) | `max_items` (di base 50) | non da `--set`: `zbone allegati aggiungi VOCE FILE` |
-| `secret` | testo cifrato con la tua chiave (dalla 0.2.3) | `level` (`protetto` di base, o `massimo`), `multiline`, `placeholder` | un testo qualsiasi; con `multiline`, `\n` va a capo |
+| `secret` | testo cifrato con la tua chiave (dalla 0.2.3) | `level` (`protetto` di base, o `massimo`), `multiline`, `placeholder`, `format` (`importo` o `saldo`: un importo di denaro, dalla 0.2.6) | un testo qualsiasi; con `multiline`, `\n` va a capo |
 
 ## Regole comuni
 - Un blocco vuoto si salva come assente; un blocco obbligatorio vuoto blocca il salvataggio con un messaggio in italiano.
