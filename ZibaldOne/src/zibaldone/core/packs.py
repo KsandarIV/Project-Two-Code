@@ -260,3 +260,27 @@ def build_pack(
         data.pop("origin", None)
         copies.append(Template.from_dict(data))
     return Pack(pack_id, name, version, copies, author, license, description).validate()
+
+
+# — the packs a first start installs —
+
+BASE_PACKS = ("diario", "aree", "persone", "collezioni", "io", "askesis", "theoria")  # not segreti or finanze: those stay on request
+
+
+def install_base_packs(store: Any) -> List[str]:
+    """Install the base packs and return the names of those it installed.
+
+    A pack already there (its templates are in the store) is skipped, and so is one whose
+    technical names are taken by something else: a first start never makes copies.
+    """
+    installed = []
+    for name in BASE_PACKS:
+        pack = find_builtin_pack(name)
+        if pack is None:
+            continue
+        plan = plan_install(pack, store)
+        if all(step.action == "same" for step in plan.steps) or any(step.action == "copy" for step in plan.steps):
+            continue
+        apply_install(plan, store)
+        installed.append(pack.short_name)
+    return installed
