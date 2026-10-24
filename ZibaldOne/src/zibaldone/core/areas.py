@@ -454,9 +454,8 @@ class Upcoming:
 # Remove an item when its version ships: a test checks that none is older than the app.
 UPCOMING: Tuple[Upcoming, ...] = (
     Upcoming("Ricerche salvate", "«tutti i libri in corso» o «i film da vedere» sempre a portata di mano", "0.2.8", ("svago",)),
-    Upcoming("Bilancio cifrato", "saldo, entrate e spese per categoria, budget e obiettivi di risparmio", "0.2.6", ("finanze",)),
-    Upcoming("Debiti, crediti e spese condivise", "chi deve cosa a chi, anche le spese ricorrenti di casa", "0.2.6", ("finanze", "famiglia", "sociale")),
-    Upcoming("Lista della spesa", "quello che serve, spuntato mentre fai la spesa", "0.2.6", ("finanze", "famiglia")),
+    Upcoming("Il bilancio nella tua home", "il saldo e il mese in corso tra i riquadri di Oggi, senza aprire Finanze", "0.2.8", ("finanze",)),
+    Upcoming("Ricorrenze di famiglia e amici", "compleanni, anniversari e cene tra i riquadri della home, con il promemoria", "0.2.8", ("famiglia", "sociale")),
     Upcoming("Abitudini", "meditazione, movimento, acqua, sonno: la serie di giorni e un promemoria gentile", "0.2.7", ("salute", "personale")),
     Upcoming("Ore di studio e abitudini", "le sessioni di studio contate giorno per giorno, con la loro serie", "0.2.7", ("studio",)),
     Upcoming("Abitudini di lavoro", "ore di lavoro concentrato, pause, giorni di fila: il tracker delle abitudini anche qui", "0.2.7", ("lavoro",)),

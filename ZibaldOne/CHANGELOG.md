@@ -4,6 +4,16 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.2.6] — 2026-10-24
+### Aggiunto
+- **Oikonomia · Finanze**: pacchetto con conti (*Oikos*), movimenti (*Chrematistica*), budget (*Giusto mezzo*), obiettivi di risparmio (*Formica*), debiti e crediti con le persone (*Schuld*), spese ricorrenti condivise (*Koinonia*) e liste della spesa (*Emporio*).
+- **Il bilancio** (`/finanze`, da Aree → Finanze): saldo, mese per categoria con i budget, obiettivi, debiti e crediti, spese condivise da registrare, liste della spesa; **Spesa** ed **Entrata** rapide. Gli importi si leggono solo dopo il PIN.
+- `zbone finanze` (riepilogo), `finanze spesa`, `entrata`, `debiti`, `salda`, `ricorrenti [--registra]`.
+- Opzione `format` (`importo` o `saldo`) dei blocchi segreti: l'importo si normalizza (`1.234,50` → `1234.50`) prima di cifrare.
+- Le mascotte disegnate da Alex (SVG) negli avatar.
+### Documentazione
+- [Le finanze](docs/tecnica/finanze.md), [ADR-0013](docs/decisioni/ADR-0013-importi-come-segreti.md); roadmap, requisiti, aree, blocchi, guida rapida, interfaccia e identità aggiornati.
+
 ## [0.2.5] — 2026-10-17
 ### Aggiunto
 - **Voto a mezzi punti**: l'opzione `half` del voto a stelle (`4,5`); nel modulo la stella si tocca intera, poi mezza, poi si toglie.

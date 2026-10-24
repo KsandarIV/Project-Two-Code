@@ -58,6 +58,7 @@ Ogni parte dell'app ha un nome filosofico accanto al nome semplice: l'interfacci
 | **Agorà · Persone** | L'Altro (persona, Levinas), Simposio (incontro, Platone) |
 | **Liceo · Aree** | Prosoché (check-in di un'area, l'attenzione a sé degli stoici), Telos (obiettivo, Aristotele), Opere e giorni (cose da fare, Esiodo) |
 | **Adyton · Segreti** | A se stesso (diario segreto, Marco Aurelio), Ippocrate (note mediche) |
+| **Oikonomia · Finanze** | Oikos (conto), Chrematistica (spesa o entrata, Aristotele), Giusto mezzo (budget, Aristotele), Formica (obiettivo di risparmio, la favola), Schuld (debito, Nietzsche), Koinonia (spesa condivisa), Emporio (lista della spesa) |
 
 ## Le mascotte
 Una per ogni area della vita, più una dell'app (da decidere quale sarà la principale).

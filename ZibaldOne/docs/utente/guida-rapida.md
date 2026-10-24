@@ -113,6 +113,19 @@ Come è andata la settimana o il mese: quante voci, l'umore giorno per giorno, l
 
 La proposta è una bozza: il voto viene dai voti alle giornate, l'area su cui concentrarti è la più bassa, gli obiettivi sono le cose ancora aperte, i momenti belli sono presi dalle tue voci. Nell'app il pulsante **Revisione della settimana** fa lo stesso e apre il modulo per completarla. Come funziona: [statistiche e revisioni](../tecnica/statistiche.md).
 
+## Le finanze · Oikonomia
+Conti, spese e entrate, budget, obiettivi di risparmio, debiti e crediti con gli amici, spese di casa da dividere e la lista della spesa. **Ogni importo è cifrato**: ricerca ed esportazioni non lo vedono. Nell'app: **Aree → Finanze → Apri il bilancio**; si apre con il PIN. **Spesa** ed **Entrata** si scrivono anche a conti chiusi.
+
+| Comando | Cosa fa |
+|---|---|
+| `zbone pack install finanze` | installa i modelli (serve la cifratura dei backup) |
+| `zbone finanze` | saldo, mese per categoria con i budget, obiettivi (chiede il PIN) |
+| `zbone finanze spesa 12,50 "Pizza" --categoria Cibo` | scrive una spesa senza PIN |
+| `zbone finanze debiti` | chi deve cosa a chi; `zbone finanze salda ID` lo segna saldato |
+| `zbone finanze ricorrenti --registra` | scrive le spese condivise arrivate: la tua quota e quello che devono gli altri |
+
+Come funziona: [le finanze](../tecnica/finanze.md).
+
 ## Le otto aree · Eudaimonia
 Personale, Salute, Finanze, Famiglia, Sociale, Lavoro, Studio e Svago: ogni modello e ogni voce può appartenere a un'area. I libri vanno da soli in Svago, lo sport in Salute, la mamma in Famiglia e il capo in Lavoro; a una voce puoi dare un'altra area. Ogni area ha la sua pagina: il punteggio da 0 a 10 settimana per settimana, le cose da fare, gli obiettivi, le voci, e le novità **in arrivo**. Nell'app: **Oggi → Aree**, oppure tocca un'area in Oggi.
 
