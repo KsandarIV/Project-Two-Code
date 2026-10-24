@@ -6,15 +6,18 @@ from typer.testing import CliRunner
 from zibaldone.cli.app import app
 from zibaldone.core.blocks import BLOCK_TYPES
 from zibaldone.core.packs import (
+    BASE_PACKS,
     MAX_PACK_BYTES,
     Pack,
     apply_install,
     build_pack,
     builtin_packs,
     find_builtin_pack,
+    install_base_packs,
     load_pack_bytes,
     plan_install,
 )
+from zibaldone.core.templates import BlockSpec, Template
 from zibaldone.storage.database import Store
 
 runner = CliRunner()
@@ -142,3 +145,25 @@ def test_cli_unknown_pack() -> None:
     result = runner.invoke(app, ["pack", "install", "cucina"])
     assert result.exit_code == 1
     assert "non è un pacchetto integrato" in result.output
+
+
+def test_install_base_packs_once_and_never_as_copies(tmp_path) -> None:
+    with Store.open(tmp_path / "base") as store:
+        assert install_base_packs(store) == list(BASE_PACKS)
+        assert {template.origin.get("pack_id") for template in store.list_templates()} >= {find_builtin_pack(name).id for name in BASE_PACKS}
+        assert not {"segreto", "diario_segreto", "movimento"} & {template.slug for template in store.list_templates()}  # segreti and finanze stay on request
+        assert install_base_packs(store) == []  # a second start installs nothing
+    with Store.open(tmp_path / "taken") as store:
+        store.save_template(Template("libro", "Il mio libro", [BlockSpec("titolo", "text", "Titolo")]))  # the user already has a «libro»
+        done = install_base_packs(store)
+        assert "collezioni" not in done and {"diario", "askesis", "theoria"} <= set(done)
+        assert store.get_template("libro").name == "Il mio libro" and store.find_template("libro_2") is None
+
+
+def test_cli_install_base(isolated_data_dir) -> None:
+    runner.invoke(app, ["privacy", "accept"])
+    assert runner.invoke(app, ["pack", "install"]).exit_code == 1
+    assert runner.invoke(app, ["pack", "install", "diario", "--base"]).exit_code == 1
+    first = runner.invoke(app, ["pack", "install", "--base"])
+    assert first.exit_code == 0 and first.output.startswith("Installati: diario, aree") and "theoria" in first.output, first.output
+    assert "ci sono già" in runner.invoke(app, ["pack", "install", "--base"]).output

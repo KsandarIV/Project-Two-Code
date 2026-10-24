@@ -7,12 +7,14 @@ import typer
 
 from zibaldone.cli.common import ask_yes_no, fail, open_store
 from zibaldone.core.packs import (
+    BASE_PACKS,
     PACK_SUFFIX,
     Pack,
     apply_install,
     build_pack,
     builtin_packs,
     find_builtin_pack,
+    install_base_packs,
     plan_install,
     read_pack_file,
     write_pack_file,
@@ -77,10 +79,18 @@ def show_pack(source: str = typer.Argument(..., metavar="PACCHETTO", help="nome 
 
 @pack_app.command("install")
 def install_pack(
-    source: str = typer.Argument(..., metavar="PACCHETTO", help="nome integrato o file .zbpack.json"),
+    source: Optional[str] = typer.Argument(None, metavar="PACCHETTO", help="nome integrato o file .zbpack.json"),
     yes: bool = typer.Option(False, "--yes", "-y", help="non chiedere conferma"),
+    base: bool = typer.Option(False, "--base", help=f"installa i pacchetti di base ({', '.join(BASE_PACKS)}), senza altre domande"),
 ) -> None:
-    """Installa un pacchetto: prima mostra cosa cambierà."""
+    """Installa un pacchetto: prima mostra cosa cambierà. Con --base, tutti quelli di base."""
+    if base == bool(source):
+        fail("scrivi il nome di un pacchetto, oppure --base per quelli di base (non tutti e due)")
+    if base:
+        with open_store() as store:
+            names = install_base_packs(store)
+        typer.echo(f"Installati: {', '.join(names)}." if names else "I pacchetti di base ci sono già.")
+        return
     with open_store() as store:
         pack = load_pack(source)
         plan = plan_install(pack, store)
@@ -106,7 +116,7 @@ def import_pack(
     yes: bool = typer.Option(False, "--yes", "-y", help="non chiedere conferma"),
 ) -> None:
     """Importa un pacchetto da file (come install)."""
-    install_pack(str(path), yes)
+    install_pack(str(path), yes, base=False)
 
 
 @pack_app.command("export")
