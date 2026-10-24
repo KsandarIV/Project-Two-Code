@@ -4,6 +4,18 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.2.9] — 2026-10-24
+Versione per i tester.
+### Aggiunto
+- **Primo avvio con un solo pulsante**: «Inizia con i pacchetti di base» installa Diario, Aree, Persone, Collezioni, Io, Askesis e Theoria e porta a Oggi. Dal terminale: `zbone pack install --base`.
+### Corretto
+- «1 giorno di fila» e «1 giorno alla scadenza» (prima «1 giorni»).
+- L'errore di `viste salva` quando manca il modello dice quale pacchetto installare.
+### Cambiato
+- Tolto l'avviso «I tuoi vecchi diari · in arrivo»: l'import dalla vecchia Journal App non serve, la fase 0.2 è chiusa.
+### Documentazione
+- [Guida per i tester](docs/utente/guida-tester.md) con la parte Windows; [stato dell'app](team/stato-app.md).
+
 ## [0.2.8] — 2026-10-24
 ### Aggiunto
 - **Theoria · Viste**: ricerche salvate con un nome (modello, area, testo e un filtro su un blocco, per esempio «tutti i libri in corso»), ordinate per data o titolo. Schermata `/viste` e `zbone viste` (`mostra`, `salva`, `togli`). Le voci segrete non compaiono mai.

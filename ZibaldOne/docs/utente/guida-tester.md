@@ -2,7 +2,10 @@
 
 Grazie per provare ZibaldOne! È una versione di prova (0.x): funziona, ma può avere difetti e cambierà spesso. Questa pagina spiega come installarla, cosa succede ai tuoi dati e come aiutarci.
 
-## Prima di iniziare
+## Su Windows (dalla 0.2.9)
+La cartella zippata `ZibaldOne-X.Y.Z-windows.zip` sta tra gli **Assets** della release, quando Alex la pubblica. Scompatta, apri `ZibaldOne.exe` con doppio clic: non serve Python né il terminale, e la cartella dei dati si crea da sola. Windows mostrerà «PC protetto»: tocca **Ulteriori informazioni**, poi **Esegui comunque** (l'app non è ancora firmata). La prima volta, il pulsante **Inizia con i pacchetti di base** prepara i modelli. *Non ancora provato su un PC pulito: dicci se qualcosa non va.*
+
+## Prima di iniziare (Android)
 - Ti serve un telefono **Android 8 o più recente**.
 - Alex deve aggiungere la tua email Google tra i tester: senza, l'accesso con Google non funziona. Mandagli l'indirizzo che usi sul telefono.
 
