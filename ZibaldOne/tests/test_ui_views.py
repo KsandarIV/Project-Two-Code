@@ -186,11 +186,13 @@ def test_first_run_consent_then_diary_then_today(folder: Path) -> None:
     assert shell.current.screen == "consenso"  # nothing saved, the page stays
     click(button(shell.body.content, "Ho capito, iniziamo"))
     assert shell.current.screen == "diario"
-    click(button(shell.body.content, "Installa il diario"))
+    click(button(shell.body.content, "Inizia con i pacchetti di base"))
     assert shell.current.screen == "oggi"
     with Store.open(folder) as store:
         assert store.find_template("sera") is not None
         assert store.find_template("checkin_area") is not None  # 0.2.0: the areas pack comes along
+        assert all(store.find_template(slug) is not None for slug in ("persona", "libro", "rituale", "vista"))  # one tap installs the base packs
+        assert store.find_template("conto") is None  # Finanze stays on request
     assert shell.rail is not None and shell.rail.selected_index == 0
 
 

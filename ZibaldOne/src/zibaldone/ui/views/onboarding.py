@@ -5,7 +5,7 @@ from typing import Any, List
 import flet as ft
 
 from zibaldone.core.brand import APP_MOTTO, APP_NAME, APP_TAGLINE, NOMENCLATURE, mascot_for
-from zibaldone.core.packs import apply_install, find_builtin_pack, plan_install
+from zibaldone.core.packs import BASE_PACKS, find_builtin_pack, install_base_packs
 from zibaldone.core.privacy import NOTICE_VERSION, notice_text
 from zibaldone.storage.database import StoreError
 from zibaldone.storage.settings import SettingsError, consent_status, record_consent
@@ -156,49 +156,39 @@ def copies(ctx: AppContext, route: Route) -> ft.Control:
 
 
 def diario(ctx: AppContext, route: Route) -> ft.Control:
-    pack = find_builtin_pack("diario")
-    extra = find_builtin_pack("aree")  # 0.2.0: check-in of one area, goals and to-dos come along
-    names: List[ft.Control] = [W.pill(template.name) for template in pack.templates] if pack else []
-    if extra is not None:
-        names += [W.pill(template.name, T.ACCENT) for template in extra.templates]
+    names: List[ft.Control] = [W.pill(pack.name, T.ACCENT if index else T.ACCENT_2) for index, pack in enumerate(filter(None, (find_builtin_pack(name) for name in BASE_PACKS)))]
 
     def later(_: Any) -> None:
         services.save_ui_settings(ctx.folder, diario_suggested=True)
         ctx.advance()
 
     def install(_: Any) -> None:
-        if pack is None:
-            later(_)
-            return
         try:
             with ctx.store() as store:
-                installed = apply_install(plan_install(pack, store), store)
-                if extra is not None:
-                    installed += apply_install(plan_install(extra, store), store)
+                added = install_base_packs(store)
         except (StoreError, ValueError) as problem:
             ctx.toast(str(problem), error=True)
             return
         services.save_ui_settings(ctx.folder, diario_suggested=True)
         ctx.data_changed()
-        ctx.toast(f"Diario installato: {len(installed)} modelli.")
+        ctx.toast(f"Pacchetti di base installati: {len(added)}." if added else "I pacchetti di base c'erano già.")
         ctx.advance()
 
     return W.screen(
         [
             _brand(),
-            W.title_with_nickname("Iniziamo dal diario?", pack.name if pack else "Stoa", size=22),
+            W.title_with_nickname("Da dove partiamo?", "Stoa", size=22),
             W.panel(
                 ft.Column(
                     [
-                        W.body(pack.description if pack else ""),
-                        W.body(f"Insieme arriva «{extra.name}»: il check-in di una sola area, gli obiettivi e le cose da fare di ogni area.", dim=True) if extra else ft.Container(),
+                        W.body("Con un solo tocco arrivano il diario, le otto aree, le persone, le collezioni, le abitudini e le viste salvate."),
                         ft.Row(names, wrap=True, spacing=6, run_spacing=6),
-                        W.body("Puoi cambiarlo, toglierlo o aggiungere altre Scuole quando vuoi, da Modelli.", dim=True),
+                        W.body("Puoi cambiare tutto, togliere o aggiungere altre Scuole quando vuoi, da Modelli. Segreti e Finanze restano su richiesta.", dim=True),
                     ],
                     spacing=12,
                 )
             ),
-            ft.Row([W.secondary_button("Più tardi", later), W.primary_button("Installa il diario", install, icon="DOWNLOAD")], alignment=ft.MainAxisAlignment.END, wrap=True, spacing=8),
+            ft.Row([W.secondary_button("Più tardi", later), W.primary_button("Inizia con i pacchetti di base", install, icon="DOWNLOAD")], alignment=ft.MainAxisAlignment.END, wrap=True, spacing=8),
             W.body(APP_MOTTO, dim=True, italic=True, text_align=ft.TextAlign.CENTER),
         ],
         ctx.wide,

@@ -41,9 +41,8 @@ def load_rows(store: Any, today: date, area: str = "", include_inactive: bool = 
 
 def streak_label(habit: H.Habit, streak: H.Streak) -> str:
     """«5 giorni di fila», «3 settimane di fila», or the plain count of the week when there is no run."""
-    unit = ("giorno", "giorni") if habit.every == "day" else ("settimana", "settimane")
     if streak.current:
-        return f"{streak.current} {unit[streak.current != 1]} di fila"
+        return H.run_text(habit.every, streak.current)
     if habit.every == "week":
         return f"{streak.done_this_week}/{streak.target_week} questa settimana"
     return "nessuna serie in corso"
