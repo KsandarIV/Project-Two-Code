@@ -59,4 +59,5 @@ Le parti senza Flet (`navigation`, `forms`, `viewmodels`, `cloud_model`, `theme`
 - 0.2.4 ✅: gli **allegati** (`ui/views/media_view.py`): «Aggiungi file» nel modulo (`ctx.pick_files`, il `FilePicker` di Flet), miniature e **Apri** nella pagina della voce (`ctx.open_file`: programma predefinito sul PC, menu Condividi sul telefono) ([gli allegati](allegati.md)).
 - 0.2.5 ✅: **Collezioni** con i riquadri Preferiti, Lista dei desideri e Tempo speso, la finestra **Importa da un file** (`ui/views/import_dialog.py`), le stelle a metà, il cuore del preferito (`FavoriteEditor`) e la recensione con spoiler nascosta nella pagina della voce ([svago avanzato](svago.md)).
 - 0.2.6 ✅: il **bilancio** (`/finanze`, `/finanze/AAAA-MM`, da Aree → Finanze, `ui/views/finance.py`): chiede il PIN con `unlock_secrets`, somma in memoria, `Spesa`/`Entrata` rapide in un dialogo ([le finanze](finanze.md)).
-- 0.2.7–0.2.9: il resto dello sprint delle 8 aree ([requisiti](requisiti-v0.2.md)).
+- 0.2.7 ✅: **Abitudini** (`/abitudini`, `ui/views/habits.py`): riquadro in Oggi, schermata con serie e ultimi 7 giorni, riga nella pagina dell'area ([le abitudini](abitudini.md)).
+- 0.2.8–0.2.9: il resto dello sprint delle 8 aree ([requisiti](requisiti-v0.2.md)).

@@ -479,7 +479,7 @@ def test_the_areas_from_oggi_with_to_dos_and_coming_soon(ready: Path) -> None:
     assert shell.current.path == "/aree/salute" and shell.section_key == "oggi"
     shown = texts(shell.body.content)
     assert "Correre 10 km" in shown and "5 km" in shown and "Da fare (1)" in shown
-    assert "IN ARRIVO PER SALUTE" in shown and "Abitudini" in shown and "In arrivo · versione 0.2.7" in shown
+    assert "IN ARRIVO PER SALUTE" in shown and "Obiettivi con traguardi" in shown and "In arrivo · versione 0.2.8" in shown
     field = find(shell.body.content, ft.TextField, hint_text="Che cosa c'è da fare?")
     field.value = "prenotare il dentista"
     click(button(shell.body.content, "Aggiungi"))
