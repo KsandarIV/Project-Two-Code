@@ -4,7 +4,7 @@ from typing import Any, Callable, List
 
 import flet as ft
 
-from zibaldone.core.areas import AreaError, add_todo, set_todo
+from zibaldone.core.areas import AreaError, add_todo, goals_overview, set_todo
 from zibaldone.core.brand import NOMENCLATURE
 from zibaldone.storage.database import StoreError
 from zibaldone.ui import forms
@@ -15,6 +15,7 @@ from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route
 from zibaldone.ui.views import habits
 from zibaldone.ui.views.common import not_found
+from zibaldone.ui.views.tiles import in_days_label
 
 CHART_HEIGHT = 84
 PACK_NOTE = "Check-in di una sola area, obiettivi e cose da fare arrivano con la Scuola «Liceo · Aree»."
@@ -233,6 +234,11 @@ class AreaScreen:
             )
         if not page.goals:
             rows.append(W.body("Nessun obiettivo in quest'area. Un obiettivo ha i suoi passi, che compaiono anche tra le cose da fare.", dim=True))
+        with self.ctx.store() as store:
+            today = self.ctx.now().date()
+            soonest = next((line for line in goals_overview(store, today, self.key) if line.days_left is not None), None)
+        if soonest is not None:
+            rows.insert(1, W.caption(f"Prossima scadenza: {soonest.goal.title}, " + (in_days_label(soonest.days_left) if soonest.days_left >= 0 else f"era il {soonest.goal.deadline.day:02d}/{soonest.goal.deadline.month:02d}")))
         return W.panel(ft.Column(rows, spacing=8))
 
     def _people(self, page: vm.AreaPage) -> ft.Control:

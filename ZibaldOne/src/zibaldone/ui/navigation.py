@@ -4,7 +4,7 @@ Every screen has a route, so the app can start on any of them (handy for
 tests and screenshots): `/oggi`, `/voci`, `/voci/<id>`, `/voci/<id>/modifica`,
 `/scrivi/<modello>`, `/scrivi/<modello>/<area>`, `/collezioni`, `/modelli`,
 `/modelli/nuovo`, `/modelli/<modello>`, `/scuole`, `/aree`, `/aree/<area>`,
-`/persone/<id>`, `/finanze`, `/finanze/<AAAA-MM>`, `/abitudini`, `/albero`, `/rete`, `/rete/<area>`, `/organon`, `/organon/<parte>`.
+`/persone/<id>`, `/finanze`, `/finanze/<AAAA-MM>`, `/abitudini`, `/viste`, `/viste/<id>`, `/albero`, `/rete`, `/rete/<area>`, `/organon`, `/organon/<parte>`.
 """
 
 import re
@@ -66,6 +66,7 @@ SETTINGS_PARTS: Tuple[SettingsPart, ...] = (
     SettingsPart("mnemosyne", "Backup", NOMENCLATURE["history"].name, "le istantanee dei tuoi dati", "HISTORY"),
     SettingsPart("nuvole", "Account e cloud", NOMENCLATURE["cloud"].name, "l'account e dove vanno le copie", "CLOUD_OUTLINED"),
     SettingsPart("velo", "Anonimizzatore", NOMENCLATURE["anonymizer"].name, "togliere i dati personali da un testo, prima di un'IA", "VISIBILITY_OFF_OUTLINED"),
+    SettingsPart("home", "La tua home", "Oikos", "quali riquadri mostra Oggi e in che ordine", "HOME_OUTLINED"),
     SettingsPart("info", "Informazioni", "ZibaldOne", "il nome, le mascotte e i nomi filosofici", "INFO_OUTLINE"),
 )
 SETTINGS_KEYS: Tuple[str, ...] = tuple(part.key for part in SETTINGS_PARTS)
@@ -135,6 +136,8 @@ def route_path(screen: str, arg: str = "", extra: str = "") -> str:
         "theoria": "/theoria",
         "finanze": f"/finanze/{arg}" if arg else "/finanze",
         "abitudini": "/abitudini",
+        "viste": "/viste",
+        "vista": f"/viste/{arg}",
         "parte": f"/organon/{arg}",
         "consenso": "/benvenuto/consenso",
         "accesso": "/benvenuto/accesso",
@@ -184,6 +187,10 @@ def parse_route(path: Optional[str]) -> Route:
         return Route("theoria", "oggi")
     if head == "finanze" and (not rest or (len(rest) == 1 and MONTH_ROUTE.match(rest[0]))):
         return Route("finanze", "oggi", rest[0] if rest else "")
+    if head == "viste" and not rest:
+        return Route("viste", "voci")
+    if head == "viste" and len(rest) == 1:
+        return Route("vista", "voci", rest[0])
     if head == "abitudini" and not rest:
         return Route("abitudini", "oggi")
     if head == "organon" and len(rest) == 1 and rest[0] in SETTINGS_KEYS:
