@@ -4,6 +4,7 @@ import json
 import sqlite3
 import struct
 import zipfile
+import zlib
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -160,6 +161,29 @@ def member_data(path: Path, name: str) -> tuple:
     return info.header_offset + 30 + name_length + extra_length, info.compress_size
 
 
+def flip_changing(path: Path, member: str, index: int) -> None:
+    """Flip a bit at `index` or at the first byte after it that really changes what the member unpacks to.
+
+    A few bits of a deflate stream (padding, unused code lengths) change nothing, and which
+    ones depends on the zlib build: a snapshot is only damaged if its content is.
+    """
+    with zipfile.ZipFile(path) as archive:
+        before = archive.read(member)
+    original = path.read_bytes()
+    start, size = member_data(path, member)
+    for at in range(index, start + size):
+        flip(path, at)
+        try:
+            with zipfile.ZipFile(path) as archive:
+                same = archive.read(member) == before
+        except (zipfile.BadZipFile, zlib.error, EOFError):
+            same = False
+        if not same:
+            return
+        path.write_bytes(original)
+    raise AssertionError("no byte of the member changes its content")
+
+
 @pytest.mark.parametrize("member", ["manifest.json", "zibaldone.db"])
 @pytest.mark.parametrize("where", ["start", "middle"])
 def test_verify_detects_flipped_bytes(folder, member, where) -> None:
@@ -167,7 +191,7 @@ def test_verify_detects_flipped_bytes(folder, member, where) -> None:
     snapshot = create_snapshot(folder)
     start, size = member_data(snapshot.path, member)
     # Not byte 0: its lowest bit is deflate's "last block" flag and flipping it leaves the content intact.
-    flip(snapshot.path, start + 1 if where == "start" else start + size // 2)
+    flip_changing(snapshot.path, member, start + 1 if where == "start" else start + size // 2)
     assert not verify_snapshot(folder, snapshot.id).ok
 
 
