@@ -27,6 +27,7 @@ from zibaldone.cli.search_cmd import SEARCH_CONTEXT, links_command, search_comma
 from zibaldone.cli.stats_cmd import review_command, stats_command
 from zibaldone.cli.template_cmd import template_app
 from zibaldone.cli.update_cmd import check_updates
+from zibaldone.cli.view_cmd import view_app
 
 
 app = typer.Typer(
@@ -52,6 +53,7 @@ app.add_typer(secret_app, name="segreti")
 app.add_typer(media_app, name="allegati")
 app.add_typer(finance_app, name="finanze")
 app.add_typer(habit_app, name="abitudini")
+app.add_typer(view_app, name="viste")
 app.command("update")(check_updates)
 app.command("importa")(import_command)
 app.command("search", context_settings=SEARCH_CONTEXT)(search_command)

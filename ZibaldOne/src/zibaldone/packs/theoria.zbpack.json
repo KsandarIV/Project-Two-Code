@@ -1,0 +1,68 @@
+{
+  "format": 1,
+  "id": "zibaldone.theoria",
+  "name": "Theoria · Viste",
+  "version": "1.0.0",
+  "author": "ZibaldOne",
+  "license": "CC0-1.0",
+  "description": "Theoria, lo sguardo che contempla: ricerche salvate con i loro filtri, da riaprire con un tocco e da mettere nella tua home. Non contiene dati cifrati.",
+  "required_blocks": [
+    "choice",
+    "text"
+  ],
+  "templates": [
+    {
+      "slug": "vista",
+      "name": "Theoria",
+      "blocks": [
+        {
+          "key": "nome",
+          "type": "text",
+          "label": "Nome della vista",
+          "required": true
+        },
+        {
+          "key": "modello",
+          "type": "text",
+          "label": "Modello (vuoto = tutti)"
+        },
+        {
+          "key": "area",
+          "type": "text",
+          "label": "Area (vuoto = tutte)"
+        },
+        {
+          "key": "testo",
+          "type": "text",
+          "label": "Testo da cercare"
+        },
+        {
+          "key": "campo",
+          "type": "text",
+          "label": "Campo da filtrare (es. stato)"
+        },
+        {
+          "key": "valore",
+          "type": "text",
+          "label": "Valore del campo (es. In corso)"
+        },
+        {
+          "key": "ordine",
+          "type": "choice",
+          "label": "Ordine",
+          "options": {
+            "choices": [
+              "Più recenti",
+              "Titolo"
+            ]
+          }
+        }
+      ],
+      "description": "Una ricerca salvata, per ritrovarla con un tocco: «tutti i libri in corso», «i film da vedere». Theoria è lo sguardo che contempla.",
+      "icon": "VISIBILITY_OUTLINED",
+      "color": "#8A2BE2",
+      "category": "viste",
+      "title_block": "nome"
+    }
+  ]
+}
