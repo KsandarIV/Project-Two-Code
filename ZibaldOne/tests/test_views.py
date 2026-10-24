@@ -89,6 +89,15 @@ def test_save_checks_the_filters_and_find_view_takes_first_letters(store) -> Non
     assert store.count_entries("libro") == 3
 
 
+def test_unknown_template_says_which_pack_brings_it(isolated_data_dir) -> None:
+    with Store.open(isolated_data_dir) as bare:
+        install(bare, V.PACK_NAME)
+        with pytest.raises(V.ViewError, match="zbone pack install collezioni"):
+            V.save_view(bare, "Libri", template="libro")
+        with pytest.raises(V.ViewError, match="zbone template list"):
+            V.save_view(bare, "Boh", template="nonesiste")
+
+
 def test_without_the_pack_a_message_says_how_to_install_it(isolated_data_dir) -> None:
     with Store.open(isolated_data_dir) as bare:
         assert V.load_views(bare) == []
