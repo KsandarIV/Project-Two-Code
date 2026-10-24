@@ -477,7 +477,6 @@ class Upcoming:
 # Remove an item when its version ships: a test checks that none is older than the app.
 UPCOMING: Tuple[Upcoming, ...] = (
     Upcoming("Sblocco con l'impronta", "aprire i segreti con l'impronta o il volto, quando l'app potrà chiederli al telefono", "più avanti", ("personale",)),
-    Upcoming("I tuoi vecchi diari", "i file della vecchia Journal App diventano voci di ZibaldOne", "0.2.9"),
     Upcoming("Maieutica", "un'IA che ti fa domande sulle tue aree («le mie azioni riflettono i miei valori?»), sempre dietro il Velo d'ignoranza", "dopo la 1.0"),
 )
 
