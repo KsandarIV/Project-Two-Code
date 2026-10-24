@@ -149,10 +149,10 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
         "/grafo", f"/grafo/{known['persona']}", "/grafo/nonesiste", "/theoria",
         "/aree", "/aree/salute", "/aree/svago", "/scrivi/checkin_area/salute", "/scrivi/riflessione/lavoro",
         f"/persone/{known['persona']}", f"/persone/{known['libro']}", "/persone/nonesiste",
-        "/albero", "/rete", "/rete/famiglia", "/finanze", "/finanze/2026-09", "/abitudini",
+        "/albero", "/rete", "/rete/famiglia", "/finanze", "/finanze/2026-09", "/abitudini", "/viste", "/viste/nonesiste",
     ]
     paths += [f"/scrivi/{slug}" for slug in ("sera", "aree", "mattina", "libro", "serie", "incontro", "persona", "desiderio")]
-    paths += [f"/organon/{part}" for part in ("parresia", "daimon", "mnemosyne", "nuvole", "velo", "info")]
+    paths += [f"/organon/{part}" for part in ("parresia", "daimon", "mnemosyne", "nuvole", "velo", "home", "info")]
     for path in paths:
         ctx = AppContext(ready)
         ctx.wide = wide
@@ -162,7 +162,7 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
 
 def test_screens_cover_every_route_kind() -> None:
     assert ONBOARDING_SCREENS <= set(SCREENS)
-    assert {"oggi", "voci", "voce", "scrivi", "modifica", "collezioni", "modelli", "modello", "scuole", "grafo", "theoria", "finanze", "abitudini", "aree", "area", "persona", "albero", "rete", "organon", "parte"} <= set(SCREENS)
+    assert {"oggi", "voci", "voce", "scrivi", "modifica", "collezioni", "modelli", "modello", "scuole", "grafo", "theoria", "finanze", "abitudini", "viste", "vista", "aree", "area", "persona", "albero", "rete", "organon", "parte"} <= set(SCREENS)
 
 
 def test_missing_entry_and_template_say_so_gently(ready: Path) -> None:

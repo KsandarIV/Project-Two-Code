@@ -1,9 +1,10 @@
 """Oggi · Hic et nunc: the day at a glance."""
 
-from typing import Any, List
+from typing import Any, Dict, List, Optional
 
 import flet as ft
 
+from zibaldone.storage import home_log
 from zibaldone.ui import services
 from zibaldone.ui import theme as T
 from zibaldone.ui import viewmodels as vm
@@ -11,7 +12,10 @@ from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route, section
 from zibaldone.ui.views import habits
+from zibaldone.ui.views import tiles as tiles_
 from zibaldone.ui.views.common import choose_template
+
+TOP_TILES = ("promemoria", "citazione")
 
 
 def build(ctx: AppContext, route: Route) -> ft.Control:
@@ -21,7 +25,20 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     with ctx.store() as store:
         streak = services.streak_days(store, now.date())
         model = vm.build_today(store, now, reminder, streak, config)
-        habit_block = habits.today_panel(ctx, store, now.date())
+        layout = home_log.load_layout(ctx.folder)
+        today = now.date()
+        builders = {
+            "abitudini": lambda: habits.today_panel(ctx, store, today),
+            "ricorrenze": lambda: tiles_.occasions_tile(ctx, store, today),
+            "obiettivi": lambda: tiles_.goals_tile(ctx, store, today),
+            "bilancio": lambda: tiles_.balance_tile(ctx, store, now),
+        }
+        tiles: Dict[str, Optional[ft.Control]] = {}
+        for key in layout:  # only what the layout shows is worked out
+            if key.startswith("vista:"):
+                tiles[key] = tiles_.view_tile(ctx, store, key.split(":", 1)[1], today)
+            elif key in builders:
+                tiles[key] = builders[key]()
 
     info = section("oggi")
     actions: List[ft.Control] = [
@@ -34,26 +51,17 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     controls: List[ft.Control] = [
         W.screen_header(info.label, info.nickname, f"{model.greeting}, è {model.date_label}.", actions=actions),
     ]
-    if model.reminder is not None:
-        controls.append(_reminder_banner(ctx, model.reminder))
-    controls.append(_quote(model.quote))
-    controls.append(W.section_label("I tre momenti", "Stoa"))
-    if model.diario_installed:
-        controls.append(ft.ResponsiveRow([_moment_card(ctx, card) for card in model.moments], spacing=12, run_spacing=12))
-    else:
-        controls.append(
-            W.empty_state(
-                "Il diario non è ancora installato. Con la Scuola «Stoa · Diario» trovi mattina, metà giornata e sera, "
-                "più il check-in delle otto aree.",
-                "WB_SUNNY",
-                W.primary_button("Vai alle Scuole", lambda _: ctx.go("/scuole"), icon="SCHOOL_OUTLINED"),
-            )
-        )
-    if model.areas.installed:
-        controls.append(W.section_label("Le otto aree", "Eudaimonia"))
-        controls.append(_areas(ctx, model.areas))
-    if habit_block is not None:
-        controls.append(habit_block)
+    # shortcut: the three moments sit before the first tile that is not the reminder or the quote; a layout cannot move them
+    moments_done = False
+    for key in layout:
+        if key not in TOP_TILES and not moments_done:
+            controls.append(_moments(ctx, model))
+            moments_done = True
+        block = _tile(ctx, key, model, tiles)
+        if block is not None:
+            controls.append(block)
+    if not moments_done:
+        controls.append(_moments(ctx, model))
     controls.append(W.section_label("Le voci di oggi"))
     if model.entries:
         for row in model.entries:
@@ -63,6 +71,34 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     else:
         controls.append(W.empty_state("Nessuna voce oggi, per ora. Quando vuoi, il tuo zibaldone è qui.", "EDIT_NOTE"))
     return W.screen(controls, ctx.wide)
+
+
+def _tile(ctx: AppContext, key: str, model: vm.TodayModel, tiles: Dict[str, Optional[ft.Control]]) -> Optional[ft.Control]:
+    if key == "promemoria":
+        return _reminder_banner(ctx, model.reminder) if model.reminder is not None else None
+    if key == "citazione":
+        return _quote(model.quote)
+    if key == "aree":
+        if not model.areas.installed:
+            return None
+        return ft.Column([W.section_label("Le otto aree", "Eudaimonia"), _areas(ctx, model.areas)], spacing=8)
+    return tiles.get(key)
+
+
+def _moments(ctx: AppContext, model: vm.TodayModel) -> ft.Control:
+    parts: List[ft.Control] = [W.section_label("I tre momenti", "Stoa")]
+    if model.diario_installed:
+        parts.append(ft.ResponsiveRow([_moment_card(ctx, card) for card in model.moments], spacing=12, run_spacing=12))
+    else:
+        parts.append(
+            W.empty_state(
+                "Il diario non è ancora installato. Con la Scuola «Stoa · Diario» trovi mattina, metà giornata e sera, "
+                "più il check-in delle otto aree.",
+                "WB_SUNNY",
+                W.primary_button("Vai alle Scuole", lambda _: ctx.go("/scuole"), icon="SCHOOL_OUTLINED"),
+            )
+        )
+    return ft.Column(parts, spacing=8)
 
 
 def _reminder_banner(ctx: AppContext, banner: vm.ReminderBanner) -> ft.Control:
