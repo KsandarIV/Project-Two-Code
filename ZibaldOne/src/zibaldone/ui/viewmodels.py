@@ -588,29 +588,16 @@ def category_label(category: str) -> str:
     return CATEGORY_LABELS.get(category, category.capitalize() if category else CATEGORY_LABELS[""])
 
 
-# Where the templates of the built-in packs sit when they declare no area (decided with Alex, 2026-10-25; the packs may declare it later).
-AREA_BY_CATEGORY: Dict[str, str] = {
-    "diario": "personale",
-    "aree": "personale",
-    "io": "personale",
-    "segreti": "personale",
-    "abitudini": "salute",
-    "persone": "sociale",
-    "finanze": "finanze",
-    "collezioni": "svago",
-}
-
-
 def area_of(template: Template) -> str:
-    """The area page of a template: its own, else the one for its category, else '' (Generale)."""
-    return template.area or AREA_BY_CATEGORY.get(template.category, "")
+    """The main area page of a template: its own, else '' (Generale). Nothing is guessed from the category."""
+    return template.area
 
 
 def group_templates(templates: Iterable[Template], counts: Mapping[str, int], area: Optional[str] = None) -> List[Tuple[str, List[TemplateRow]]]:
     """Templates by category; with `area` only those of that page ('' = those with no area)."""
     groups: Dict[str, List[TemplateRow]] = {}
     for template in templates:
-        if area is not None and area_of(template) != area:
+        if area is not None and (area not in template.all_areas() if area else bool(template.all_areas())):
             continue
         row = TemplateRow(
             slug=template.slug,
@@ -813,6 +800,7 @@ class EditorState:
     origin: Dict[str, str] = field(default_factory=dict)
     version: int = 1
     area: str = ""  # 0.2.0
+    areas: List[str] = field(default_factory=list)  # 0.3.2: the other areas
 
     @property
     def is_new(self) -> bool:
@@ -832,6 +820,7 @@ def editor_from_template(template: Template) -> EditorState:
         origin=dict(template.origin),
         version=template.version,
         area=template.area,
+        areas=list(template.areas),
     )
 
 
@@ -862,6 +851,7 @@ def template_from_editor(state: EditorState, slug: str) -> Template:
         origin=dict(state.origin),
         version=state.version,
         area=state.area,
+        areas=list(state.areas),
     )
     return template.validate()
 
@@ -1399,6 +1389,13 @@ def area_options(inherited: str = "", inherited_label: str = "Area del modello")
     """Dropdown choices: 'from the template' (or 'none'), then the 8 areas."""
     first = f"{inherited_label}: {eudaimonia.area_label(inherited)}" if inherited else "Nessuna area"
     return [(NO_AREA, first)] + [(area.key, area.label) for area in eudaimonia.AREA_LIST]
+
+
+def toggle_template_area(area: str, areas: Sequence[str], key: str) -> Tuple[str, List[str]]:
+    """Switch `key` on or off among the areas of a template; the first one on is the main one."""
+    chosen = ([area] if area else []) + list(areas)
+    chosen = [item for item in chosen if item != key] if key in chosen else chosen + [key]
+    return (chosen[0] if chosen else ""), chosen[1:]
 
 
 def area_from_option(value: Optional[str]) -> str:

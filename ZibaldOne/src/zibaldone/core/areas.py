@@ -145,8 +145,8 @@ def entry_areas(entry: Entry, template: Optional[Template]) -> List[str]:
             found += [key for key in AREAS if key in listed and key not in found]
     if is_person_template(template):
         found += [key for key in role_areas(entry, template) if key not in found]
-    if not found and template.area:
-        found.append(template.area)
+    if not found:
+        found += template.all_areas()
     return found
 
 
@@ -453,7 +453,7 @@ def area_detail(entries: Sequence[Entry], templates: Mapping[str, Template], key
         goals=area_goals(entries, templates, area.key),
         recent=mine[:recent],
         checkins=checkins,
-        templates=sorted(slug for slug, template in templates.items() if template.area == area.key),
+        templates=sorted(slug for slug, template in templates.items() if area.key in template.all_areas()),
     )
 
 

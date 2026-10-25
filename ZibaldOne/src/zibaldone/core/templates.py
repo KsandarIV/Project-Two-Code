@@ -17,7 +17,7 @@ SLUG = re.compile(r"^[a-z][a-z0-9_]{0,39}$")
 HEX_COLOR = re.compile(r"^#[0-9A-Fa-f]{6}$")
 MAX_BLOCKS = 60
 
-TEMPLATE_FIELDS = {"slug", "name", "blocks", "description", "icon", "color", "category", "area", "title_block", "origin", "version"}
+TEMPLATE_FIELDS = {"slug", "name", "blocks", "description", "icon", "color", "category", "area", "areas", "title_block", "origin", "version"}
 BLOCK_FIELDS = {"key", "type", "label", "required", "options", "help"}
 ORIGIN_FIELDS = {"pack_id", "pack_version", "author"}
 
@@ -129,6 +129,7 @@ class Template:
     origin: Dict[str, str] = field(default_factory=dict)
     version: int = 1
     area: str = ""  # 0.2.0: the life area its entries belong to, unless an entry says otherwise
+    areas: List[str] = field(default_factory=list)  # 0.3.2: more areas the template is in, besides `area`
 
     def validate(self) -> "Template":
         if not SLUG.match(self.slug):
@@ -138,6 +139,9 @@ class Template:
         self.icon = _short_text(self.icon, "icona", 60)
         self.category = _short_text(self.category, "categoria", 40).lower()
         self.area = check_area(self.area, "area del modello")
+        if not isinstance(self.areas, list):
+            raise ValueError("le altre aree del modello sono una lista")
+        self.areas = [key for key in dict.fromkeys(check_area(value, "area del modello") for value in self.areas) if key and key != self.area]
         if self.color and not HEX_COLOR.match(self.color):
             raise ValueError("il colore deve essere nel formato #RRGGBB")
         if not isinstance(self.blocks, list) or not self.blocks:
@@ -176,6 +180,10 @@ class Template:
                 return block.key
         return None
 
+    def all_areas(self) -> List[str]:
+        """Every area of the template, the main one first."""
+        return ([self.area] if self.area else []) + self.areas
+
     def block_types(self) -> List[str]:
         return sorted({block.type for block in self.blocks})
 
@@ -184,6 +192,8 @@ class Template:
         for key in ("description", "icon", "color", "category", "area", "title_block"):
             if getattr(self, key):
                 data[key] = getattr(self, key)
+        if self.areas:
+            data["areas"] = list(self.areas)
         if self.origin:
             data["origin"] = dict(self.origin)
         if self.version != 1:
@@ -205,6 +215,7 @@ class Template:
             color=data.get("color", ""),
             category=data.get("category", ""),
             area=data.get("area", ""),
+            areas=list(data["areas"]) if isinstance(data.get("areas"), list) else data.get("areas", []),
             title_block=data.get("title_block", ""),
             origin=dict(data.get("origin", {})) if isinstance(data.get("origin", {}), dict) else data.get("origin"),
             version=data.get("version", 1),

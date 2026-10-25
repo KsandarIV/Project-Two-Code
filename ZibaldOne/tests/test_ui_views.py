@@ -577,9 +577,11 @@ def test_an_area_page_offers_the_missing_pack(ready: Path) -> None:
 
 def test_entries_by_area_and_the_area_of_a_template(ready: Path) -> None:
     known = ids(ready)
+    with Store.open(ready) as store:
+        assert store.get_template("libro").area == "svago"  # the pack says so; nothing is guessed from the category
     shell = Shell(FakePage(), ready)
     shell.start(f"/voci/{known['libro']}")
-    assert "Svago" in texts(shell.body.content)  # Libro belongs to svago
+    assert "Svago" in texts(shell.body.content)
     shell.navigate("/voci")
     menu = find(shell.body.content, ft.Dropdown, label="Area")
     menu.value = "svago"
@@ -587,8 +589,8 @@ def test_entries_by_area_and_the_area_of_a_template(ready: Path) -> None:
     shown = texts(shell.body.content)
     assert "Ficciones" in shown and "Cena" not in shown and "1 voce" in shown
     shell.navigate("/modelli/libro")
-    editor_menu = find(shell.body.content, ft.Dropdown, label="Area della vita delle sue voci")
-    assert editor_menu.value == "svago"
+    chip = next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and item.tooltip == "Svago")
+    assert chip.bgcolor is not None  # on
 
 
 # * — 0.2.1: people —
@@ -842,17 +844,19 @@ def test_backup_button_does_not_use_a_camera(ready: Path) -> None:
     assert create.icon == ft.Icons.BACKUP_OUTLINED
 
 
-def test_template_editor_shows_the_area_mascot(ready: Path) -> None:
+def test_template_editor_areas_are_mascot_chips_and_there_can_be_several(ready: Path) -> None:
     shell = Shell(FakePage(), ready)
     shell.start("/modelli/nuovo")
-    assert "Salute" not in texts(shell.body.content)  # no area yet, no badge
-    menu = next(item for item in walk(shell.body.content) if isinstance(item, ft.Dropdown) and item.label == "Area della vita delle sue voci")
-    menu.value = "salute"
-    menu.on_select(SimpleNamespace(control=menu))
-    assert "Salute" in texts(shell.body.content)
-    from zibaldone.core.brand import mascot_for
 
-    assert any(isinstance(item, ft.Container) and (item.tooltip or "").startswith(mascot_for("salute").name) for item in walk(shell.body.content))
+    def chip(label: str) -> Any:
+        return next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and item.tooltip == label)
+
+    assert chip("Salute").bgcolor is None and chip("Svago").bgcolor is None
+    chip("Salute").on_click(SimpleNamespace(control=chip("Salute")))
+    chip("Svago").on_click(SimpleNamespace(control=chip("Svago")))
+    assert chip("Salute").bgcolor is not None and chip("Svago").bgcolor is not None
+    assert vm.toggle_template_area("salute", ["svago"], "salute") == ("svago", [])
+    assert vm.toggle_template_area("", [], "lavoro") == ("lavoro", [])
 
 
 def test_leaving_a_form_keeps_a_draft_that_can_be_resumed(ready: Path) -> None:
