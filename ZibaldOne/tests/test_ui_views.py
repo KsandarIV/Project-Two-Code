@@ -1062,3 +1062,12 @@ def test_lente_explains_itself_and_adds_then_removes_nine_examples(ready: Path) 
     with Store.open(ready) as store:
         assert [store.count_entries(slug) for slug in ("libro", "film", "serie")] == before and V.load_views(store) == []
     assert lente_examples.added(ready) == []
+
+
+def test_the_lente_model_sits_on_the_general_page(ready: Path) -> None:
+    from zibaldone.core.packs import apply_install, find_builtin_pack, plan_install
+    from zibaldone.storage.database import Store
+
+    with Store.open(ready) as store:
+        apply_install(plan_install(find_builtin_pack("theoria") or find_builtin_pack("lente"), store), store)
+        assert vm.area_of(store.get_template("vista")) == ""

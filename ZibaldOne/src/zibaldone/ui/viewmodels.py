@@ -593,7 +593,6 @@ AREA_BY_CATEGORY: Dict[str, str] = {
     "diario": "personale",
     "aree": "personale",
     "io": "personale",
-    "viste": "personale",
     "segreti": "personale",
     "abitudini": "salute",
     "persone": "sociale",
