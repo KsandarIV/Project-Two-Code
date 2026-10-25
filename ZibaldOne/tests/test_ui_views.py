@@ -250,7 +250,26 @@ def test_navigation_history_and_back(ready: Path) -> None:
     assert shell.current.path == "/collezioni"
 
 
-def test_android_back_goes_to_the_previous_section_and_leaves_on_the_second_press(ready: Path) -> None:
+def test_android_back_from_an_area_page_goes_to_general_then_oggi_then_asks_to_leave(ready: Path) -> None:
+    shell = Shell(FakePage(width=412), ready)
+    shell.start("/oggi")
+    shell.on_nav(SimpleNamespace(control=SimpleNamespace(selected_index=3)))  # Modelli
+    click(next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and item.tooltip == "Svago"))
+    answers = []
+
+    async def confirm_pop(value: bool) -> None:
+        answers.append(value)
+
+    event = SimpleNamespace(control=SimpleNamespace(confirm_pop=confirm_pop))
+    asyncio.run(shell.on_confirm_pop(event))
+    assert shell.current.path == "/modelli" and shell.ctx.memory["modelli_area"] == ""
+    asyncio.run(shell.on_confirm_pop(event))
+    assert shell.current.path == "/oggi"
+    asyncio.run(shell.on_confirm_pop(event))
+    assert "Premi ancora indietro per uscire." in shell.ctx.toasts and answers == [False, False, False]
+
+
+def test_android_back_goes_to_oggi_from_a_section_and_leaves_on_the_second_press(ready: Path) -> None:
     page = FakePage(width=412)
     shell = Shell(page, ready)
     shell.start("/oggi")
@@ -264,12 +283,10 @@ def test_android_back_goes_to_the_previous_section_and_leaves_on_the_second_pres
         answers.append(value)
 
     event = SimpleNamespace(control=SimpleNamespace(confirm_pop=confirm_pop))
-    asyncio.run(shell.on_confirm_pop(event))
-    assert answers == [False] and shell.current.path == "/voci"
-    asyncio.run(shell.on_confirm_pop(event))
-    assert answers == [False, False] and shell.current.path == "/oggi"
+    asyncio.run(shell.on_confirm_pop(event))  # a section is one step from Oggi, not back through the others
+    assert answers == [False] and shell.current.path == "/oggi"
     asyncio.run(shell.on_confirm_pop(event))  # nothing left: the first press only asks
-    assert answers == [False, False, False] and "Premi ancora indietro per uscire." in shell.ctx.toasts
+    assert answers == [False, False] and "Premi ancora indietro per uscire." in shell.ctx.toasts
     now[0] += 1.0
     asyncio.run(shell.on_confirm_pop(event))  # the second one, soon after, leaves
     assert answers[-1] is True

@@ -37,7 +37,6 @@ logger = logging.getLogger("zibaldone.ui")
 REMINDER_FIRST_CHECK_SECONDS = 60
 UPDATE_CHECK_DELAY_SECONDS = 5
 REMINDER_INTERVAL_SECONDS = 300
-GRID_REDRAW = 40  # pixels of resize that redraw the home grid
 EXIT_WINDOW_SECONDS = 2.0  # the second Android back within this leaves the app
 HISTORY_KEEP = 50
 
@@ -57,7 +56,6 @@ class Shell:
         self.history: List[str] = []
         self.clock = time.monotonic
         self.exit_asked = float("-inf")
-        self.grid_seen = 0.0
         self.current: Route = HOME
         self.section_key = "oggi"
         self.layout = layout_for(page.width)
@@ -151,6 +149,10 @@ class Shell:
 
     def back(self) -> None:
         if self.ctx.back_hook is not None and self.ctx.back_hook():
+            return
+        if self.current.is_top_level and self.current.screen != "oggi":
+            self.history.clear()  # a section is one step from Oggi, whichever sections were open before
+            self.show(HOME)
             return
         while self.history:
             path = self.history.pop()
@@ -279,12 +281,8 @@ class Shell:
         width = getattr(event, "width", None) or self.page.width
         layout = layout_for(width)
         if layout == self.layout:
-            if self.current.screen == "oggi" and abs(width - self.grid_seen) >= GRID_REDRAW:
-                self.grid_seen = width
-                self.refresh()  # the home grid is drawn for the width it had
             return
         self.layout = layout
-        self.grid_seen = width
         self.ctx.wide = layout == "wide"
         if self.mounted is not None:
             self.mount(self.mounted[1])

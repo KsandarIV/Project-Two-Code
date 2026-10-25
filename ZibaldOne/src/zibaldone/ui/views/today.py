@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional
 
 import flet as ft
 
-from zibaldone.core import views as V
 from zibaldone.storage import home_log
 from zibaldone.ui import novita, services, sparkles
 from zibaldone.ui import theme as T
@@ -12,9 +11,12 @@ from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route, section
-from zibaldone.ui.views import habits, home_grid
+from zibaldone.ui.views import habits
 from zibaldone.ui.views import tiles as tiles_
 from zibaldone.ui.views.common import choose_template
+
+TOP_TILES = ("promemoria", "citazione")
+
 
 def _news_button(ctx: AppContext) -> Optional[ft.Control]:
     """The sparkling «Novità» button at the other end of the title; None when there are no notes."""
@@ -35,7 +37,7 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
         streak = services.streak_days(store, now.date())
         model = vm.build_today(store, now, reminder, streak, config)
         shortcut_row = tiles_.shortcuts_row(ctx, store)
-        layout = home_log.load_layout(ctx.folder, {item.id for item in V.load_views(store)} if store.find_template(V.TEMPLATE) is not None else set())
+        layout = home_log.load_layout(ctx.folder)
         today = now.date()
         builders = {
             "abitudini": lambda: habits.today_panel(ctx, store, today),
@@ -44,8 +46,7 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
             "bilancio": lambda: tiles_.balance_tile(ctx, store, now),
         }
         tiles: Dict[str, Optional[ft.Control]] = {}
-        for placed in layout:  # only what the layout shows is worked out
-            key = placed.key
+        for key in layout:  # only what the layout shows is worked out
             if key.startswith("vista:"):
                 tiles[key] = tiles_.view_tile(ctx, store, key.split(":", 1)[1], today)
             elif key in builders:
@@ -64,15 +65,17 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     ]
     if shortcut_row is not None:
         controls.append(shortcut_row)
-    controls.append(
-        ft.Row([W.text_button("Fine della modifica" if home_grid.editing(ctx) else "Modifica home", _toggle_edit(ctx), icon="CHECK" if home_grid.editing(ctx) else "DASHBOARD_CUSTOMIZE_OUTLINED")], alignment=ft.MainAxisAlignment.END)
-    )
-    if home_grid.editing(ctx):
-        controls.append(home_grid.edit_view(ctx))
-    else:
-        blocks = {placed.key: _tile(ctx, placed.key, model, tiles) for placed in layout}
-        controls.append(home_grid.grid(ctx, layout, {key: home_grid.fit(block) if block is not None else None for key, block in blocks.items()}))
-    controls.append(_moments(ctx, model))
+    # shortcut: the three moments sit before the first tile that is not the reminder or the quote; a layout cannot move them
+    moments_done = False
+    for key in layout:
+        if key not in TOP_TILES and not moments_done:
+            controls.append(_moments(ctx, model))
+            moments_done = True
+        block = _tile(ctx, key, model, tiles)
+        if block is not None:
+            controls.append(block)
+    if not moments_done:
+        controls.append(_moments(ctx, model))
     controls.append(W.section_label("Le voci di oggi"))
     if model.entries:
         for row in model.entries:
@@ -82,14 +85,6 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     else:
         controls.append(W.empty_state("Nessuna voce oggi, per ora. Quando vuoi, il tuo zibaldone è qui.", "EDIT_NOTE"))
     return W.screen(controls, ctx.wide)
-
-
-def _toggle_edit(ctx: AppContext) -> Any:
-    def run(_: Any) -> None:
-        home_grid.set_editing(ctx, not home_grid.editing(ctx))
-        ctx.refresh()
-
-    return run
 
 
 def _tile(ctx: AppContext, key: str, model: vm.TodayModel, tiles: Dict[str, Optional[ft.Control]]) -> Optional[ft.Control]:
