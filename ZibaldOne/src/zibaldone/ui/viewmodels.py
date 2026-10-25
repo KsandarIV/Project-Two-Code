@@ -575,6 +575,7 @@ class TemplateRow:
     block_count: int
     entry_count: int
     from_pack: str
+    area: str = ""  # the page of Modelli it sits in; '' = «Generale»
 
     @property
     def counts_label(self) -> str:
@@ -587,9 +588,31 @@ def category_label(category: str) -> str:
     return CATEGORY_LABELS.get(category, category.capitalize() if category else CATEGORY_LABELS[""])
 
 
-def group_templates(templates: Iterable[Template], counts: Mapping[str, int]) -> List[Tuple[str, List[TemplateRow]]]:
+# Where the templates of the built-in packs sit when they declare no area (decided with Alex, 2026-10-25; the packs may declare it later).
+AREA_BY_CATEGORY: Dict[str, str] = {
+    "diario": "personale",
+    "aree": "personale",
+    "io": "personale",
+    "viste": "personale",
+    "segreti": "personale",
+    "abitudini": "salute",
+    "persone": "sociale",
+    "finanze": "finanze",
+    "collezioni": "svago",
+}
+
+
+def area_of(template: Template) -> str:
+    """The area page of a template: its own, else the one for its category, else '' (Generale)."""
+    return template.area or AREA_BY_CATEGORY.get(template.category, "")
+
+
+def group_templates(templates: Iterable[Template], counts: Mapping[str, int], area: Optional[str] = None) -> List[Tuple[str, List[TemplateRow]]]:
+    """Templates by category; with `area` only those of that page ('' = those with no area)."""
     groups: Dict[str, List[TemplateRow]] = {}
     for template in templates:
+        if area is not None and area_of(template) != area:
+            continue
         row = TemplateRow(
             slug=template.slug,
             name=template.name,
@@ -600,6 +623,7 @@ def group_templates(templates: Iterable[Template], counts: Mapping[str, int]) ->
             block_count=len(template.blocks),
             entry_count=counts.get(template.slug, 0),
             from_pack=template.origin.get("pack_id", ""),
+            area=area_of(template),
         )
         groups.setdefault(template.category, []).append(row)
     order = {category: index for index, category in enumerate(CATEGORY_ORDER)}

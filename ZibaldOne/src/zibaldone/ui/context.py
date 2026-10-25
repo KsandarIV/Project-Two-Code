@@ -35,6 +35,7 @@ class AppContext:
         self._refresh: Callable[[], None] = lambda: None
         self._advance: Callable[[], None] = lambda: None
         self._data_changed: Callable[[], None] = lambda: None
+        self.back_hook: Optional[Callable[[], bool]] = None  # a screen with its own pages takes the back press first; True = used it
         self.leave_guard: Optional[Callable[[], None]] = None  # the open form keeps its draft when the screen changes
 
     # — time and data —

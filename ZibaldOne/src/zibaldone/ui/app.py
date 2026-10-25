@@ -148,6 +148,8 @@ class Shell:
         self.show(route)
 
     def back(self) -> None:
+        if self.ctx.back_hook is not None and self.ctx.back_hook():
+            return
         while self.history:
             path = self.history.pop()
             if path != self.current.path:
@@ -160,9 +162,10 @@ class Shell:
         self.show(self.current)
 
     def can_go_back(self) -> bool:
-        return bool(self.history) or not self.current.is_top_level
+        return bool(self.history) or not self.current.is_top_level or self.ctx.back_hook is not None
 
     def show(self, route: Route) -> None:
+        self.ctx.back_hook = None
         guard, self.ctx.leave_guard = self.ctx.leave_guard, None
         if guard is not None and route.path != self.current.path:
             guard()

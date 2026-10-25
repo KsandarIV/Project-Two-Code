@@ -882,6 +882,7 @@ def test_a_model_opens_a_new_entry_and_the_small_icons_edit_and_pin(ready: Path)
     from zibaldone.ui import services
 
     shell = Shell(FakePage(), ready)
+    shell.ctx.memory["modelli_area"] = "svago"
     shell.start("/modelli")
     tile = next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and item.on_click and "Biblioteca di Babele" in texts(item))
     click(tile)
@@ -918,3 +919,32 @@ def test_pack_list_does_not_show_pack_version_numbers(ready: Path) -> None:
     shell = Shell(FakePage(), ready)
     shell.start("/scuole")
     assert not any(text.startswith("versione ") for text in texts(shell.body.content))
+
+
+def test_models_sit_in_area_pages_and_back_goes_to_the_general_one_first(ready: Path) -> None:
+    shell = Shell(FakePage(), ready)
+    shell.start("/modelli")
+    assert shell.ctx.memory.get("modelli_area", "") == "" and "Biblioteca di Babele" not in texts(shell.body.content)
+    click(next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and item.tooltip == "Svago"))
+    assert "Biblioteca di Babele" in texts(shell.body.content) and "Conto" not in texts(shell.body.content)
+    assert shell.can_go_back()
+    shell.back()
+    assert shell.ctx.memory["modelli_area"] == "" and shell.current.path == "/modelli"
+    assert shell.ctx.back_hook is None
+
+
+def test_a_long_press_and_drag_changes_the_area_page_in_a_loop(ready: Path) -> None:
+    shell = Shell(FakePage(), ready)
+    shell.start("/modelli")
+    detector = next(item for item in walk(shell.body.content) if isinstance(item, ft.GestureDetector))
+    detector.on_long_press_move_update(SimpleNamespace(offset_from_origin=SimpleNamespace(x=-120)))
+    detector.on_long_press_end(None)
+    assert shell.ctx.memory["modelli_area"] == "personale"
+    detector = next(item for item in walk(shell.body.content) if isinstance(item, ft.GestureDetector))
+    detector.on_long_press_move_update(SimpleNamespace(offset_from_origin=SimpleNamespace(x=120)))
+    detector.on_long_press_end(None)
+    assert shell.ctx.memory["modelli_area"] == ""
+    detector = next(item for item in walk(shell.body.content) if isinstance(item, ft.GestureDetector))
+    detector.on_long_press_move_update(SimpleNamespace(offset_from_origin=SimpleNamespace(x=120)))
+    detector.on_long_press_end(None)
+    assert shell.ctx.memory["modelli_area"] == "svago"
