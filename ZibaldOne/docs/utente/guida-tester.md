@@ -17,7 +17,7 @@ La cartella zippata `ZibaldOne-X.Y.Z-windows.zip` sta tra gli **Assets** della r
 
 ## Il primo avvio
 1. Leggi l'avviso sulla privacy e accetta.
-2. **Entra con Google**. Comparirà "Google non ha verificato questa app": è normale per un'app in prova. Tocca **Continua** e lascia spuntato il permesso per Drive.
+2. **Entra con Google** (facoltativo: con «Continua senza account» l'app resta solo sul dispositivo e la domanda non torna; l'accesso si può fare dopo dalle impostazioni). Se entri, comparirà "Google non ha verificato questa app": è normale per un'app in prova. Tocca **Continua** e lascia spuntato il permesso per Drive.
 3. Scegli dove tenere i backup: solo sul telefono, oppure anche sul tuo Google Drive (cifrati, in uno spazio nascosto dell'app).
 4. Se scegli Drive, attiva la **cifratura dei backup**: scegli una passphrase e scrivi su carta il codice di recupero.
 
