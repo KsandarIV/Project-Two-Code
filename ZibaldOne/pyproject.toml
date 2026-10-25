@@ -54,6 +54,8 @@ org = "it.zibaldone"
 bundle_id = "it.zibaldone.app"
 company = "ZibaldOne"
 copyright = "Copyright (C) 2026 Alex"
+# Fill behind the icon (src/assets/icon_android.png is the transparent foreground of the Android adaptive icon).
+icon_background = "#0D0E15"
 
 [tool.flet.app]
 path = "src"
