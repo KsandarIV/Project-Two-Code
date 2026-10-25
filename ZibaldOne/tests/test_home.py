@@ -28,8 +28,8 @@ def test_no_file_a_broken_file_or_an_empty_layout_give_the_default(tmp_path) -> 
 
 def test_unknown_keys_repeats_and_deleted_views_are_dropped(tmp_path) -> None:
     home_log.home_path(tmp_path).write_text('{"tiles": ["aree", "boh", "aree", 7, "vista:abc", "vista:old", "vista:", "bilancio"]}', encoding="utf-8")
-    assert home_log.load_layout(tmp_path) == ["aree", "vista:abc", "vista:old", "bilancio"]  # without the list of views, any view key is kept
-    assert home_log.load_layout(tmp_path, {"abc"}) == ["aree", "vista:abc", "bilancio"]
+    assert home_log.load_layout(tmp_path) == ["stoa", "aree", "vista:abc", "vista:old", "bilancio"]  # a file from before 0.3.2 gets the moments back where they always were; without the list of views, any view key is kept
+    assert home_log.load_layout(tmp_path, {"abc"}) == ["stoa", "aree", "vista:abc", "bilancio"]
     assert home_log.save_layout(tmp_path, ["citazione", "x"]) == ["citazione"]
     assert home_log.load_layout(tmp_path) == ["citazione"]
     assert not list(tmp_path.glob(".home-*"))  # no temporary file left
@@ -72,4 +72,4 @@ def test_cli_show_add_move_remove_reset_with_a_view(isolated_data_dir) -> None:
 def test_a_grid_file_of_0_3_0_is_read_as_a_list_in_reading_order(tmp_path) -> None:
     rows = [{"key": "bilancio", "col": 0, "row": 4, "w": 5, "h": 2}, {"key": "aree", "col": 3, "row": 0, "w": 2, "h": 2}, {"key": "citazione", "col": 0, "row": 0, "w": 3, "h": 2}, {"key": "boh", "col": 0, "row": 9}, "x"]
     home_log.home_path(tmp_path).write_text(json.dumps({"versione": 2, "riquadri": rows}), encoding="utf-8")
-    assert home_log.load_layout(tmp_path) == ["citazione", "aree", "bilancio"]
+    assert home_log.load_layout(tmp_path) == ["citazione", "stoa", "aree", "bilancio"]

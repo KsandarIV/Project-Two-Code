@@ -6,7 +6,7 @@ import tempfile
 from pathlib import Path
 from typing import Collection, List, Optional
 
-from zibaldone.core.home import DEFAULT_LAYOUT, clean_layout
+from zibaldone.core.home import DEFAULT_LAYOUT, TILES, clean_layout
 
 HOME_FILE = "home.json"
 
@@ -25,6 +25,9 @@ def load_layout(folder: Path, view_ids: Optional[Collection[str]] = None) -> Lis
             tiles = [row.get("key") for row in sorted(rows, key=lambda row: (row["row"], row["col"]))]
     except (OSError, ValueError):
         return list(DEFAULT_LAYOUT)  # the home must always open: a damaged file is just not used
+    if isinstance(tiles, list) and isinstance(data, dict) and "v" not in data and "stoa" not in tiles:  # before 0.3.2 the three moments always sat after the top tiles
+        top = [key for key in tiles if key in ("promemoria", "citazione")]
+        tiles = [*top, "stoa", *[key for key in tiles if key not in top]]
     return clean_layout(tiles if isinstance(tiles, list) else [], view_ids)
 
 
@@ -35,7 +38,7 @@ def save_layout(folder: Path, tiles: List[str]) -> List[str]:
     handle, temporary = tempfile.mkstemp(prefix=".home-", suffix=".tmp", dir=folder)
     try:
         with os.fdopen(handle, "w", encoding="utf-8") as stream:
-            json.dump({"tiles": kept}, stream, indent=2, ensure_ascii=False)
+            json.dump({"v": 2, "tiles": kept}, stream, indent=2, ensure_ascii=False)
             stream.flush()
             os.fsync(stream.fileno())
         os.replace(temporary, home_path(folder))

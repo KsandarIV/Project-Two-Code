@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 
 import flet as ft
 
+from zibaldone.core import home
 from zibaldone.core import views as V
 from zibaldone.storage import home_log
 from zibaldone.ui import novita, services, sparkles
@@ -16,7 +17,6 @@ from zibaldone.ui.views import habits, home_layout
 from zibaldone.ui.views import tiles as tiles_
 from zibaldone.ui.views.common import choose_template
 
-TOP_TILES = ("promemoria", "citazione")
 ARRANGE_KEY = "oggi_riordina"
 
 
@@ -68,35 +68,31 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     ]
     if shortcut_row is not None:
         controls.append(shortcut_row)
-    arranging = bool(ctx.memory.get(ARRANGE_KEY))
+    unlocked = bool(ctx.memory.get(ARRANGE_KEY))
 
-    def toggle_arranging(_: Any) -> None:
-        ctx.memory[ARRANGE_KEY] = not arranging
+    def toggle_lock(_: Any) -> None:
+        ctx.memory[ARRANGE_KEY] = not unlocked
         ctx.refresh()
 
-    controls.append(ft.Row([W.text_button("Fine" if arranging else "Riordina i riquadri", toggle_arranging, icon="CHECK" if arranging else "DRAG_INDICATOR")], alignment=ft.MainAxisAlignment.END))
-    if arranging:
-        shown = [key for key in layout if not key.startswith("vista:") or key.split(":", 1)[1] in view_names]
+    def save(order: List[str]) -> None:
+        home_log.save_layout(ctx.folder, order)
+        ctx.refresh()
 
-        def save(order: List[str]) -> None:
-            home_log.save_layout(ctx.folder, order)
-            ctx.refresh()
-
-        controls.append(W.caption("Tieni premuto il quadratino di un riquadro e trascinalo dove vuoi. Gli altri si spostano."))
-        controls.append(home_layout.reorder_list(ctx, shown, view_names, save))
-        controls.append(_moments(ctx, model))
+    shown = [key for key in layout if not key.startswith("vista:") or key.split(":", 1)[1] in view_names]
+    lock = W.icon_button("LOCK_OPEN" if unlocked else "LOCK", toggle_lock, "Blocca i riquadri" if unlocked else "Sblocca per spostare i riquadri")
+    if unlocked:
+        controls.append(ft.Row([W.caption("Sbloccata: trascina la maniglia di un riquadro per spostarlo."), lock], alignment=ft.MainAxisAlignment.SPACE_BETWEEN))
+        entries = [(key, block) for key in shown for block in [_tile(ctx, key, model, tiles)] if block is not None]
+        controls.append(home_layout.arrange(entries, view_names, save, remove=lambda key: save([item for item in shown if item != key])))
+        offered = [key for key in [*home.TILES, *[f"vista:{view_id}" for view_id in view_names]] if key not in shown]
+        if offered:
+            controls.append(W.secondary_button("Aggiungi un riquadro", lambda _: _add_dialog(ctx, offered, view_names, lambda key: save([*shown, key])), icon="ADD"))
     else:
-        # shortcut: the three moments sit before the first tile that is not the reminder or the quote; a layout cannot move them
-        moments_done = False
-        for key in layout:
-            if key not in TOP_TILES and not moments_done:
-                controls.append(_moments(ctx, model))
-                moments_done = True
+        controls.append(ft.Row([lock], alignment=ft.MainAxisAlignment.END))
+        for key in shown:
             block = _tile(ctx, key, model, tiles)
             if block is not None:
                 controls.append(block)
-        if not moments_done:
-            controls.append(_moments(ctx, model))
     controls.append(W.section_label("Le voci di oggi"))
     if model.entries:
         for row in model.entries:
@@ -108,11 +104,30 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     return W.screen(controls, ctx.wide)
 
 
+def _add_dialog(ctx: AppContext, offered: List[str], view_names: Dict[str, str], add: Any) -> None:
+    def pick(key: str) -> Any:
+        def chosen(_: Any) -> None:
+            ctx.close_dialog()
+            add(key)
+
+        return chosen
+
+    ctx.show_dialog(
+        ft.AlertDialog(
+            title="Aggiungi un riquadro",
+            content=ft.Column([W.secondary_button(home_layout.label_of(key, view_names), pick(key)) for key in offered], spacing=8, tight=True, scroll=ft.ScrollMode.AUTO),
+            actions=[W.text_button("Annulla", ctx.close_dialog, color=T.TEXT)],
+        )
+    )
+
+
 def _tile(ctx: AppContext, key: str, model: vm.TodayModel, tiles: Dict[str, Optional[ft.Control]]) -> Optional[ft.Control]:
     if key == "promemoria":
         return _reminder_banner(ctx, model.reminder) if model.reminder is not None else None
     if key == "citazione":
         return _quote(model.quote)
+    if key == "stoa":
+        return _moments(ctx, model)
     if key == "aree":
         if not model.areas.installed:
             return None
