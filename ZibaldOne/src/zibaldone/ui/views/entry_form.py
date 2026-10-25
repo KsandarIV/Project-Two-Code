@@ -645,7 +645,7 @@ class EntryForm:
                 W.panel(
                     ft.Row(
                         [W.body(f"Ripresa dalla bozza di {self.draft.get('saved', '')[:16].replace('T', ' alle ')}.", size=13, expand=True), W.text_button("Scarta la bozza", self.discard_draft, color=T.TEXT_DIM)],
-                        wrap=True,
+                        vertical_alignment=ft.CrossAxisAlignment.CENTER,
                     ),
                     border_color=W.fade(T.ACCENT_2, 0.5),
                 )

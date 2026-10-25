@@ -981,3 +981,21 @@ def test_collections_have_pages_per_kind_with_the_collection_colour_and_back_to_
     detector = next(item for item in walk(shell.body.content) if isinstance(item, ft.GestureDetector))
     swipe(detector, -120)
     assert shell.ctx.memory["collezioni_pagina"] != ""
+
+
+def test_no_wrapping_row_holds_an_expanding_child(ready: Path) -> None:
+    """A Row with wrap=True cannot lay out a child with expand=True: on the phone it shows as a grey box. Looked for on the screens that had one."""
+    from zibaldone.ui import drafts
+
+    with Store.open(ready) as store:
+        store.add_entry("libro", {"titolo": "Dune"})
+    shell = Shell(FakePage(width=412), ready)
+    shell.start("/scrivi/libro")
+    field = next(item for item in walk(shell.body.content) if isinstance(item, ft.TextField))
+    field.value = "Bozza"
+    field.on_change(SimpleNamespace(control=field))
+    shell.back()
+    for path in ("/scrivi/libro", "/voci", "/oggi", "/abitudini", "/viste"):
+        shell.start(path)
+        bad = [row for row in walk(shell.body.content) if isinstance(row, ft.Row) and row.wrap and any(getattr(child, "expand", None) for child in row.controls)]
+        assert not bad, path

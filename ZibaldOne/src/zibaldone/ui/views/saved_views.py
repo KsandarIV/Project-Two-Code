@@ -138,7 +138,6 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
                     ],
                     spacing=8,
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
-                    wrap=True,
                 )
             )
         )

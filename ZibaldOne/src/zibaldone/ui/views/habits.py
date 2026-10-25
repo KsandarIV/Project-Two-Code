@@ -102,7 +102,6 @@ def _habit_row(ctx: AppContext, row: HabitRow, today: date, detail: bool = False
             [ft.Column(lines, spacing=3, expand=True)] + right,
             spacing=10,
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
-            wrap=True,
         ),
         padding=ft.Padding.symmetric(vertical=6, horizontal=2),
     )
