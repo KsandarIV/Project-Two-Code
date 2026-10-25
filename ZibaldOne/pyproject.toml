@@ -43,7 +43,7 @@ version = { attr = "zibaldone.__version__" }
 where = ["src"]
 
 [tool.setuptools.package-data]
-zibaldone = ["packs/*.zbpack.json", "cloud/google_client.json", "ui/mascots/*.svg"]
+zibaldone = ["packs/*.zbpack.json", "cloud/google_client.json"]
 
 # * — `flet build`: the APK for testers (0.1.1) and, later, the Windows build —
 
