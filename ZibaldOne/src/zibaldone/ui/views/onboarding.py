@@ -87,21 +87,55 @@ def sign_in(ctx: AppContext, route: Route) -> ft.Control:
     from zibaldone.ui.views.cloud import google_sign_in
 
     cloud = NOMENCLATURE["cloud"]
+
+    def without_account(_: Any) -> None:
+        try:
+            services.skip_login(ctx.folder)
+        except OSError as problem:
+            ctx.toast(f"Non riesco a salvare la scelta: {problem}", error=True)
+            return
+        ctx.advance()
+
+    why = ft.ExpansionTile(
+        title=ft.Text("A che cosa serve l'accesso?", size=14, color=T.TEXT),
+        controls=[
+            ft.Container(
+                ft.Column(
+                    [
+                        W.body("L'accesso riconosce te e, se vuoi, permette di tenere una copia cifrata su Google Drive.", size=13),
+                        W.body("Google vede solo la tua email e il tuo nome.", size=13),
+                        W.body("Drive è facoltativo: se entri, scegli dopo se usarlo.", size=13),
+                        W.body("Senza account tutto resta su questo dispositivo. Puoi entrare più tardi dalle Nuvole, in Impostazioni.", size=13),
+                    ],
+                    spacing=6,
+                ),
+                padding=ft.Padding.only(left=16, right=16, bottom=12),
+            )
+        ],
+    )
     return W.screen(
         [
             _brand(),
-            W.title_with_nickname("Entra con Google", cloud.name, size=22),
+            W.title_with_nickname("Entra con Google, se vuoi", cloud.name, size=22),
             W.panel(
                 ft.Column(
                     [
-                        W.body("ZibaldOne usa il tuo account Google per riconoscerti e, se vuoi, per tenere una copia cifrata su Google Drive."),
-                        W.body("Si apre il browser: scegli l'account e torna qui. I tuoi pensieri restano su questo dispositivo.", dim=True),
-                        W.body("Serve la connessione a internet solo per questo passaggio.", dim=True),
+                        W.body("Puoi entrare con il tuo account Google oppure continuare senza account: ZibaldOne funziona allo stesso modo."),
+                        W.body("Entrare apre il browser: scegli l'account e torna qui. I tuoi pensieri restano su questo dispositivo.", dim=True),
+                        why,
                     ],
                     spacing=8,
                 )
             ),
-            ft.Row([W.primary_button("Entra con Google", lambda _: google_sign_in(ctx, lambda _status: ctx.advance()), icon="LOGIN")], alignment=ft.MainAxisAlignment.END),
+            ft.Row(
+                [
+                    W.secondary_button("Continua senza account", without_account),
+                    W.primary_button("Entra con Google", lambda _: google_sign_in(ctx, lambda _status: ctx.advance()), icon="LOGIN"),
+                ],
+                alignment=ft.MainAxisAlignment.END,
+                wrap=True,
+                spacing=8,
+            ),
         ],
         ctx.wide,
     )

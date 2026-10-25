@@ -74,7 +74,7 @@ def backups_api() -> Optional[ModuleType]:
 
 def account_api() -> Optional[ModuleType]:
     module = optional_module("zibaldone.cloud.account")
-    needed = ("account_status", "login_required", "sign_in_with_google", "sign_out", "choose_mode")
+    needed = ("account_status", "login_required", "skip_login", "sign_in_with_google", "sign_out", "choose_mode")
     if module is None or not all(hasattr(module, name) for name in needed):
         return None
     return module
@@ -126,6 +126,13 @@ def account_status(folder: Path) -> Tuple[Any, str]:
         return account.account_status(folder), ""
     except Exception as error:
         return None, str(error)
+
+
+def skip_login(folder: Path) -> None:
+    """«Continua senza account»: solo locale, and the sign-in is not asked again."""
+    account = account_api()
+    if account is not None:
+        account.skip_login(folder)
 
 
 def destination_choice_pending(folder: Path) -> bool:

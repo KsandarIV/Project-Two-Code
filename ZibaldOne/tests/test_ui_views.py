@@ -215,6 +215,19 @@ def test_sign_in_is_asked_when_the_account_requires_it(ready: Path, monkeypatch)
     assert shell.current.screen == "accesso"
 
 
+def test_sign_in_can_be_skipped_and_explains_itself(ready: Path, monkeypatch) -> None:
+    monkeypatch.setattr(services, "login_required", lambda folder: not load_settings(folder).get("login_skipped"))
+    shell = Shell(FakePage(), ready)
+    shell.start("/")
+    assert shell.current.screen == "accesso"
+    shown = texts(shell.body.content)
+    assert "Google vede solo la tua email e il tuo nome." in shown and "Senza account tutto resta su questo dispositivo. Puoi entrare più tardi dalle Nuvole, in Impostazioni." in shown
+    assert not any("consigliamo" in text.lower() for text in shown)
+    button(shell.body.content, "Entra con Google")
+    click(button(shell.body.content, "Continua senza account"))
+    assert shell.current.screen == "oggi" and load_settings(ready).get("login_skipped") is True
+
+
 def test_navigation_history_and_back(ready: Path) -> None:
     known = ids(ready)
     page = FakePage()
