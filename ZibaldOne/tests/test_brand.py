@@ -119,11 +119,11 @@ def test_active_theme_priority(clean_registry, monkeypatch) -> None:
     assert active_theme({"theme": "filosofia"}) is other
 
 
-def test_every_area_mascot_has_a_drawing_and_the_avatar_uses_it() -> None:
+def test_every_area_mascot_has_a_drawing_in_the_assets_and_the_avatar_uses_it() -> None:
     from zibaldone.ui import widgets as W
 
     for mascot in MASCOTS:
-        if mascot.sphere != "app":
-            assert W.mascot_svg(mascot.name), mascot.name
-            assert isinstance(W.mascot_avatar(mascot).content, W.ft.Image)
-    assert W.mascot_svg("Zibby") is None  # no drawing yet: the avatar falls back to the initial
+        image = W.mascot_avatar(mascot).content
+        assert isinstance(image, W.ft.Image) and image.src == f"mascots/{mascot.name}.svg"
+        assert (W.ASSETS_DIR / image.src).is_file() == (mascot.sphere != "app"), mascot.name  # Zibby has no drawing yet
+        assert image.error_content is not None  # without a drawing the avatar shows the initial

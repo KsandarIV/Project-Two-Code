@@ -375,4 +375,4 @@ def run(web: bool = False, port: int = 0, route: Optional[str] = None, assets_di
     if route:
         os.environ[START_ROUTE_ENV] = route
     view = ft.AppView.WEB_BROWSER if web else ft.AppView.FLET_APP
-    ft.run(main, name="", view=view, port=port, assets_dir=assets_dir, no_cdn=True)
+    ft.run(main, name="", view=view, port=port, assets_dir=assets_dir or str(W.ASSETS_DIR), no_cdn=True)
