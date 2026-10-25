@@ -2,8 +2,9 @@
 
 - **Data**: 2026-10-17 · **Stato**: accettata (scelta di Alex)
 - **Contesto**: i primi tester sono Alex e 2 amici, su Android e Windows. Alex vuole un accesso unico e semplice, con la libertà di tenere i dati solo in locale.
-- **Decisione**:
-  - Al primo avvio l'accesso con **account Google è obbligatorio**. L'app non ha un server suo: l'accesso serve per identificare l'utente sul dispositivo e per usare il suo Google Drive. L'app conserva in locale solo il necessario (email e token d'accesso, protetti dal sistema operativo).
+- **Aggiornamento (2026-10-25, Alex)**: l'accesso con Google **non è più obbligatorio**. Al primo avvio l'app lo offre e spiega a che cosa serve, che cosa vede Google e che Drive è facoltativo; rispondere «no» (o «Continua senza account») vuol dire solo locale e la domanda non torna. Anche uscire dall'account è una scelta e non riporta la domanda. `zbone account login` e l'accesso dalle impostazioni funzionano sempre. Dove sotto si legge «obbligatorio», vale questa riga.
+- **Decisione** (originale):
+  - Al primo avvio l'accesso con **account Google era obbligatorio**. L'app non ha un server suo: l'accesso serve per identificare l'utente sul dispositivo e per usare il suo Google Drive. L'app conserva in locale solo il necessario (email e token d'accesso, protetti dal sistema operativo).
   - Dopo l'accesso l'utente sceglie dove stanno i dati, e può cambiare idea quando vuole:
     1. **solo locale**: dati e backup restano sul dispositivo; il recupero usa il **codice di recupero**;
     2. **locale + Google Drive**: i backup cifrati vanno anche sul suo Drive; il recupero usa l'**account Google** (vedi [ADR-0006](ADR-0006-storia-e-backup-cifrati.md)).
@@ -20,4 +21,4 @@
   - Il recupero con l'account Google è **proposto** quando si sceglie Drive, con il compromesso spiegato (chi entra nell'account può aprire i backup), e si può togliere. Chi non lo attiva recupera con passphrase o codice di recupero.
   - L'accesso è obbligatorio per usare il diario, non per riavere i propri dati: backup, export e privacy funzionano sempre, anche senza account.
   - Fuori dal dispositivo escono solo istantanee cifrate; nessuna copia remota viene cancellata perché manca sul dispositivo.
-- **Alternative scartate**: accesso facoltativo (più privato ma Alex vuole un'esperienza unica); account con email e password su un server nostro (costi e obblighi GDPR).
+- **Alternative scartate**: accesso facoltativo (scartato il 2026-10-17, poi ripreso il 2026-10-25: vedi l'aggiornamento in alto); account con email e password su un server nostro (costi e obblighi GDPR).

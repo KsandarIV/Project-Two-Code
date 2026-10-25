@@ -20,7 +20,7 @@
 - Le notifiche dei promemoria si vedono anche a schermo bloccato: non contengono mai il testo delle voci, ma rivelano che si usa un diario (avviso versione 4, dalla 0.0.9). Sono calcolate sul dispositivo, senza servizi push.
 
 ## Account Google e Drive (dalla 0.0.8)
-- **Accesso**: al primo avvio si entra con Google ([ADR-0007](../decisioni/ADR-0007-account-google-e-destinazioni-cloud.md)). L'app riceve solo email e nome e li tiene sul dispositivo; i token stanno in `account-token.json` (DPAPI su Windows). Nessun server nostro: tra l'app e Google non c'è nessuno.
+- **Accesso**: al primo avvio l'app offre di entrare con Google, ma non è obbligatorio: senza account tutto resta sul dispositivo ([ADR-0007](../decisioni/ADR-0007-account-google-e-destinazioni-cloud.md)). L'app riceve solo email e nome e li tiene sul dispositivo; i token stanno in `account-token.json` (DPAPI su Windows). Nessun server nostro: tra l'app e Google non c'è nessuno.
 - **Drive**: solo se l'utente lo sceglie, e solo nello spazio nascosto dell'app (`drive.appdata`): l'app non vede gli altri file. Lì vanno solo istantanee **già cifrate** e il file delle chiavi chiuso dalle serrature.
 - **Recupero con l'account Google** (facoltativo): mette su Drive un segreto che apre i backup. È comodo, ma rende l'account Google la chiave dei backup; l'app lo spiega prima di attivarlo.
 - **Cartella**: in alternativa le copie cifrate vanno in una cartella scelta (chiavetta, OneDrive, Dropbox).

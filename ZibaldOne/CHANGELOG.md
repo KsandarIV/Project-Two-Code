@@ -3,6 +3,8 @@
 Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), versioni [SemVer](https://semver.org/lang/it/).
 
 ## [Unreleased]
+### Cambiato
+- **L'accesso con Google non è più obbligatorio** (Alex, 2026-10-25): al primo avvio si può continuare senza account e la domanda non torna; Drive resta facoltativo. Aggiornati ADR-0007, guida tester e privacy.
 
 ## [0.2.9] — 2026-10-24
 Versione per i tester.
