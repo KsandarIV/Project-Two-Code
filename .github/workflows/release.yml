@@ -42,7 +42,7 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Installa e fai girare i test
@@ -85,7 +85,7 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - name: Costruisci e prova la wheel
@@ -117,7 +117,7 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - run: |
@@ -167,7 +167,7 @@ jobs:
         with:
           ref: ${{ inputs.tag || github.ref }}
           persist-credentials: false
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.12"
       - uses: actions/setup-java@v4
