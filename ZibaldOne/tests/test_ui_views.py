@@ -1038,3 +1038,27 @@ def test_every_field_explains_its_block_on_a_tap(ready: Path) -> None:
     assert infos
     click(infos[0])
     assert shell.ctx.toasts[-1] == infos[0].tooltip
+
+
+def test_lente_explains_itself_and_adds_then_removes_nine_examples(ready: Path) -> None:
+    from zibaldone.core import views as V
+    from zibaldone.storage.database import Store
+    from zibaldone.ui.views import lente_examples
+
+    with Store.open(ready) as store:
+        before = [store.count_entries(slug) for slug in ("libro", "film", "serie")]
+    shell = Shell(FakePage(), ready)
+    shell.start("/viste")
+    assert "Come funziona Lente" in texts(shell.body.content)
+    click(button(shell.body.content, "Provala con degli esempi"))
+    with Store.open(ready) as store:
+        assert [store.count_entries(slug) for slug in ("libro", "film", "serie")] == [count + 3 for count in before]
+        assert len(V.load_views(store)) == 3
+        found = V.run_view(store, V.load_views(store)[0])
+        assert found and all(entry.template in ("libro", "film", "serie") for entry in found)
+    assert len(lente_examples.added(ready)) == 12
+    click(button(shell.body.content, "Togli gli esempi"))
+    click(button(shell.ctx.page.dialogs[-1], "Togli"))
+    with Store.open(ready) as store:
+        assert [store.count_entries(slug) for slug in ("libro", "film", "serie")] == before and V.load_views(store) == []
+    assert lente_examples.added(ready) == []

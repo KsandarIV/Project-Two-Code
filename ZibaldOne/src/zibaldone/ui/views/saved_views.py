@@ -13,6 +13,7 @@ from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route
+from zibaldone.ui.views import lente_examples
 from zibaldone.ui.views.common import not_found
 
 ANY = "*"  # a dropdown key for «tutti»: an empty key does not round-trip
@@ -101,6 +102,48 @@ def _delete(ctx: AppContext, view: V.View) -> Callable[[Any], None]:
     return lambda _: ctx.confirm("Togliere la vista?", f"«{view.name}» sparisce dall'elenco e da Oggi; le voci restano dove sono.", "Togli", remove)
 
 
+def _intro(ctx: AppContext) -> ft.Control:
+    """How Lente works, in three lines, with the way to try it on nine example entries (and to take them away)."""
+    present = bool(lente_examples.added(ctx.folder))
+
+    def try_it(_: Any) -> None:
+        try:
+            with ctx.store() as store:
+                lente_examples.add(store, ctx.folder)
+        except (StoreError, V.ViewError, ValueError) as problem:
+            ctx.toast(str(problem), error=True)
+            return
+        ctx.data_changed()
+        ctx.toast("Ho aggiunto 3 libri, 3 film, 3 serie e 3 viste: aprile e guarda.")
+        ctx.refresh()
+
+    def take_away() -> None:
+        with ctx.store() as store:
+            lente_examples.remove(store, ctx.folder)
+        ctx.data_changed()
+        ctx.toast("Esempi tolti.")
+        ctx.refresh()
+
+    button = (
+        W.secondary_button("Togli gli esempi", lambda _: ctx.confirm("Togliere gli esempi?", "Spariscono i 9 esempi e le loro 3 viste; le tue voci restano dove sono.", "Togli", take_away), icon="DELETE_OUTLINE")
+        if present
+        else W.primary_button("Provala con degli esempi", try_it, icon="AUTO_AWESOME")
+    )
+    return W.panel(
+        ft.Column(
+            [
+                W.body("Come funziona Lente", weight=ft.FontWeight.W_600),
+                W.body("1. Scegli che cosa cercare: un modello (libri, film…), un'area, una parola, un blocco come «stato = In corso».", size=13),
+                W.body("2. Dagli un nome e salvala: da quel momento è una vista, sempre aggiornata.", size=13),
+                W.body("3. Aprila quando vuoi o mettila in Oggi: le voci nuove ci entrano da sole.", size=13),
+                ft.Row([button], alignment=ft.MainAxisAlignment.END),
+            ],
+            spacing=6,
+        ),
+        border_color=W.fade(T.ACCENT, 0.45),
+    )
+
+
 def build_list(ctx: AppContext, route: Route) -> ft.Control:
     with ctx.store() as store:
         ready = installed(store)
@@ -111,6 +154,7 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
         return W.screen(
             [
                 header,
+                _intro(ctx),
                 W.panel(
                     ft.Column(
                         [
@@ -124,7 +168,7 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
             ],
             ctx.wide,
         )
-    controls: List[ft.Control] = [header, ft.Row([W.primary_button("Nuova vista", lambda _: _new_dialog(ctx, templates), icon="ADD")], alignment=ft.MainAxisAlignment.END)]
+    controls: List[ft.Control] = [header, _intro(ctx), ft.Row([W.primary_button("Nuova vista", lambda _: _new_dialog(ctx, templates), icon="ADD")], alignment=ft.MainAxisAlignment.END)]
     if not views:
         controls.append(W.empty_state("Nessuna vista, per ora. Una buona prima: «i libri in corso».", "FILTER_ALT_OUTLINED"))
     for view in views:
