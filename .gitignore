@@ -228,3 +228,9 @@ __marimo__/
 *.p12
 *.pfx
 *.pem
+
+# Solo in locale: appunti, piani e documenti di lavoro (la storia pubblica non li contiene)
+AI_Context/
+ZibaldOne/team/
+ZibaldOne/docs/docs della versione precedente/
+.mailmap
