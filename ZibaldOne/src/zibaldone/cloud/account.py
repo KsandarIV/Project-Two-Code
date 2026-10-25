@@ -46,6 +46,7 @@ class AccountStatus:
     last_sync_error: Optional[str]
     drive_allowed: bool = False
     google_recovery: bool = False
+    login_skipped: bool = False  # the user chose to go on without an account
 
     @property
     def mode_label(self) -> str:
@@ -99,13 +100,21 @@ def account_status(folder: Path) -> AccountStatus:
         last_sync_error=cloud.get("last_sync_error"),
         drive_allowed=bool(account.get("drive")),
         google_recovery=bool(cloud.get("google_recovery")),
+        login_skipped=bool(settings.get("login_skipped")),
     )
 
 
 def login_required(folder: Path) -> bool:
-    """True at first start (and after signing out) when Google sign-in is available."""
+    """True at first start when Google sign-in is available and the user has not said «no, grazie»."""
     status = account_status(folder)
-    return status.google_configured and not status.signed_in
+    return status.google_configured and not status.signed_in and not status.login_skipped
+
+
+def skip_login(folder: Path) -> None:
+    """The user goes on without an account (solo locale): sign-in is not asked again, `zbone account login` still works."""
+    settings = _settings(folder)
+    settings["login_skipped"] = True
+    save_settings(folder, settings)
 
 
 def _client(folder: Path) -> GoogleClient:
@@ -127,6 +136,7 @@ def sign_in_with_google(
     tokens, profile = google_auth.sign_in(client, http or UrllibHttp(), open_browser, timeout, login_hint=previous.email or "")
     token_store.save_tokens(folder, tokens)
     settings = _settings(folder)
+    settings.pop("login_skipped", None)
     settings["account"] = {
         "provider": "google",
         "email": profile.email,
@@ -150,6 +160,7 @@ def sign_out(folder: Path, http: Optional[HttpClient] = None) -> bool:
     token_store.delete_tokens(folder)
     settings = _settings(folder)
     settings.pop("account", None)
+    settings["login_skipped"] = True  # signing out is a choice: no nagging at the next start
     cloud = _section(settings, "cloud")
     if cloud.get("mode") == "google":
         cloud["mode"] = "local"

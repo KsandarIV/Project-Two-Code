@@ -539,20 +539,37 @@ def fake_google(monkeypatch):
     return google
 
 
-def test_first_start_asks_to_sign_in_before_using_the_diary(isolated_data_dir, fake_google):
+def test_first_start_offers_sign_in_and_saying_no_goes_on_locally(isolated_data_dir, fake_google):
     configure_client(isolated_data_dir)
     assert invoke("privacy", "accept").exit_code == 0
-    refused = invoke("template", "list", input="no\n")
-    assert refused.exit_code == 1
-    assert "account Google" in refused.output and "zbone account login" in refused.output
+    declined = invoke("template", "list", input="no\n")
+    assert declined.exit_code == 0, declined.output
+    assert "non è obbligatorio" in declined.output and "continui solo in locale" in declined.output and "zbone account login" in declined.output
+    assert not account.login_required(isolated_data_dir) and account.account_status(isolated_data_dir).login_skipped
+    assert "account Google" not in invoke("template", "list").output  # no more questions
     exported = invoke("export", "markdown")  # getting the data back never needs Google
     assert exported.exit_code == 0, exported.output
+    later = invoke("account", "login", input="no\n")  # the explicit login still works
+    assert later.exit_code == 0, later.output
+    assert f"Sei entrato come {EMAIL}" in later.output
+    assert account.account_status(isolated_data_dir).mode == "local" and not account.account_status(isolated_data_dir).login_skipped
+
+
+def test_first_start_saying_yes_signs_in(isolated_data_dir, fake_google):
+    configure_client(isolated_data_dir)
+    assert invoke("privacy", "accept").exit_code == 0
     accepted = invoke("template", "list", input="sì\nno\n")
     assert accepted.exit_code == 0, accepted.output
-    assert f"Sei entrato come {EMAIL}" in accepted.output
-    assert "solo locale" in accepted.output
-    assert account.account_status(isolated_data_dir).mode == "local"
-    assert "account Google" not in invoke("template", "list").output  # no more questions
+    assert f"Sei entrato come {EMAIL}" in accepted.output and "solo locale" in accepted.output
+    assert account.account_status(isolated_data_dir).signed_in
+    assert "account Google" not in invoke("template", "list").output
+
+
+def test_signing_out_does_not_bring_the_question_back(isolated_data_dir, fake_google):
+    configure_client(isolated_data_dir)
+    signed_in(isolated_data_dir, fake_google)
+    account.sign_out(isolated_data_dir, fake_google)
+    assert account.account_status(isolated_data_dir).login_skipped and not account.login_required(isolated_data_dir)
 
 
 def test_cli_folder_copies_start_with_encryption(isolated_data_dir, tmp_path, fake_google):
