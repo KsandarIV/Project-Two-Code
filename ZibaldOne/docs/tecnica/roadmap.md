@@ -43,16 +43,18 @@ Le richieste della vecchia Journal App: [requisiti della fase 0.2](requisiti-v0.
 | v0.2.8 | **Viste componibili**, home su misura, ricorrenze e obiettivi con avanzamento ([viste e home](viste-e-home.md)) | ✅ |
 
 ## Fase 0.3: tester su Windows e Android
-Decisioni di Alex (2026-10-25): la home a griglia 5×6 va nella prima versione disponibile; Google resta «in test»; la firma di Windows non serve ora; il repository resta privato fino alla prima versione stabile; la capacità della 0.4.0 si sceglie arrivati alla 0.3.9. Le versioni dopo la 0.3.0 sono ancora una proposta.
+Decisioni di Alex (2026-10-25): Google resta «in test»; la firma di Windows non serve ora; il repository resta privato fino alla prima versione stabile; la 0.3.1 è solo di correzioni; la capacità della 0.4.0 si sceglie arrivati alla 0.3.9. Le versioni dopo la 0.3.1 sono ancora una proposta.
 
 | Versione | Capacità | Stato |
 |---|---|---|
-| v0.3.0 | **Home a griglia 5×6** con riquadri ridimensionabili e spostabili; release unica (zip Windows, APK, wheel) | |
-| v0.3.1 | **Prova dei tester su Windows**: feedback e correzioni, barra delle 8 mascotte configurabile | |
-| v0.3.2 | **Android e Google provati davvero**: APK su telefono, Drive dal vivo, ripristino su dispositivo nuovo | |
-| v0.3.3 | **Promemoria veri dall'app** (Windows e Android) | |
-| v0.3.4 | **Aggiornamento in app** (scarica e installa la versione nuova) | |
-| v0.3.5–v0.3.9 | da decidere con Alex dal feedback dei tester; alla 0.3.9 si sceglie la capacità della 0.4.0 | |
+| v0.3.0 | **Home a griglia 5×6** (superata dalla 0.3.1: la griglia è in pausa); release unica (zip Windows, APK, wheel) | ✅ |
+| v0.3.1 | **Solo correzioni**: home a lista riordinabile col trascinamento, backup rifatto con file `.zbbackup`, Lente, correzioni di Android | ✅ |
+| v0.3.2 | **Aree multiple e icona dell'app**: una voce in più aree; icona e barra delle 8 mascotte configurabile | |
+| v0.3.3 | **Prova dei tester su Windows**: feedback e correzioni | |
+| v0.3.4 | **Android e Google provati davvero**: APK su telefono, Drive dal vivo, ripristino su dispositivo nuovo | |
+| v0.3.5 | **Promemoria veri dall'app** (Windows e Android) | |
+| v0.3.6 | **Aggiornamento in app** (scarica e installa la versione nuova) | |
+| v0.3.7–v0.3.9 | da decidere con Alex dal feedback dei tester; alla 0.3.9 si sceglie la capacità della 0.4.0 | |
 | v0.4.0 | **Una capacità nuova**: Documenti e carte (consigliata), Password con Bitwarden, sincronizzazione continua o Linux | |
 
 ## Verso la 1.0

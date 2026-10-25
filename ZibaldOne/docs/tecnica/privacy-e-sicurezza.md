@@ -15,7 +15,7 @@
 - Perdita del dispositivo o del disco senza backup.
 - Altre persone con accesso al PC possono leggere i file, se non sono cifrati.
 - Se la cartella è dentro Google Drive, i dati sono anche sui server di Google, alle condizioni dell'account Google dell'utente.
-- Le istantanee conservano anche le voci cancellate finché non scadono (di base fino a circa 12 mesi). Dalla 0.0.6 l'avviso lo dice, e per questo `NOTICE_VERSION` è passato a 2: chi aveva già accettato lo rivede una volta.
+- Le istantanee conservano anche le voci cancellate finché non vengono sostituite. Dalla 0.0.6 l'avviso lo dice (`NOTICE_VERSION` 2). Dalla 0.3.1, con il backup automatico, restano la copia di oggi, 4 settimanali, 3 mensili e 3 annuali: una voce cancellata può restare fino a circa 3 anni, e l'avviso passa alla versione 6, che chi aveva già accettato rivede una volta. Con il backup manuale le copie le fai e le cancelli tu.
 - Con le copie su Drive le istantanee cifrate stanno anche sui server di Google; con il recupero con l'account Google, chi entra nell'account può aprirle (avviso versione 3, dalla 0.0.8).
 - Le notifiche dei promemoria si vedono anche a schermo bloccato: non contengono mai il testo delle voci, ma rivelano che si usa un diario (avviso versione 4, dalla 0.0.9). Sono calcolate sul dispositivo, senza servizi push.
 
@@ -47,7 +47,7 @@
 - Le foto possono contenere la posizione (EXIF): l'app non la legge e non la toglie.
 
 ## Sicurezza tecnica
-- **Backup cifrati con storia** ([ADR-0006](../decisioni/ADR-0006-storia-e-backup-cifrati.md)): istantanee che durano un tempo scelto, cifrate sul dispositivo e copiabili fuori; nessuno tranne l'utente può aprirle. Una voce cancellata resta nei backup fino alla loro scadenza, e l'avviso lo deve dire.
+- **Backup cifrati con storia** ([ADR-0006](../decisioni/ADR-0006-storia-e-backup-cifrati.md)): istantanee che durano un tempo scelto, cifrate sul dispositivo e copiabili fuori; nessuno tranne l'utente può aprirle. Una voce cancellata resta nei backup finché le copie non vengono sostituite (di base fino a circa 3 anni), e l'avviso lo deve dire.
 - **Cifratura opzionale** dei dati con una passphrase (un diario può contenere salute, opinioni e convinzioni: dati delicati). Se l'utente dimentica la passphrase, i dati non sono recuperabili: va detto chiaramente.
 - Scritture atomiche (file temporaneo + rinomina) per non corrompere i dati se il PC si spegne.
 - Nessun segreto nel codice o nella repo; `.env` e dati utente esclusi da git.

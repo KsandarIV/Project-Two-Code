@@ -1,0 +1,31 @@
+{
+  "versione": "0.3.1",
+  "data": "2026-10-25",
+  "titolo": "Solo correzioni",
+  "voci": [
+    {
+      "tipo": "corretto",
+      "testo": "La home torna a riquadri in lista: si riordinano trascinandoli, senza pulsanti."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Backup in un file: «Salva in un file» e «Importa da un file» in Mnemosyne. Al primo avvio, se ne trova uno, ti propone di riportarlo."
+    },
+    {
+      "tipo": "migliorato",
+      "testo": "Backup più chiari: automatico (oggi, 4 settimane, 3 mesi, 3 anni) o manuale, dove decidi tu cosa tenere."
+    },
+    {
+      "tipo": "migliorato",
+      "testo": "Le viste salvate si chiamano Lente, si spiegano da sole e hanno nove esempi da cui partire."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Nei modelli, ogni area mostra la sua mascotte e ogni campo spiega a cosa serve con un tocco."
+    },
+    {
+      "tipo": "corretto",
+      "testo": "I caroselli non cambiano pagina scorrendo in verticale; le bozze non mostrano più il riquadro grigio; il tasto indietro torna alla pagina precedente."
+    }
+  ]
+}

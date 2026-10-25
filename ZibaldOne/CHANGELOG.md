@@ -4,6 +4,25 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.3.1] — 2026-10-25
+Solo correzioni, dopo la prova su Android.
+### Cambiato
+- **La home torna a riquadri fissi in lista**, e si riordinano solo trascinandoli: niente più griglia 5×6 né pulsanti con le frecce. Il vecchio `home.json` della 0.3.0 si legge ancora, nell'ordine di lettura; `zbone home` torna come nella 0.2.8. La griglia libera si rivedrà per i blocchi nella composizione dei modelli.
+- **Backup (Mnemosyne) rifatto**: in automatico restano la copia di oggi (alle 01:00, con l'app aperta), 4 settimanali, 3 mensili e 3 annuali; in manuale non nasce né si cancella nulla da solo. Le copie fatte a mano non si toccano mai; fuori dal dispositivo si cancella solo ciò che il dispositivo ha già tolto. Il giorno del primo backup automatico dopo l'aggiornamento le vecchie copie automatiche oltre l'ultima vengono sostituite da questo schema.
+- **Theoria · Viste si chiama Lente** (lo slug `vista` e l'id del pacchetto non cambiano; Theoria resta il nome delle statistiche). Chi aveva il modello con il vecchio nome lo trova rinominato; un nome scelto da te non si tocca.
+- L'avviso privacy passa alla versione 6: le voci cancellate possono restare nei backup fino a circa 3 anni; l'accesso con Google è descritto come facoltativo. Chi aveva già accettato lo rivede una volta.
+### Aggiunto
+- **File di backup `.zbbackup`**: «Salva in un file» e «Importa da un file» in Mnemosyne; da terminale `zbone backup export` e `zbone backup import`. Un solo file porta con sé la copia, gli allegati e le chiavi già chiuse da passphrase e codice di recupero.
+- **Backup trovato al primo avvio**: su un'installazione vuota, dopo il consenso, l'app cerca un `.zbbackup` in Download, Documenti e Scrivania e propone di riportarlo (passphrase o codice di recupero se è cifrato). Non blocca mai l'avvio.
+- Modelli: l'intestazione di ogni area mostra la sua mascotte; ogni campo spiega a un tocco a cosa serve il suo blocco.
+- **Lente** si spiega da sola e offre nove esempi da cui partire.
+### Corretto
+- I caroselli (mascotte e pagine) usano inizio e fine del gesto: lo scorrimento verticale non li fa più cambiare pagina per sbaglio.
+- Bozze: niente più riquadro grigio vuoto.
+- «Novità» è solo decorativa (la stella, il pulsante non copre più nulla) e il tasto indietro torna alla pagina precedente.
+### Documentazione
+- Aggiornati [Viste e home](docs/tecnica/viste-e-home.md), [Storia e backup](docs/tecnica/backup.md), [Privacy e sicurezza](docs/tecnica/privacy-e-sicurezza.md), la roadmap della fase 0.3 e il README.
+
 ## [0.3.0] — 2026-10-25
 La home a griglia.
 ### Aggiunto
@@ -13,7 +32,6 @@ La home a griglia.
 ### Cambiato
 - Le mascotte passano agli asset dell'app.
 - Workflow unico `release.yml`: zip Windows, APK e wheel con `SHA256SUMS`.
-### Cambiato
 - **L'accesso con Google non è più obbligatorio** (Alex, 2026-10-25): al primo avvio si può continuare senza account e la domanda non torna; Drive resta facoltativo. Aggiornati ADR-0007, guida tester e privacy.
 
 ## [0.2.9] — 2026-10-24

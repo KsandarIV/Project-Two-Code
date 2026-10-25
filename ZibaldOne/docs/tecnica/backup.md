@@ -3,7 +3,7 @@
 Come funzionano le istantanee di ZibaldOne ([ADR-0006](../decisioni/ADR-0006-storia-e-backup-cifrati.md)). Il codice è in `src/zibaldone/storage/backups.py`, i comandi in `src/zibaldone/cli/backup_cmd.py`.
 
 ## Le istantanee
-- Un'**istantanea** è una copia completa e coerente dei dati, come un commit di git. Si crea a mano (`zbone backup create`) o da sola una volta al giorno, dopo un comando che ha salvato qualcosa.
+- Un'**istantanea** è una copia completa e coerente dei dati, come un commit di git. Si crea a mano (`zbone backup create`) o da sola, se il backup è automatico (di base): la copia di oggi nasce al primo momento utile dopo l'01:00, con l'app aperta.
 - Ogni istantanea è un file in `backups/` dentro la cartella dati, con il nome dell'ora in UTC: `20261017T112233Z-a1b2c3.zbsnap`. Le ultime 6 cifre bastano per indicarla nei comandi.
 - Dentro c'è uno zip con:
   - `manifest.json`: id, ora, versione dell'app, versione dello schema, motivo (manuale, automatica, prima di un ripristino, prima di un aggiornamento), nota, impronta SHA-256 e dimensione del database, numero di voci e modelli;
@@ -17,16 +17,25 @@ Come funzionano le istantanee di ZibaldOne ([ADR-0006](../decisioni/ADR-0006-sto
 - Restano come sono adesso `settings.json` e `keys.json`: un'istantanea vecchia non deve revocare un consenso, cambiare la durata dei backup (cancellerebbe istantanee) o riportare una vecchia passphrase.
 - ZibaldOne deve essere chiuso nelle altre finestre: un database in uso viene rilevato e il ripristino si ferma con un messaggio.
 
-## Durata (retention)
-Come `restic forget`: per ogni regola si tiene l'istantanea più recente di ognuno degli ultimi N giorni, settimane e mesi che ne hanno una. Di base **7 giornaliere, 4 settimanali, 12 mensili**: un dato cancellato può sopravvivere nei backup fino a circa 12 mesi, e l'avviso privacy lo dice. Si tengono sempre l'istantanea più recente e l'ultima "prima di un ripristino".
+## Durata e modalità (dalla 0.3.1)
+Due modalità, scelte in Mnemosyne o con `zbone backup config --auto/--manual`:
+- **Automatico** (di base). Resta **la copia di oggi**, che ogni giorno sostituisce quella di ieri, più la copia **della settimana** (a 7 giorni, ne restano 4), **del mese** (a 28 giorni, 3) e **dell'anno** (a 365 giorni, 3): ogni nuova sostituisce la più vecchia del suo gruppo. Una voce cancellata può quindi restare nei backup fino a circa 3 anni, e l'avviso privacy (versione 6) lo dice.
+- **Manuale**. Non nasce e non si cancella nulla da solo: le copie le fai e le cancelli tu.
+
+Le copie fatte a mano e quelle «prima di un ripristino» non vengono mai tolte dall'app. Sulle destinazioni fuori dal dispositivo (Le Nuvole) si cancella solo ciò che il dispositivo ha già tolto. Al primo backup automatico dopo l'aggiornamento alla 0.3.1 le vecchie copie automatiche oltre l'ultima sono sostituite da questo schema.
 
 ```powershell
-zbone backup config                                   # mostra le impostazioni
-zbone backup config --days 3 --weeks 2 --months 3     # durata più corta
-zbone backup config --no-auto                         # niente istantanee automatiche
-zbone backup config --interval 12                     # automatica ogni 12 ore
+zbone backup config                                   # mostra la modalità
+zbone backup config --manual                          # niente copie automatiche
+zbone backup config --auto                            # torna all'automatico
 zbone backup prune --dry-run                          # cosa cancellerebbe
 ```
+
+## Il file di backup (`.zbbackup`, dalla 0.3.1)
+Un solo file da portare via e riportare (`storage/bundle.py`): è uno zip senza compressione (dentro è già cifrato) con `bundle.json`, l'istantanea, i suoi allegati e, se la cifratura è attiva, `keys.json` con la chiave privata già chiusa da passphrase e codice di recupero. Da solo non apre nulla.
+- App: Mnemosyne → «Salva in un file» e «Importa da un file». Terminale: `zbone backup export [--to CARTELLA|FILE]` (di base la cartella Download) e `zbone backup import FILE`.
+- Importare non sovrascrive: aggiunge l'istantanea e gli allegati accanto agli altri e installa `keys.json` solo se il dispositivo non ne ha; i dati cambiano solo con il ripristino, dopo i soliti controlli.
+- **Al primo avvio**: su un'installazione senza dati né backup propri, dopo il consenso, l'app cerca un `.zbbackup` in Download, Documenti e Scrivania e propone di riportarlo (passphrase o codice di recupero se è cifrato). Non blocca mai l'avvio.
 
 ## Verifica
 `zbone backup verify` controlla l'ultima istantanea (`--all` tutte, oppure un ID): zip integro, impronta SHA-256, `PRAGMA integrity_check` di SQLite e versione dello schema.
