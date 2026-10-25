@@ -1075,3 +1075,15 @@ def test_the_lente_model_sits_on_the_general_page(ready: Path) -> None:
     with Store.open(ready) as store:
         apply_install(plan_install(find_builtin_pack("theoria") or find_builtin_pack("lente"), store), store)
         assert vm.area_of(store.get_template("vista")) == ""
+
+
+def test_installing_a_pack_redraws_only_that_pack(folder: Path) -> None:
+    record_consent(folder, True, NOTICE_VERSION)
+    services.save_ui_settings(folder, diario_suggested=True)
+    shell = Shell(FakePage(), folder)
+    shell.start("/scuole")
+    body = shell.body.content
+    click(button(body, "Vedi cosa cambia"))
+    click(button(body, "Installa"))
+    assert shell.body.content is body  # no new screen: the scroll stays where it was
+    assert any("installat" in toast for toast in shell.ctx.toasts)

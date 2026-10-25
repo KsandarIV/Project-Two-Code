@@ -239,6 +239,7 @@ class PacksScreen:
     def __init__(self, ctx: AppContext) -> None:
         self.ctx = ctx
         self.plan_holders: Dict[str, ft.Column] = {}
+        self.panels: Dict[str, ft.Container] = {}
 
     def build(self) -> ft.Control:
         packs = builtin_packs()
@@ -253,7 +254,9 @@ class PacksScreen:
             )
         ]
         for pack in packs:
-            controls.append(self._pack_panel(vm.pack_card(pack, installed)))
+            panel = self._pack_panel(vm.pack_card(pack, installed))
+            self.panels[pack.id] = panel
+            controls.append(panel)
         return W.screen(controls, self.ctx.wide)
 
     def _pack_panel(self, card: vm.PackCard) -> ft.Control:
@@ -324,7 +327,11 @@ class PacksScreen:
         count = len(installed)
         self.ctx.data_changed()
         self.ctx.toast(f"{pack.name}: {'1 modello installato' if count == 1 else f'{count} modelli installati'}.")
-        self.ctx.refresh()
+        with self.ctx.store() as store:  # redraw this pack only: the page keeps its scroll
+            card = vm.pack_card(pack, [template.slug for template in store.list_templates()])
+        panel = self.panels[pack_id]
+        panel.content = self._pack_panel(card).content
+        self.ctx.update(panel)
 
 
 def build_packs(ctx: AppContext, route: Route) -> ft.Control:
