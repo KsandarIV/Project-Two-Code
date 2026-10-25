@@ -6,6 +6,7 @@ import flet as ft
 
 from zibaldone.core.areas import AREA_BY_KEY, AREA_LIST, Area
 from zibaldone.core.brand import NOMENCLATURE
+from zibaldone.core import views as lente
 from zibaldone.core.packs import apply_install, builtin_packs, plan_install
 from zibaldone.storage.database import StoreError
 from zibaldone.ui import carousel, services
@@ -14,7 +15,7 @@ from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route, section
-from zibaldone.ui.views import personalize
+from zibaldone.ui.views import personalize, saved_views
 
 
 GENERAL = ""  # the ninth page: templates with no area
@@ -153,6 +154,8 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
         controls.append(W.caption("Nessun modello in questa pagina, per ora."))
     for label, rows in groups:
         controls.append(W.section_label(label))
+        if any(row.slug == lente.TEMPLATE for row in rows):
+            controls.append(ft.Row([saved_views.examples_button(ctx)]))
         if compact:
             controls.append(ft.Row([_icon_tile(ctx, row) for row in rows], wrap=True, spacing=6, run_spacing=6))
         else:
