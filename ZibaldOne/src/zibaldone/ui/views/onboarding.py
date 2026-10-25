@@ -84,6 +84,18 @@ def consent(ctx: AppContext, route: Route) -> ft.Control:
     )
 
 
+def _restored(ctx: AppContext) -> None:
+    """The data came back from a backup: no account is asked for now, nor the base packs (they came with the data)."""
+    services.skip_login(ctx.folder)
+    services.save_ui_settings(ctx.folder, diario_suggested=True)
+    ctx.go("/oggi")
+
+
+def _found_backup(ctx: AppContext) -> List[ft.Control]:
+    panel = backup_file.found_backup_panel(ctx, lambda: _restored(ctx))
+    return [panel] if panel is not None else []
+
+
 def sign_in(ctx: AppContext, route: Route) -> ft.Control:
     from zibaldone.ui.views.cloud import google_sign_in
 
@@ -96,11 +108,6 @@ def sign_in(ctx: AppContext, route: Route) -> ft.Control:
             ctx.toast(f"Non riesco a salvare la scelta: {problem}", error=True)
             return
         ctx.advance()
-
-    def restored() -> None:
-        services.skip_login(ctx.folder)  # the data came back: no account is asked for now
-        services.save_ui_settings(ctx.folder, diario_suggested=True)  # nor the base packs: they came with the data
-        ctx.go("/oggi")
 
     why = ft.ExpansionTile(
         title=ft.Text("A che cosa serve l'accesso?", size=14, color=T.TEXT),
@@ -122,6 +129,7 @@ def sign_in(ctx: AppContext, route: Route) -> ft.Control:
     return W.screen(
         [
             _brand(),
+            *_found_backup(ctx),
             W.title_with_nickname("Entra con Google, se vuoi", cloud.name, size=22),
             W.panel(
                 ft.Column(
@@ -133,7 +141,7 @@ def sign_in(ctx: AppContext, route: Route) -> ft.Control:
                     spacing=8,
                 )
             ),
-            ft.Row([W.text_button("Ho già un backup", lambda _: backup_file.import_file(ctx, restored), icon="SETTINGS_BACKUP_RESTORE")], alignment=ft.MainAxisAlignment.END),
+            ft.Row([W.text_button("Ho già un backup", lambda _: backup_file.import_file(ctx, lambda: _restored(ctx)), icon="SETTINGS_BACKUP_RESTORE")], alignment=ft.MainAxisAlignment.END),
             ft.Row(
                 [
                     W.secondary_button("Continua senza account", without_account),
@@ -218,6 +226,7 @@ def diario(ctx: AppContext, route: Route) -> ft.Control:
     return W.screen(
         [
             _brand(),
+            *_found_backup(ctx),
             W.title_with_nickname("Da dove partiamo?", "Stoa", size=22),
             W.panel(
                 ft.Column(

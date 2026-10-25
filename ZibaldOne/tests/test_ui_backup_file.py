@@ -89,3 +89,17 @@ def test_the_first_start_offers_a_backup_file(ready: Path, tmp_path: Path) -> No
     assert shell.current.path == "/oggi"
     with Store.open(fresh) as store:
         assert store.list_templates()
+
+
+def test_a_backup_found_on_the_first_start_is_offered_and_can_be_set_aside(ready: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from zibaldone.ui.views import backup_file
+
+    snapshot = backups.create_snapshot(ready, "manual")
+    file = bundle.export_bundle(ready, snapshot.id, tmp_path / "out")
+    monkeypatch.setattr(bundle, "first_run_candidate", lambda folder: bundle.inspect_bundle(file))
+    shell = Shell(FakePage(), ready)
+    shell.start("/oggi")
+    panel = backup_file.found_backup_panel(shell.ctx, lambda: None)
+    assert panel is not None and "Ho trovato un tuo backup di ZibaldOne." in texts(panel)
+    click(button(panel, "Parto da zero"))
+    assert backup_file.found_backup_panel(shell.ctx, lambda: None) is None

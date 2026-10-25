@@ -15,6 +15,7 @@ from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 
 EXPORT_DIR = "exports"
+SKIPPED_KEY = "backup_trovato_scartato"
 
 
 def export_snapshot(ctx: AppContext, snapshot_id: str) -> None:
@@ -114,4 +115,33 @@ def _offer(ctx: AppContext, path: Path, info: Any, on_done: Optional[Callable[[]
             content=ft.Container(ft.Column(lines, spacing=10, tight=True), width=440),
             actions=[W.text_button("Annulla", ctx.close_dialog, color=T.TEXT), W.secondary_button("Aggiungi alle istantanee", add), W.primary_button("Ripristina i dati", restore, icon="SETTINGS_BACKUP_RESTORE")],
         )
+    )
+
+
+def found_backup_panel(ctx: AppContext, on_done: Callable[[], Any]) -> Optional[ft.Control]:
+    """On a new installation: a backup file found in the usual folders, with the way to bring it back; None when there is none (or it was set aside)."""
+    if ctx.memory.get(SKIPPED_KEY):
+        return None
+    try:
+        candidate = bundle.first_run_candidate(ctx.folder)
+    except OSError:
+        return None
+    if candidate is None:
+        return None
+    when = candidate.created_at.astimezone().strftime("%d/%m/%Y alle %H:%M") if candidate.created_at else "data sconosciuta"
+
+    def skip(_: Any) -> None:
+        ctx.memory[SKIPPED_KEY] = True
+        ctx.refresh()
+
+    return W.panel(
+        ft.Column(
+            [
+                W.body("Ho trovato un tuo backup di ZibaldOne.", weight=ft.FontWeight.W_600),
+                W.caption(f"Del {when}, in {candidate.path.parent}"),
+                ft.Row([W.text_button("Parto da zero", skip, color=T.TEXT_DIM), W.primary_button("Riporta i miei dati", lambda _: _offer(ctx, candidate.path, candidate, on_done), icon="SETTINGS_BACKUP_RESTORE")], alignment=ft.MainAxisAlignment.END, wrap=True, spacing=8),
+            ],
+            spacing=6,
+        ),
+        border_color=W.fade(T.ACCENT, 0.5),
     )
