@@ -1016,3 +1016,16 @@ def test_no_wrapping_row_holds_an_expanding_child(ready: Path) -> None:
         shell.start(path)
         bad = [row for row in walk(shell.body.content) if isinstance(row, ft.Row) and row.wrap and any(getattr(child, "expand", None) for child in row.controls)]
         assert not bad, path
+
+
+def test_an_area_page_shows_its_mascot_and_only_the_general_page_has_the_big_block(ready: Path) -> None:
+    shell = Shell(FakePage(), ready)
+    shell.start("/modelli")
+    general = texts(shell.body.content)
+    assert "Nuovo modello" in general and "Esporta" in general
+    shell.ctx.memory["modelli_area"] = "svago"
+    shell.refresh()
+    area = texts(shell.body.content)
+    assert "Nuovo modello" not in area and "Esporta" not in area
+    assert any(isinstance(item, ft.Image) and str(item.src).endswith(".svg") for item in walk(shell.body.content))
+    assert any("Svago" in text for text in area)

@@ -4,7 +4,7 @@ from typing import Any, Callable, Dict, List, Optional
 
 import flet as ft
 
-from zibaldone.core.areas import AREA_BY_KEY, AREA_LIST
+from zibaldone.core.areas import AREA_BY_KEY, AREA_LIST, Area
 from zibaldone.core.brand import NOMENCLATURE
 from zibaldone.core.packs import apply_install, builtin_packs, plan_install
 from zibaldone.storage.database import StoreError
@@ -77,6 +77,22 @@ def _page_bar(page: str, choose: Callable[[str], None]) -> List[ft.Control]:
     return items
 
 
+def _area_header(area: Area, tools: List[ft.Control]) -> ft.Control:
+    """On an area page the big block gives way to the area's mascot, large, with who it is."""
+    mascot = area.mascot
+    texts: List[ft.Control] = [W.title_with_nickname(area.label, mascot.name if mascot else "")]
+    if mascot is not None:
+        texts += [W.caption(f"{mascot.animal} · {mascot.philosopher}"), W.body(mascot.story, dim=True, size=13)]
+    return W.panel(
+        ft.Row(
+            [W.mascot_avatar(mascot, 112), ft.Column(texts, spacing=4, expand=True), ft.Column(tools, spacing=0)],
+            spacing=14,
+            vertical_alignment=ft.CrossAxisAlignment.START,
+        ),
+        border_color=W.fade(area.color, 0.5),
+    )
+
+
 def build_list(ctx: AppContext, route: Route) -> ft.Control:
     info = section("modelli")
     page = ctx.memory.get("modelli_area", GENERAL)
@@ -108,15 +124,23 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
     # Back from an area page goes to the general one before leaving Modelli.
     ctx.back_hook = carousel.hook_back(ctx, GENERAL, page, lambda: choose(GENERAL))
 
-    actions = [
-        W.primary_button("Nuovo modello", lambda _: ctx.go("/modelli/nuovo"), icon="ADD"),
-        W.secondary_button(f"{NOMENCLATURE['pack'].name} · pacchetti", lambda _: ctx.go("/scuole"), icon="SCHOOL_OUTLINED"),
-        W.secondary_button("Esporta", lambda _: export_dialog(ctx), icon="DOWNLOAD", disabled=not templates),
+    tools = [
         W.icon_button("SETTINGS_OUTLINED", lambda _: ctx.go("/organon/personalizza"), "Personalizza"),
         W.icon_button("GRID_VIEW" if compact else "VIEW_AGENDA_OUTLINED", toggle_view, "Mostra la vista completa" if compact else "Mostra solo le icone"),
     ]
-    note = "i modelli senza un'area" if page == GENERAL else AREA_BY_KEY[page].covers
-    controls: List[ft.Control] = [W.screen_header(info.label, info.nickname, "le ricette fatte di blocchi: ogni voce nasce da un modello", actions=actions), W.section_label(_page_label(page)), W.caption(note)]
+    if page == GENERAL:
+        actions = [
+            W.primary_button("Nuovo modello", lambda _: ctx.go("/modelli/nuovo"), icon="ADD"),
+            W.secondary_button(f"{NOMENCLATURE['pack'].name} · pacchetti", lambda _: ctx.go("/scuole"), icon="SCHOOL_OUTLINED"),
+            W.secondary_button("Esporta", lambda _: export_dialog(ctx), icon="DOWNLOAD", disabled=not templates),
+            *tools,
+        ]
+        head: ft.Control = W.screen_header(info.label, info.nickname, "le ricette fatte di blocchi: ogni voce nasce da un modello", actions=actions)
+        note = "i modelli senza un'area"
+    else:
+        head = _area_header(AREA_BY_KEY[page], tools)
+        note = AREA_BY_KEY[page].covers
+    controls: List[ft.Control] = [head, W.section_label(_page_label(page)), W.caption(note)]
     if not templates:
         controls.append(
             W.empty_state(
