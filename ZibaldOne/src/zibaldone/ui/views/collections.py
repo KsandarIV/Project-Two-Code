@@ -4,6 +4,7 @@ from typing import Any, List
 
 import flet as ft
 
+from zibaldone.ui import carousel
 from zibaldone.ui import theme as T
 from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
@@ -11,6 +12,8 @@ from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route, section
 from zibaldone.ui.views.common import not_found
 from zibaldone.ui.views.import_dialog import open_import
+
+ALL = ""  # the first page: every collection as cards
 
 
 def build(ctx: AppContext, route: Route) -> ft.Control:
@@ -28,10 +31,28 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
             )
         )
         return W.screen(controls, ctx.wide)
-    controls += _overview(ctx, groups)
-    controls.append(W.section_label("Le raccolte"))
-    controls.append(ft.ResponsiveRow([_card(ctx, group) for group in groups], spacing=12, run_spacing=12))
-    return W.screen(controls, ctx.wide)
+    pages = [ALL] + [group.slug for group in groups]
+    page = ctx.memory.get("collezioni_pagina", ALL)
+    if page not in pages:
+        page = ALL
+
+    def choose(target: str) -> None:
+        ctx.memory["collezioni_pagina"] = target
+        ctx.refresh()
+
+    ctx.back_hook = carousel.hook_back(ctx, ALL, page, lambda: choose(ALL))
+    bar = [carousel.bar_item(ft.Icon(W.icon_of("COLLECTIONS_BOOKMARK_OUTLINED"), size=24, color=T.ACCENT), T.ACCENT, "Tutte", page == ALL, lambda: choose(ALL))]
+    bar += [carousel.bar_item(ft.Icon(W.icon_of(group.icon), size=24, color=group.color), group.color, group.name, group.slug == page, lambda target=group.slug: choose(target)) for group in groups]
+    shown = next((group for group in groups if group.slug == page), None)
+    if shown is not None:
+        controls[0] = W.screen_header(shown.name, "Museion", shown.description or shown.count_label, actions=[W.primary_button("Aggiungi", lambda _: ctx.go(f"/scrivi/{shown.slug}"), icon="ADD"), import_button])
+        controls += _group_items(ctx, shown)
+    else:
+        controls += _overview(ctx, groups)
+        controls.append(W.section_label("Le raccolte"))
+        controls.append(ft.ResponsiveRow([_card(ctx, group) for group in groups], spacing=12, run_spacing=12))
+    color = shown.color if shown is not None else T.ACCENT
+    return carousel.page_body(W.screen(controls, ctx.wide), bar, color, lambda delta: choose(carousel.next_page(pages, page, delta)))
 
 
 def _card(ctx: AppContext, group: vm.CollectionGroup) -> ft.Control:
@@ -60,11 +81,14 @@ def build_group(ctx: AppContext, route: Route) -> ft.Control:
         return not_found(ctx, "Questa raccolta non esiste. Le raccolte sono i modelli della Scuola «Museion · Collezioni».")
     add = W.primary_button("Aggiungi", lambda _: ctx.go(f"/scrivi/{group.slug}"), icon="ADD")
     controls: List[ft.Control] = [W.screen_header(group.name, "Museion", group.description or group.count_label, on_back=ctx.back, actions=[add])]
-    if group.items:
-        controls.append(ft.ResponsiveRow([_item(ctx, group, item) for item in group.items], spacing=10, run_spacing=10))
-    else:
-        controls.append(W.empty_state("Questa raccolta è ancora vuota. Tocca «Aggiungi» per la prima voce.", group.icon))
+    controls += _group_items(ctx, group)
     return W.screen(controls, ctx.wide)
+
+
+def _group_items(ctx: AppContext, group: vm.CollectionGroup) -> List[ft.Control]:
+    if group.items:
+        return [ft.ResponsiveRow([_item(ctx, group, item) for item in group.items], spacing=10, run_spacing=10)]
+    return [W.empty_state("Questa raccolta è ancora vuota. Tocca «Aggiungi» per la prima voce.", group.icon)]
 
 
 def _chip(ctx: AppContext, text: str, entry_id: str, icon: str = "", color: str = T.ACCENT_2) -> ft.Control:

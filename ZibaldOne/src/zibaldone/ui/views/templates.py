@@ -8,7 +8,7 @@ from zibaldone.core.areas import AREA_BY_KEY, AREA_LIST
 from zibaldone.core.brand import NOMENCLATURE
 from zibaldone.core.packs import apply_install, builtin_packs, plan_install
 from zibaldone.storage.database import StoreError
-from zibaldone.ui import services
+from zibaldone.ui import carousel, services
 from zibaldone.ui import theme as T
 from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
@@ -18,8 +18,6 @@ from zibaldone.ui.views import personalize
 
 
 GENERAL = ""  # the ninth page: templates with no area
-SWIPE_DISTANCE = 60  # pixels of drag, after the long press, that change the page
-AREA_TINT = 0.07
 
 
 def _pages() -> List[str]:
@@ -71,24 +69,12 @@ def _icon_tile(ctx: AppContext, row: vm.TemplateRow) -> ft.Control:
     )
 
 
-def _page_bar(ctx: AppContext, page: str, choose: Callable[[str], None]) -> ft.Control:
+def _page_bar(page: str, choose: Callable[[str], None]) -> List[ft.Control]:
     items: List[ft.Control] = []
     for key in _pages():
-        color = _page_color(key)
         face = W.mascot_avatar(AREA_BY_KEY[key].mascot, 30) if key else ft.Icon(W.icon_of("DASHBOARD_OUTLINED"), size=24, color=T.ACCENT)
-        items.append(
-            ft.Container(
-                face,
-                padding=4,
-                border_radius=T.RADIUS_SMALL,
-                bgcolor=W.fade(color, 0.22) if key == page else None,
-                border=ft.Border.all(1, color) if key == page else None,
-                tooltip=_page_label(key),
-                on_click=lambda _, target=key: choose(target),
-                ink=True,
-            )
-        )
-    return ft.Row(items, alignment=ft.MainAxisAlignment.SPACE_AROUND, spacing=2)
+        items.append(carousel.bar_item(face, _page_color(key), _page_label(key), key == page, lambda target=key: choose(target)))
+    return items
 
 
 def build_list(ctx: AppContext, route: Route) -> ft.Control:
@@ -113,27 +99,14 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
         ctx.refresh()
 
     def step(delta: int) -> None:
-        pages = _pages()
-        choose(pages[(pages.index(page) + delta) % len(pages)])
+        choose(carousel.next_page(_pages(), page, delta))
 
     def toggle_view(_: Any) -> None:
         personalize.set_templates_view(ctx, "completa" if compact else "icone")
         ctx.refresh()
 
-    drag = {"dx": 0.0}
-
-    def moved(event: Any) -> None:
-        drag["dx"] = event.offset_from_origin.x
-
-    def released(_: Any) -> None:
-        dx, drag["dx"] = drag["dx"], 0.0
-        if dx <= -SWIPE_DISTANCE:
-            step(1)
-        elif dx >= SWIPE_DISTANCE:
-            step(-1)
-
     # Back from an area page goes to the general one before leaving Modelli.
-    ctx.back_hook = (lambda: choose(GENERAL) or True) if page != GENERAL else None
+    ctx.back_hook = carousel.hook_back(ctx, GENERAL, page, lambda: choose(GENERAL))
 
     actions = [
         W.primary_button("Nuovo modello", lambda _: ctx.go("/modelli/nuovo"), icon="ADD"),
@@ -160,10 +133,7 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
             controls.append(ft.Row([_icon_tile(ctx, row) for row in rows], wrap=True, spacing=6, run_spacing=6))
         else:
             controls.append(ft.ResponsiveRow([_template_tile(ctx, row, pinned, pin) for row in rows], spacing=10, run_spacing=10))
-    pages = ft.GestureDetector(content=W.screen(controls, ctx.wide), on_long_press_move_update=moved, on_long_press_end=released, expand=True)
-    # The bar of the areas sits at the bottom, under the thumb.
-    bar = ft.Container(_page_bar(ctx, page, choose), padding=ft.Padding.symmetric(horizontal=8, vertical=6), border=ft.Border(top=ft.BorderSide(1, T.BORDER)))
-    return ft.Container(ft.Column([pages, bar], spacing=0, expand=True), bgcolor=W.fade(_page_color(page), AREA_TINT), expand=True)
+    return carousel.page_body(W.screen(controls, ctx.wide), _page_bar(page, choose), _page_color(page), step)
 
 
 # * — export —

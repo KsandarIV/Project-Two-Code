@@ -962,3 +962,20 @@ def test_the_view_of_the_models_is_saved_from_the_personalize_page(ready: Path) 
     fresh = Shell(FakePage(), ready)
     fresh.start("/modelli")
     assert any(isinstance(item, ft.Row) and item.wrap for item in walk(fresh.body.content))
+
+
+def test_collections_have_pages_per_kind_with_the_collection_colour_and_back_to_all(ready: Path) -> None:
+    with Store.open(ready) as store:
+        store.add_entry("libro", {"titolo": "Dune"})
+    shell = Shell(FakePage(width=412), ready)
+    shell.start("/collezioni")
+    assert "Dune" not in texts(shell.body.content)
+    click(next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and item.tooltip == "Biblioteca di Babele"))
+    assert "Dune" in texts(shell.body.content) and shell.current.path == "/collezioni"
+    assert shell.can_go_back()
+    shell.back()
+    assert shell.ctx.memory["collezioni_pagina"] == "" and "Dune" not in texts(shell.body.content)
+    detector = next(item for item in walk(shell.body.content) if isinstance(item, ft.GestureDetector))
+    detector.on_long_press_move_update(SimpleNamespace(offset_from_origin=SimpleNamespace(x=-120)))
+    detector.on_long_press_end(None)
+    assert shell.ctx.memory["collezioni_pagina"] != ""
