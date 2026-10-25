@@ -36,6 +36,7 @@ Obiettivo: versione per i tester senza regressioni nelle schermate toccate da Al
 | Raccolta feedback dei tester e correzioni (nessuna feature nuova) | Vibe Coding | Backlog | 0.3.0 |
 | Misura con migliaia di voci e movimenti | Backend | Backlog | — |
 | Layout home 5×6 con blocchi ridimensionabili | Frontend | Backlog 🔒 da decidere se è una capacità propria (ADR-0010) o va in questa versione; serve contratto in `core/home` | decisione di Alex |
+| Barra delle 8 mascotte configurabile: sopra o a lato, a scomparsa o fissa, a scelta dell'utente | Frontend | Backlog | barra in fondo (0.2.9), impostazioni |
 | Import e condivisione WhatsApp dei modelli (thread già aperto) | Backend, Frontend | In corso (thread dedicato) | formato `.zbpack.json`, ADR-0005 |
 
 ## Sprint 0.3.2: Android e Google provati davvero
