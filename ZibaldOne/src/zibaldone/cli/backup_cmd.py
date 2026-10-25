@@ -1,4 +1,4 @@
-"""`zbone backup …`: snapshots like commits, restore, retention and encryption.
+"""`zbone backup …`: full copies of the data, the backup file, restore, the automatic scheme and encryption.
 
 Secrets are asked with hidden input and never taken from flags or
 environment variables, so they do not end up in the shell history or in
@@ -65,11 +65,11 @@ def describe(snapshot: SnapshotInfo) -> str:
 
 
 def print_status(folder: Path, settings: BackupSettings) -> None:
-    retention = settings.retention
-    automatic = f"sì, ogni {settings.auto_interval_hours:g} ore" if settings.auto else "no"
     typer.echo(f"Cartella:     {backups.backups_dir(folder)}")
-    typer.echo(f"Automatico:   {automatic}")
-    typer.echo(f"Durata:       {retention.daily} giornaliere, {retention.weekly} settimanali, {retention.monthly} mensili")
+    if settings.auto:
+        typer.echo(f"Automatico:   sì: ogni giorno dopo l'01:00 la copia di oggi sostituisce quella di ieri; poi {backups.TIER_KEEP['week']} della settimana, {backups.TIER_KEEP['month']} del mese, {backups.TIER_KEEP['year']} dell'anno")
+    else:
+        typer.echo("Automatico:   no: le copie le fai e le cancelli tu (zbone backup create, zbone backup export)")
     if keys.is_configured(folder):
         typer.echo(f"Cifratura:    attiva (chiave {keys.format_key_id(keys.key_id(folder))})")
     else:
@@ -256,7 +256,7 @@ def verify_backups(
 
 @backup_app.command("prune")
 def prune_backups(dry_run: bool = typer.Option(False, "--dry-run", help="mostra cosa cancellerebbe, senza cancellare nulla")) -> None:
-    """Cancella le istantanee scadute secondo la durata scelta."""
+    """Cancella le copie automatiche che non servono più (mai quelle fatte a mano)."""
     ensure_consent()
     with backup_errors():
         result = backups.prune(data_dir(), dry_run=dry_run)
@@ -276,32 +276,19 @@ def prune_backups(dry_run: bool = typer.Option(False, "--dry-run", help="mostra 
 
 
 @backup_app.command("config")
-def configure_backups(
-    auto: Optional[bool] = typer.Option(None, "--auto/--no-auto", help="istantanea automatica dopo i comandi che salvano dati"),
-    days: Optional[int] = typer.Option(None, "--days", min=0, max=backups.MAX_KEEP, help="quante istantanee giornaliere tenere"),
-    weeks: Optional[int] = typer.Option(None, "--weeks", min=0, max=backups.MAX_KEEP, help="quante settimanali"),
-    months: Optional[int] = typer.Option(None, "--months", min=0, max=backups.MAX_KEEP, help="quante mensili"),
-    interval: Optional[float] = typer.Option(None, "--interval", min=1, max=backups.MAX_INTERVAL_HOURS, help="ore tra due istantanee automatiche"),
-) -> None:
-    """Mostra o cambia backup automatico e durata delle istantanee."""
+def configure_backups(auto: Optional[bool] = typer.Option(None, "--auto/--manual", help="automatico (di base) o manuale: con il manuale le copie le fai e le cancelli tu")) -> None:
+    """Mostra o cambia la modalità dei backup: automatico o manuale."""
     ensure_consent()
     folder = data_dir()
     with backup_errors():
         settings = backups.load_backup_settings(folder)
         if auto is not None:
             settings.auto = auto
-        if interval is not None:
-            settings.auto_interval_hours = interval
-        for name, value in (("daily", days), ("weekly", weeks), ("monthly", months)):
-            if value is not None:
-                setattr(settings.retention, name, value)
-        changed = any(value is not None for value in (auto, interval, days, weeks, months))
-        if changed:
             backups.save_backup_settings(folder, settings)
-        typer.echo("Impostazioni salvate." if changed else "Impostazioni dei backup:")
+        typer.echo("Impostazioni salvate." if auto is not None else "Impostazioni dei backup:")
         print_status(folder, settings)
-    if changed:
-        typer.echo("La nuova durata vale dalla prossima pulizia: zbone backup prune --dry-run per vedere cosa cambierebbe.")
+    if auto is False:
+        typer.echo("Da ora non nasce più nessuna copia da sola e niente viene cancellato: le copie già fatte restano finché non le cancelli tu.")
 
 
 @backup_app.command("setup")

@@ -2,8 +2,8 @@
 
 - `sync_now` uploads the encrypted snapshots that are missing remotely and
   `keys.json` (public key plus the wrapped private key: useless without the
-  passphrase, the recovery code or the Google secret), then applies the same
-  retention as on the device to the remote copies. Plain snapshots never
+  passphrase, the recovery code or the Google secret), then removes from the
+  destination the copies the device removed under its automatic scheme. Plain snapshots never
   leave the device: encryption must be on first.
 - `enable_google_recovery` adds a "google" lock to the private key and puts
   its 32-byte secret in the hidden app space of the user's Drive. Whoever
@@ -12,7 +12,7 @@
 - `recover_from_cloud` brings the data to a new device: keys, newest (or
   chosen) snapshot, restore.
 
-Nothing is ever deleted remotely because it is missing locally: a lost
+Nothing is ever deleted remotely because it is merely missing locally: a lost
 device must not wipe its own backups.
 
 Attached files (0.2.4) travel as their sealed copies (`<file>.zbblob`): the
@@ -184,15 +184,17 @@ def _push(folder: Path, destination: Destination) -> SyncResult:
             continue
         destination.upload(name, snapshot.path.read_bytes())
         result.uploaded.append(snapshot.id)
-    remote_now = remote_snapshots(destination.list_files())
-    # What the device still keeps stays remote too (no upload/delete churn);
-    # beyond that, the same retention as on the device.
-    keep_local = [snapshot.id for snapshot in local if snapshot.encrypted]
-    plan = backups.plan_retention(remote_now, backups.load_backup_settings(folder).retention, protect=keep_local)
-    for info in plan.remove:
-        if destination.delete(info.path.name):
-            result.deleted.append(info.id)
-    result.remote_count = len(remote_now) - len(result.deleted)
+    # Only what the device itself removed under the automatic scheme goes from the destination too (a copy that
+    # merely is not on this device is never deleted: a lost phone must not take its backups with it).
+    backup = backups.load_backup_settings(folder)
+    keep_local = {snapshot.id for snapshot in local}
+    for snapshot_id in backup.pending_remote:
+        if snapshot_id not in keep_local and destination.delete(f"{snapshot_id}{backups.SNAPSHOT_SUFFIX}"):
+            result.deleted.append(snapshot_id)
+    if backup.pending_remote:
+        backup.pending_remote = []
+        backups.save_backup_settings(folder, backup)
+    result.remote_count = len(remote_snapshots(destination.list_files()))
     _prune_remote_media(destination, local, result)
     return result
 

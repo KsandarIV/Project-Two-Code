@@ -38,7 +38,7 @@ from zibaldone.core.crypto import ScryptParams
 from zibaldone.core.privacy import NOTICE_VERSION
 from zibaldone.core.templates import BlockSpec, Template
 from zibaldone.storage import backups, keys
-from zibaldone.storage.backups import RetentionPolicy, BackupSettings, create_snapshot, save_backup_settings
+from zibaldone.storage.backups import create_snapshot
 from zibaldone.storage.database import Store
 from zibaldone.storage.settings import load_settings, record_consent, save_settings
 
@@ -406,22 +406,24 @@ def test_nothing_leaves_the_device_unencrypted(isolated_data_dir, tmp_path):
     assert destination.list_files() == []
 
 
-def test_sync_uploads_only_what_is_missing_and_prunes_remote(isolated_data_dir, tmp_path):
+def test_sync_uploads_only_what_is_missing_and_removes_remotely_only_what_the_device_removed(isolated_data_dir, tmp_path):
     encrypted_data(isolated_data_dir, "Zibaldone")
-    save_backup_settings(isolated_data_dir, BackupSettings(retention=RetentionPolicy(daily=2, weekly=0, monthly=0)))
     start = datetime(2026, 10, 10, 12, 0, tzinfo=UTC)
     first = [create_snapshot(isolated_data_dir, "auto", now=start + timedelta(days=day)) for day in range(3)]
+    hand = create_snapshot(isolated_data_dir, "manual", now=start)
     stick = tmp_path / "chiavetta"
     stick.mkdir()
     destination = LocalFolderDestination(stick)
     result = sync.sync_now(isolated_data_dir, destination)
-    assert sorted(result.uploaded) == sorted(item.id for item in first)
+    assert sorted(result.uploaded) == sorted(item.id for item in [*first, hand])
     assert result.deleted == []  # what the device still keeps stays on the destination too
-    assert result.remote_count == 3 and "3 in tutto" in result.message
-    backups.prune(isolated_data_dir)  # the oldest daily copy is over the retention of 2
+    assert result.remote_count == 4 and "4 in tutto" in result.message
+    hand.path.unlink()  # missing here is not a reason to delete it there
+    backups.prune(isolated_data_dir)  # today's copy replaces the two older automatic ones
     again = sync.sync_now(isolated_data_dir, destination)
-    assert again.uploaded == [] and again.deleted == [first[0].id]
+    assert again.uploaded == [] and sorted(again.deleted) == sorted([first[0].id, first[1].id])
     assert again.remote_count == 2
+    assert sync.sync_now(isolated_data_dir, destination).deleted == []
     names = {item.name for item in destination.list_files()}
     assert sync.REMOTE_KEYS in names
     status = account.account_status(isolated_data_dir)

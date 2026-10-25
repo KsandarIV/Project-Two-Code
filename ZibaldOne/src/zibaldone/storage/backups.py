@@ -72,10 +72,13 @@ MANIFEST_FILE = "manifest.json"
 BLOB_SUFFIX = ".zbblob"
 PUBLIC_FIELDS = ("format", "format_version", "id", "created_at", "app_version", "schema_version", "reason")
 
-REASONS = ("manual", "auto", "pre-restore", "pre-migration")
+REASONS = ("manual", "auto", "week", "month", "year", "pre-restore", "pre-migration")
 REASON_LABELS = {
     "manual": "manuale",
     "auto": "automatica",
+    "week": "della settimana",
+    "month": "del mese",
+    "year": "dell'anno",
     "pre-restore": "prima di un ripristino",
     "pre-migration": "prima di un aggiornamento",
 }
@@ -88,9 +91,13 @@ STALE_TEMP_SECONDS = 3600
 
 SETTINGS_KEY = "backup"
 DEFAULT_AUTO = True
-DEFAULT_INTERVAL_HOURS = 24
-MAX_INTERVAL_HOURS = 24 * 365
-MAX_KEEP = 1000
+AUTO_HOUR = 1  # local time: the daily copy is made at the first chance after 01:00
+# The automatic scheme (0.3.1): one copy of today, overwritten every day; then one of the week, of the month and of
+# the year, each kept up to its limit and replacing the oldest. Copies made by hand are never removed by the app.
+TIERS = ("week", "month", "year")
+TIER_DAYS = {"week": 7, "month": 28, "year": 365}
+TIER_KEEP = {"week": 4, "month": 3, "year": 3}
+SCHEME_KEYS = ("since", "current", "current_id", *TIERS)
 
 IN_USE = "il database è in uso da un altro programma o finestra di ZibaldOne: chiudila e riprova"
 
@@ -107,50 +114,37 @@ class KeyRequiredError(BackupError):
 
 
 @dataclass
-class RetentionPolicy:
-    """restic-like: the newest snapshot of each of the last N days, weeks and months with snapshots."""
-
-    daily: int = 7
-    weekly: int = 4
-    monthly: int = 12
-
-
-@dataclass
 class BackupSettings:
+    """`auto`: the automatic scheme is on (the default); off means manual, and the user looks after the copies.
+    `scheme` remembers when each automatic copy was made; `pending_remote` the copies removed here that a
+    destination outside the device should lose too (`cloud/sync.py`)."""
+
     auto: bool = DEFAULT_AUTO
-    auto_interval_hours: float = DEFAULT_INTERVAL_HOURS
-    retention: RetentionPolicy = field(default_factory=RetentionPolicy)
+    scheme: Dict[str, str] = field(default_factory=dict)
+    pending_remote: List[str] = field(default_factory=list)
 
 
 def _validated(backup: BackupSettings) -> BackupSettings:
-    retention = backup.retention
-    for key, value in (("keep_daily", retention.daily), ("keep_weekly", retention.weekly), ("keep_monthly", retention.monthly)):
-        if isinstance(value, bool) or not isinstance(value, int) or not 0 <= value <= MAX_KEEP:
-            raise BackupError(f"{SETTINGS_FILE}: '{SETTINGS_KEY}.{key}' deve essere un numero intero da 0 a {MAX_KEEP}")
     if not isinstance(backup.auto, bool):
         raise BackupError(f"{SETTINGS_FILE}: '{SETTINGS_KEY}.auto' deve essere true o false")
-    hours = backup.auto_interval_hours
-    if isinstance(hours, bool) or not isinstance(hours, (int, float)) or not 0 < hours <= MAX_INTERVAL_HOURS:
-        raise BackupError(f"{SETTINGS_FILE}: '{SETTINGS_KEY}.auto_interval_hours' deve essere un numero di ore da 0 a {MAX_INTERVAL_HOURS}")
     return backup
 
 
 def load_backup_settings(folder: Path) -> BackupSettings:
+    """Keys of the older retention settings (days, weeks, interval) are ignored."""
     try:
         data = load_settings(folder).get(SETTINGS_KEY, {})
     except SettingsError as error:
         raise BackupError(str(error)) from None
     if not isinstance(data, dict):
         raise BackupError(f"{SETTINGS_FILE}: '{SETTINGS_KEY}' deve essere un oggetto")
+    scheme = data.get("scheme")
+    pending = data.get("pending_remote")
     return _validated(
         BackupSettings(
             auto=data.get("auto", DEFAULT_AUTO),
-            auto_interval_hours=data.get("auto_interval_hours", DEFAULT_INTERVAL_HOURS),
-            retention=RetentionPolicy(
-                daily=data.get("keep_daily", RetentionPolicy.daily),
-                weekly=data.get("keep_weekly", RetentionPolicy.weekly),
-                monthly=data.get("keep_monthly", RetentionPolicy.monthly),
-            ),
+            scheme={key: value for key, value in scheme.items() if key in SCHEME_KEYS and isinstance(value, str)} if isinstance(scheme, dict) else {},
+            pending_remote=[item for item in pending if isinstance(item, str)] if isinstance(pending, list) else [],
         )
     )
 
@@ -162,13 +156,7 @@ def save_backup_settings(folder: Path, backup: BackupSettings) -> None:
         settings = load_settings(folder)
     except SettingsError as error:
         raise BackupError(str(error)) from None
-    settings[SETTINGS_KEY] = {
-        "auto": backup.auto,
-        "auto_interval_hours": backup.auto_interval_hours,
-        "keep_daily": backup.retention.daily,
-        "keep_weekly": backup.retention.weekly,
-        "keep_monthly": backup.retention.monthly,
-    }
+    settings[SETTINGS_KEY] = {"auto": backup.auto, "scheme": backup.scheme, "pending_remote": backup.pending_remote}
     save_settings(folder, settings)
 
 
@@ -840,48 +828,27 @@ def unlock_snapshot_with_recovery_code(folder: Path, reference: str, recovery_co
     return keys.unlock_recovery_wrap(wrap, header["recipient"], recovery_code)
 
 
-# * — retention —
+# * — what to keep —
 
 
-def _buckets(moment: datetime, tz: Optional[tzinfo]) -> Dict[str, Any]:
-    local = moment.astimezone(tz)
-    year, week, _ = local.isocalendar()
-    return {"daily": local.date(), "weekly": (year, week), "monthly": (local.year, local.month)}
+def plan_retention(snapshots: Iterable[SnapshotInfo], protect: Iterable[str] = ()) -> PruneResult:
+    """Decide what the automatic scheme keeps.
 
-
-RULE_LABELS = {"daily": "giornaliera", "weekly": "settimanale", "monthly": "mensile"}
-
-
-def plan_retention(
-    snapshots: Iterable[SnapshotInfo],
-    policy: RetentionPolicy,
-    protect: Iterable[str] = (),
-    tz: Optional[tzinfo] = None,
-) -> PruneResult:
-    """Decide what to keep, like `restic forget`: for each rule, the newest
-    snapshot of each of the last N days/weeks/months that have snapshots.
-
-    Always kept: the most recent snapshot, the newest "pre-restore" one (the
-    undo of the last restore) and the ids in `protect`. Days are counted in
-    `tz` (local time by default).
+    Kept: the newest automatic copy (today's), the newest copies of the week, of the month and of the year up to
+    their limits (`TIER_KEEP`), every copy made by hand, the newest "prima di un ripristino" and the newest "prima
+    di un aggiornamento", whatever cannot be classified (a file that does not read), the ids in `protect` and the
+    most recent snapshot of all. The rest goes: the copy of yesterday that today's replaces, a fifth weekly one.
     """
     ordered = sorted(snapshots, key=_sort_key, reverse=True)
     why: Dict[str, List[str]] = {item.id: [] for item in ordered}
     if ordered:
         why[ordered[0].id].append("la più recente")
-    limits = {"daily": policy.daily, "weekly": policy.weekly, "monthly": policy.monthly}
-    for rule, limit in limits.items():
-        seen = set()
-        for item in ordered:
-            if len(seen) >= limit:
-                break
-            bucket = _buckets(item.created_at, tz)[rule]
-            if bucket not in seen:
-                seen.add(bucket)
-                why[item.id].append(RULE_LABELS[rule])
-    undo = next((item for item in ordered if item.reason == "pre-restore"), None)
-    if undo:
-        why[undo.id].append("annulla l'ultimo ripristino")
+    for reason, limit, label in (("auto", 1, "di oggi"), ("pre-restore", 1, "annulla l'ultimo ripristino"), ("pre-migration", 1, "prima dell'ultimo aggiornamento"), *((tier, TIER_KEEP[tier], REASON_LABELS[tier]) for tier in TIERS)):
+        for item in [item for item in ordered if item.reason == reason][:limit]:
+            why[item.id].append(label)
+    for item in ordered:
+        if item.reason == "manual" or item.reason not in REASONS:
+            why[item.id].append("fatta a mano" if item.reason == "manual" else "da non toccare")
     for snapshot_id in protect:
         if snapshot_id in why:
             why[snapshot_id].append("appena creata")
@@ -890,45 +857,77 @@ def plan_retention(
     return PruneResult(keep=keep, remove=remove, why={key: value for key, value in why.items() if value})
 
 
-def prune(folder: Path, policy: Optional[RetentionPolicy] = None, dry_run: bool = False, protect: Iterable[str] = ()) -> PruneResult:
-    """Delete the snapshots the retention policy no longer keeps (all of them with dry_run=False)."""
-    plan = plan_retention(list_snapshots(folder), policy or load_backup_settings(folder).retention, protect)
+def prune(folder: Path, dry_run: bool = False, protect: Iterable[str] = ()) -> PruneResult:
+    """Delete the snapshots the automatic scheme no longer keeps. What is removed is remembered for the destinations outside the device."""
+    plan = plan_retention(list_snapshots(folder), protect)
     plan.dry_run = dry_run
     if not dry_run:
+        removed = []
         for item in plan.remove:
             try:
                 item.path.unlink()
+                removed.append(item.id)
             except FileNotFoundError:
-                pass
+                removed.append(item.id)
             except OSError as error:
                 plan.failed.append((item.id, str(error)))
         _remove_unused_blobs(folder)
+        if removed:
+            backup = load_backup_settings(folder)
+            backup.pending_remote = [*backup.pending_remote, *(item for item in removed if item not in backup.pending_remote)]
+            save_backup_settings(folder, backup)
     return plan
 
 
 # * — automatic snapshots —
 
 
-def maybe_auto_snapshot(folder: Path, now: Optional[datetime] = None) -> Optional[SnapshotInfo]:
-    """The daily safety net, to call after commands that write data.
+def _cutoff(now: datetime, tz: Optional[tzinfo]) -> datetime:
+    """The latest 01:00 (local time) that is not after `now`."""
+    local = now.astimezone(tz)
+    at = local.replace(hour=AUTO_HOUR, minute=0, second=0, microsecond=0)
+    return (at if local >= at else at - timedelta(days=1)).astimezone(timezone.utc)
 
-    Cheap: reads settings.json and the file names in backups/. Only when
-    automatic backups are on, the database exists and the newest snapshot is
-    older than the interval does it create an "auto" snapshot and prune.
-    Silent: returns None when there is nothing to do and prints nothing;
-    raises BackupError only on a real failure, which the caller should show
-    as a warning without failing the command (the data is already saved).
+
+def _when(value: Optional[str]) -> Optional[datetime]:
+    try:
+        moment = datetime.fromisoformat(value) if value else None
+    except ValueError:
+        return None
+    return moment if moment is None or moment.tzinfo else moment.replace(tzinfo=timezone.utc)
+
+
+def maybe_auto_snapshot(folder: Path, now: Optional[datetime] = None, tz: Optional[tzinfo] = None) -> Optional[SnapshotInfo]:
+    """The automatic scheme, to call when the app opens and after commands that write data.
+
+    Only when automatic backups are on (the default), the database exists and today's copy is missing (none yet
+    since the last 01:00) does it make a new "of today" copy; the one of yesterday goes. A copy of the week, of
+    the month or of the year is added when 7, 28 or 365 days have passed since the last one (or since the first
+    automatic copy); each tier keeps its newest few. Copies made by hand are never touched.
+    Cheap when there is nothing to do: reads settings.json only. Returns today's new snapshot, or None;
+    raises BackupError only on a real failure, which the caller should show as a warning without failing the command.
     """
     backup = load_backup_settings(folder)
     if not backup.auto or not database_path(folder).exists():
         return None
     current = _utc(now)
-    # A snapshot "from the future" (clock changed) must not stop backups.
-    times = [created for _, created, _ in _snapshot_files(folder) if created <= current]
-    if times and current - max(times) < timedelta(hours=backup.auto_interval_hours):
-        return None
+    scheme = backup.scheme
+    made = _when(scheme.get("current"))
+    if made is not None and made <= current and made >= _cutoff(current, tz) and (backups_dir(folder) / f"{scheme.get('current_id', '')}{SNAPSHOT_SUFFIX}").exists():
+        return None  # a stamp from the future (clock changed) does not count: the copy is made again
     snapshot = create_snapshot(folder, "auto", now=current)
-    prune(folder, backup.retention, protect=[snapshot.id])
+    protect = [snapshot.id]
+    scheme["since"] = scheme.get("since") or current.isoformat()
+    for tier in TIERS:
+        last = _when(scheme.get(tier)) or _when(scheme["since"])
+        if last is None or last > current:  # no stamp, or one from the future: count from now
+            scheme[tier] = current.isoformat()
+        elif current - last >= timedelta(days=TIER_DAYS[tier]):
+            protect.append(create_snapshot(folder, tier, now=current).id)
+            scheme[tier] = current.isoformat()
+    scheme["current"], scheme["current_id"] = current.isoformat(), snapshot.id
+    save_backup_settings(folder, backup)
+    prune(folder, protect=protect)
     return snapshot
 
 

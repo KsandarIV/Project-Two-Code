@@ -6,12 +6,13 @@ risk (like 0.0.7 saying that backups can now be encrypted) keeps it.
 Version 3 (0.0.8): the Google account and the copies on Drive.
 Version 4 (0.0.9): reminders on the lock screen.
 Version 5 (0.1.1): the daily check for a new version on GitHub.
+Version 6 (0.3.1): backups kept longer (up to about 3 years), the Google account is optional.
 """
 
 from pathlib import Path
 from typing import List
 
-NOTICE_VERSION = 5
+NOTICE_VERSION = 6
 
 RISKS: List[str] = [
     "Se perdi o rompi il dispositivo senza un backup, perdi i dati.",
@@ -24,8 +25,10 @@ RISKS: List[str] = [
     "il database in chiaro sta anche sui server di quel servizio.",
     "Le notifiche dei promemoria si vedono anche a schermo bloccato: non contengono mai ciò che scrivi, "
     "ma dicono che usi un diario. Sono calcolate su questo dispositivo, senza servizi esterni.",
-    "Le istantanee (backup) conservano anche le voci che cancelli finché non scadono: "
-    "con la durata predefinita fino a circa 12 mesi. Puoi accorciarla con `zbone backup config`.",
+    "Le istantanee (backup) conservano anche le voci che cancelli finché non vengono sostituite. "
+    "Con il backup automatico, di base, restano la copia di oggi, 4 della settimana, 3 del mese e 3 dell'anno: "
+    "una voce cancellata può quindi restare nei backup fino a circa 3 anni. "
+    "Con il backup manuale decidi tu: le copie stanno nella cartella dei backup e si possono cancellare.",
 ]
 
 
@@ -37,7 +40,7 @@ def notice_text(folder: Path) -> str:
         f"  {folder}\n\n"
         "Nessuno, nemmeno chi ha creato l'app, riceve i tuoi dati. "
         "L'app non invia statistiche né segnalazioni automatiche.\n\n"
-        "Per entrare usi il tuo account Google: ZibaldOne riceve solo email e nome, "
+        "Se scegli di accedere con il tuo account Google (non è obbligatorio), ZibaldOne riceve solo email e nome, "
         "e li tiene su questo dispositivo. Su Google Drive vede solo il suo spazio nascosto, "
         "mai gli altri tuoi file, e ci mette copie cifrate solo se lo scegli tu.\n\n"
         "Una volta al giorno l'app chiede a GitHub se c'è una versione nuova: GitHub vede "

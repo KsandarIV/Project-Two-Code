@@ -19,7 +19,6 @@ from zibaldone.storage.backups import (
     BackupError,
     BackupSettings,
     KeyRequiredError,
-    RetentionPolicy,
     SnapshotInfo,
     create_snapshot,
     encrypt_existing_snapshots,
@@ -137,7 +136,7 @@ def test_unknown_files_in_backups_are_ignored(folder) -> None:
     (folder / "backups" / "appunti.txt").write_text("non mio")
     (folder / "backups" / "20261017T120000Z-zzzzzz.zbsnap").write_text("nome non valido")
     assert len(list_snapshots(folder)) == 1
-    prune(folder, RetentionPolicy(0, 0, 0))
+    prune(folder)
     assert (folder / "backups" / "appunti.txt").exists()
 
 
@@ -250,13 +249,13 @@ def test_restore_keeps_device_settings(folder) -> None:
     add_books(folder, "Dune")
     record_consent(folder, accepted=True, notice_version=1)
     snapshot = create_snapshot(folder)
-    save_backup_settings(folder, BackupSettings(auto=False, retention=RetentionPolicy(daily=3)))
+    save_backup_settings(folder, BackupSettings(auto=False))
     keys.setup_keys(folder, PASSPHRASE)
     keys_before = keys.keys_path(folder).read_bytes()
     settings_before = load_settings(folder)
     restore_snapshot(folder, snapshot.id)
     assert load_settings(folder) == settings_before
-    assert load_backup_settings(folder).retention.daily == 3
+    assert load_backup_settings(folder).auto is False
     assert keys.keys_path(folder).read_bytes() == keys_before
 
 
@@ -287,116 +286,144 @@ def test_restore_refused_while_database_is_busy(folder) -> None:
     assert len(list_snapshots(folder)) == 1
 
 
-# * — retention —
+# * — what the automatic scheme keeps —
 
 
-def synthetic(days: int, end: datetime = NOON, per_day: int = 1) -> list:
-    snapshots = []
-    for back in range(days):
-        for extra in range(per_day):
-            moment = end - timedelta(days=back, hours=extra)
-            snapshots.append(SnapshotInfo(id=f"{moment:%Y%m%dT%H%M%SZ}-000000", path=Path("x"), created_at=moment, size=1))
-    return snapshots
+def info(reason: str, days_ago: int = 0, hours: int = 0, name: str = "000000") -> SnapshotInfo:
+    moment = NOON - timedelta(days=days_ago, hours=hours)
+    return SnapshotInfo(id=f"{moment:%Y%m%dT%H%M%SZ}-{name}", path=Path("x"), created_at=moment, size=1, reason=reason)
 
 
-def kept_days(plan) -> set:
-    return {item.created_at.date().isoformat() for item in plan.keep}
+def test_the_scheme_keeps_today_the_tiers_up_to_their_limits_what_is_manual_and_what_is_unknown() -> None:
+    autos = [info("auto", back) for back in range(3)]
+    weeks = [info("week", back * 7, name="aaaaa1") for back in range(6)]
+    months = [info("month", back * 28, name="bbbbb2") for back in range(5)]
+    years = [info("year", back * 365, name="ccccc3") for back in range(5)]
+    manual = [info("manual", back, 5, name="ddddd4") for back in range(3)]
+    undo = [info("pre-restore", back, 6, name="eeeee5") for back in range(2)]
+    migration = [info("pre-migration", back, 7, name="fffff6") for back in range(2)]
+    unreadable = [info("", 9, 8, name="999999")]
+    everything = autos + weeks + months + years + manual + undo + migration + unreadable
+    plan = plan_retention(everything)
+    expected = [autos[0], *weeks[:4], *months[:3], *years[:3], *manual, undo[0], migration[0], *unreadable]
+    assert {item.id for item in plan.keep} == {item.id for item in expected}
+    assert {item.id for item in plan.remove} == {item.id for item in everything} - {item.id for item in expected}
+    assert "la più recente" in plan.why[plan.keep[0].id] and "annulla l'ultimo ripristino" in plan.why[undo[0].id]
+    protected = plan_retention(everything, protect=[autos[2].id])
+    assert autos[2].id in {item.id for item in protected.keep} and plan_retention([]).keep == []
 
 
-def test_retention_daily_weekly_monthly() -> None:
-    plan = plan_retention(synthetic(400), RetentionPolicy(daily=7, weekly=4, monthly=12), tz=UTC)
-    daily = {f"2026-10-{day}" for day in range(11, 18)}
-    weekly = {"2026-10-04", "2026-09-27"}  # Sundays ending the ISO weeks before; 10-17 and 10-11 already kept
-    monthly = {
-        "2026-09-30", "2026-08-31", "2026-07-31", "2026-06-30", "2026-05-31", "2026-04-30",
-        "2026-03-31", "2026-02-28", "2026-01-31", "2025-12-31", "2025-11-30",
-    }
-    assert kept_days(plan) == daily | weekly | monthly
-    assert len(plan.remove) == 400 - len(plan.keep)
-    assert plan.why[plan.keep[0].id][0] == "la più recente"
-
-
-def test_retention_keeps_only_newest_of_each_day_and_counts_days_with_snapshots() -> None:
-    plan = plan_retention(synthetic(3, per_day=4), RetentionPolicy(daily=7, weekly=0, monthly=0), tz=UTC)
-    assert len(plan.keep) == 3 and all(item.created_at.hour == 12 for item in plan.keep)
-    sparse = [item for index, item in enumerate(synthetic(60)) if index % 10 == 0]
-    plan = plan_retention(sparse, RetentionPolicy(daily=3, weekly=0, monthly=0), tz=UTC)
-    assert kept_days(plan) == {"2026-10-17", "2026-10-07", "2026-09-27"}
-
-
-def test_retention_always_keeps_latest_undo_and_protected() -> None:
-    snapshots = synthetic(10)
-    snapshots[5].reason = "pre-restore"
-    snapshots[8].reason = "pre-restore"
-    plan = plan_retention(snapshots, RetentionPolicy(0, 0, 0), protect=[snapshots[9].id], tz=UTC)
-    assert {item.id for item in plan.keep} == {snapshots[0].id, snapshots[5].id, snapshots[9].id}
-    assert "annulla l'ultimo ripristino" in plan.why[snapshots[5].id]
-
-
-def test_prune_deletes_files_and_dry_run_does_not(folder) -> None:
+def test_prune_deletes_the_files_remembers_them_for_the_destinations_and_dry_run_does_not(folder) -> None:
     add_books(folder, "Dune")
-    created = [create_snapshot(folder, now=NOON - timedelta(days=back)) for back in range(5)]
-    policy = RetentionPolicy(daily=2, weekly=0, monthly=0)
-    preview = prune(folder, policy, dry_run=True)
-    assert preview.dry_run and len(preview.remove) == 3
-    assert len(list_snapshots(folder)) == 5
-    done = prune(folder, policy)
-    assert [item.id for item in list_snapshots(folder)] == [created[0].id, created[1].id]
+    old_autos = [create_snapshot(folder, "auto", now=NOON - timedelta(days=back)) for back in (3, 2, 1)]
+    today = create_snapshot(folder, "auto", now=NOON)
+    hand = create_snapshot(folder, "manual", now=NOON - timedelta(days=9))
+    weeks = [create_snapshot(folder, "week", now=NOON - timedelta(days=7 * back)) for back in range(5)]
+    preview = prune(folder, dry_run=True)
+    assert preview.dry_run and {item.id for item in preview.remove} == {item.id for item in old_autos} | {weeks[4].id}
+    assert len(list_snapshots(folder)) == 10 and load_backup_settings(folder).pending_remote == []
+    done = prune(folder)
     assert not done.failed
+    assert {item.id for item in list_snapshots(folder)} == {today.id, hand.id, *(item.id for item in weeks[:4])}
+    assert set(load_backup_settings(folder).pending_remote) == {item.id for item in done.remove}
+    assert prune(folder).remove == []
 
 
 def test_pre_restore_snapshot_survives_prune(folder) -> None:
     add_books(folder, "Dune")
-    first = create_snapshot(folder, now=NOON - timedelta(days=1))
+    first = create_snapshot(folder, "auto", now=NOON - timedelta(days=1))
     undo = restore_snapshot(folder, first.id).undo
-    create_snapshot(folder)  # same day as the undo point, and newer
-    prune(folder, RetentionPolicy(daily=1, weekly=0, monthly=0))
+    create_snapshot(folder, "auto")
+    prune(folder)
     assert undo.id in {item.id for item in list_snapshots(folder)}
 
 
 # * — automatic snapshots —
 
 
-def test_auto_snapshot_interval(folder) -> None:
-    assert maybe_auto_snapshot(folder, now=NOON) is None  # no data yet
+def auto_at(folder, moment: datetime):
+    return maybe_auto_snapshot(folder, now=moment, tz=UTC)
+
+
+def reasons(folder) -> list:
+    return sorted(item.reason for item in list_snapshots(folder))
+
+
+def test_the_daily_copy_is_made_after_01_00_and_replaces_yesterdays(folder) -> None:
+    assert auto_at(folder, NOON) is None  # no data yet
     add_books(folder, "Dune")
-    first = maybe_auto_snapshot(folder, now=NOON)
+    first = auto_at(folder, NOON)
     assert first is not None and first.reason == "auto"
-    assert maybe_auto_snapshot(folder, now=NOON + timedelta(hours=23)) is None
-    second = maybe_auto_snapshot(folder, now=NOON + timedelta(hours=24))
-    assert second is not None
-    save_backup_settings(folder, BackupSettings(auto_interval_hours=2))
-    assert maybe_auto_snapshot(folder, now=NOON + timedelta(hours=25)) is None
-    assert maybe_auto_snapshot(folder, now=NOON + timedelta(hours=26)) is not None
+    assert auto_at(folder, NOON + timedelta(hours=1)) is None
+    assert auto_at(folder, NOON + timedelta(hours=12, minutes=30)) is None  # 00:30 the next day: still the copy of yesterday
+    second = auto_at(folder, NOON + timedelta(hours=13))  # 01:00
+    assert second is not None and second.id != first.id
+    assert [item.id for item in list_snapshots(folder)] == [second.id]  # overwritten, not added
+    assert auto_at(folder, NOON + timedelta(hours=14)) is None
+    assert load_backup_settings(folder).pending_remote == [first.id]
+
+
+def test_a_missing_file_or_a_stamp_from_the_future_makes_the_copy_again(folder) -> None:
+    add_books(folder, "Dune")
+    first = auto_at(folder, NOON)
+    first.path.unlink()
+    assert auto_at(folder, NOON + timedelta(hours=1)) is not None
+    backup = load_backup_settings(folder)
+    backup.scheme["current"] = (NOON + timedelta(days=1000)).isoformat()
+    save_backup_settings(folder, backup)
+    assert auto_at(folder, NOON + timedelta(hours=2)) is not None
+
+
+def test_manual_mode_makes_and_removes_nothing(folder) -> None:
+    add_books(folder, "Dune")
     save_backup_settings(folder, BackupSettings(auto=False))
-    assert maybe_auto_snapshot(folder, now=NOON + timedelta(days=30)) is None
+    assert auto_at(folder, NOON) is None and list_snapshots(folder) == []
+    hand = create_snapshot(folder, "manual", now=NOON)
+    assert auto_at(folder, NOON + timedelta(days=30)) is None
+    assert [item.id for item in list_snapshots(folder)] == [hand.id]
 
 
-def test_auto_snapshot_ignores_snapshots_from_the_future(folder) -> None:
+def test_the_scheme_over_time_makes_week_month_and_year_copies_with_their_limits(folder, monkeypatch) -> None:
+    monkeypatch.setattr(backups, "TIER_DAYS", {"week": 2, "month": 4, "year": 9})  # the same rules, faster to run
     add_books(folder, "Dune")
-    create_snapshot(folder, now=NOON + timedelta(days=1000))
-    assert maybe_auto_snapshot(folder, now=NOON) is not None
-    assert maybe_auto_snapshot(folder, now=NOON + timedelta(hours=1)) is None
+    hand = create_snapshot(folder, "manual", now=NOON)
+    for day in range(0, 31):
+        for hour in (3, 15):  # twice a day: the second does nothing
+            auto_at(folder, NOON + timedelta(days=day, hours=hour))
+        if day == 1:
+            assert reasons(folder) == ["auto", "manual"]  # nothing of the week before its days have passed
+    kept = list_snapshots(folder)
+    assert reasons(folder) == ["auto", "manual", "month", "month", "month", "week", "week", "week", "week", "year", "year", "year"]
+    assert hand.id in {item.id for item in kept}
+    newest_week = max(item.created_at for item in kept if item.reason == "week")
+    assert newest_week - min(item.created_at for item in kept if item.reason == "week") == timedelta(days=6)  # 4 weeks, 2 days apart
+    scheme = load_backup_settings(folder).scheme
+    assert set(scheme) >= {"since", "current", "current_id", "week", "month", "year"}
 
 
-def test_auto_snapshot_prunes(folder) -> None:
+def test_the_first_week_copy_comes_a_week_after_the_first_automatic_one(folder) -> None:
     add_books(folder, "Dune")
-    save_backup_settings(folder, BackupSettings(retention=RetentionPolicy(daily=2, weekly=0, monthly=0)))
-    for back in range(5, 0, -1):
-        maybe_auto_snapshot(folder, now=NOON - timedelta(days=back))
-    assert len(list_snapshots(folder)) == 2
+    auto_at(folder, NOON)
+    auto_at(folder, NOON + timedelta(days=6, hours=2))
+    assert reasons(folder) == ["auto"]
+    auto_at(folder, NOON + timedelta(days=7, hours=2))
+    assert reasons(folder) == ["auto", "week"]
 
 
 def test_backup_settings_round_trip_and_validation(folder) -> None:
     record_consent(folder, accepted=True, notice_version=1)
-    assert load_backup_settings(folder) == BackupSettings()
-    save_backup_settings(folder, BackupSettings(auto=False, auto_interval_hours=12, retention=RetentionPolicy(1, 2, 3)))
+    assert load_backup_settings(folder) == BackupSettings() and BackupSettings().auto is True
+    save_backup_settings(folder, BackupSettings(auto=False, scheme={"since": "2026-10-17T12:00:00+00:00"}, pending_remote=["a", "b"]))
     saved = load_settings(folder)
-    assert saved["backup"] == {"auto": False, "auto_interval_hours": 12, "keep_daily": 1, "keep_weekly": 2, "keep_monthly": 3}
+    assert saved["backup"] == {"auto": False, "scheme": {"since": "2026-10-17T12:00:00+00:00"}, "pending_remote": ["a", "b"]}
     assert saved["privacy"]["accepted"] is True
-    saved["backup"]["keep_daily"] = -1
+    assert load_backup_settings(folder) == BackupSettings(auto=False, scheme={"since": "2026-10-17T12:00:00+00:00"}, pending_remote=["a", "b"])
+    saved["backup"] = {"auto": True, "keep_daily": -1, "auto_interval_hours": 12, "keep_weekly": 2}  # the settings of 0.3.0 and before
     (folder / "settings.json").write_text(json.dumps(saved), encoding="utf-8")
-    with pytest.raises(BackupError, match="keep_daily"):
+    assert load_backup_settings(folder) == BackupSettings()
+    saved["backup"] = {"auto": "sì"}
+    (folder / "settings.json").write_text(json.dumps(saved), encoding="utf-8")
+    with pytest.raises(BackupError, match="auto"):
         load_backup_settings(folder)
 
 

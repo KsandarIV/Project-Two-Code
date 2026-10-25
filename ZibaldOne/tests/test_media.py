@@ -117,7 +117,7 @@ def test_encrypted_backups_seal_the_files_and_prune_what_no_snapshot_needs(isola
         store.remove_unused_media()
     newest = backups.create_snapshot(folder, now=later.created_at.replace(year=2099))
     later.path.unlink()  # as if retention had dropped it
-    backups.prune(folder, backups.RetentionPolicy(daily=5, weekly=0, monthly=0))
+    backups.prune(folder)
     assert set(backups.blob_files(folder)) == set(newest.media) | set(plain.media) and len(backups.blob_files(folder)) == 1
 
 

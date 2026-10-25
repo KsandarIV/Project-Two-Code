@@ -76,7 +76,7 @@ def test_create_list_verify_restore_and_undo() -> None:
     listed = invoke("backup", "list")
     assert first in listed.output and "manuale" in listed.output and "«prima di Emma»" in listed.output
     assert "in chiaro" in listed.output and "Cifratura:    non attiva" in listed.output
-    assert "7 giornaliere, 4 settimanali, 12 mensili" in listed.output
+    assert "4 della settimana, 3 del mese, 3 dell'anno" in listed.output
 
     verified = invoke("backup", "verify")
     assert verified.exit_code == 0 and "integra" in verified.output
@@ -122,25 +122,26 @@ def test_backup_commands_ask_for_consent_first(isolated_data_dir) -> None:
     assert not isolated_data_dir.exists()
 
 
-def test_config_and_prune(isolated_data_dir) -> None:
+def test_config_manual_mode_and_prune(isolated_data_dir) -> None:
     start_with_books("Dune")
     shown = invoke("backup", "config")
-    assert "Automatico:   sì, ogni 24 ore" in shown.output
-    changed = invoke("backup", "config", "--no-auto", "--days", "2", "--weeks", "0", "--months", "0", "--interval", "12")
+    assert "Automatico:   sì" in shown.output and "dopo l'01:00" in shown.output
+    changed = invoke("backup", "config", "--manual")
     assert changed.exit_code == 0 and "Impostazioni salvate" in changed.output
-    assert "Automatico:   no" in changed.output and "2 giornaliere, 0 settimanali, 0 mensili" in changed.output
-    settings = backups.load_backup_settings(isolated_data_dir)
-    assert (settings.auto, settings.auto_interval_hours, settings.retention.daily) == (False, 12, 2)
+    assert "Automatico:   no: le copie le fai e le cancelli tu" in changed.output and "niente viene cancellato" in changed.output
+    assert backups.load_backup_settings(isolated_data_dir).auto is False
+    assert "Automatico:   sì" in invoke("backup", "config", "--auto").output
 
     forget_automatic_snapshots(isolated_data_dir)
     noon = datetime.now(timezone.utc).replace(hour=12)
     for back in range(5):
-        backups.create_snapshot(isolated_data_dir, now=noon - timedelta(days=back))
+        backups.create_snapshot(isolated_data_dir, "auto", now=noon - timedelta(days=back))
+    backups.create_snapshot(isolated_data_dir, "manual", now=noon - timedelta(days=9))
     preview = invoke("backup", "prune", "--dry-run")
-    assert "Prova" in preview.output and len(SNAPSHOT_ID.findall(preview.output)) == 3
-    assert len(backups.list_snapshots(isolated_data_dir)) == 5
+    assert "Prova" in preview.output and len(SNAPSHOT_ID.findall(preview.output)) == 4
+    assert len(backups.list_snapshots(isolated_data_dir)) == 6
     done = invoke("backup", "prune")
-    assert done.exit_code == 0 and "Istantanee cancellate" in done.output and "Restano 2" in done.output
+    assert done.exit_code == 0 and "Istantanee cancellate" in done.output and "Restano 2" in done.output  # today's and the one made by hand
     assert "Niente da cancellare" in invoke("backup", "prune").output
 
 
@@ -178,7 +179,7 @@ def test_setup_encrypts_existing_snapshots_and_restore_asks_passphrase(isolated_
 
     verified = invoke("backup", "verify", "--all", input=f"{PASSPHRASE}\n")
     assert verified.exit_code == 0, verified.output
-    assert "Tutte le 3 istantanee sono integre" in verified.output
+    assert "Tutte le 4 istantanee sono integre" in verified.output  # two by hand, the undo point and today's automatic one
 
 
 def test_setup_needs_the_last_group_and_matching_passphrases(isolated_data_dir) -> None:
