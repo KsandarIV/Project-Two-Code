@@ -1,0 +1,31 @@
+{
+  "versione": "0.3.0",
+  "data": "2026-10-25",
+  "titolo": "La home a griglia",
+  "voci": [
+    {
+      "tipo": "nuovo",
+      "testo": "Oggi è una griglia 5×6: i riquadri si spostano e si ridimensionano con le frecce e i pulsanti."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Modelli e Collezioni per area, con la barra delle mascotte e il cambio pagina a tocco prolungato."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Impostazioni → Personalizza: la vista dei modelli si ricorda."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Il pulsante «Novità» con i brillantini, accanto al titolo di Oggi."
+    },
+    {
+      "tipo": "migliorato",
+      "testo": "L'accesso con Google è facoltativo: puoi continuare senza account."
+    },
+    {
+      "tipo": "migliorato",
+      "testo": "Il tasto indietro del telefono torna alla pagina precedente e le bozze non si perdono."
+    }
+  ]
+}

@@ -3,6 +3,16 @@
 Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), versioni [SemVer](https://semver.org/lang/it/).
 
 ## [Unreleased]
+
+## [0.3.0] — 2026-10-25
+La home a griglia.
+### Aggiunto
+- **Oggi è una griglia 5×6** con riquadri ridimensionabili e spostabili (frecce e pulsanti); `zbone home` a griglia, `home.json` v2.
+- Modelli e Collezioni per area, con la barra delle mascotte e il cambio pagina a tocco prolungato; Impostazioni → Personalizza; il pulsante «Novità».
+- Il tasto indietro del telefono, le bozze salvate e le scorciatoie ai modelli.
+### Cambiato
+- Le mascotte passano agli asset dell'app.
+- Workflow unico `release.yml`: zip Windows, APK e wheel con `SHA256SUMS`.
 ### Cambiato
 - **L'accesso con Google non è più obbligatorio** (Alex, 2026-10-25): al primo avvio si può continuare senza account e la domanda non torna; Drive resta facoltativo. Aggiornati ADR-0007, guida tester e privacy.
 
