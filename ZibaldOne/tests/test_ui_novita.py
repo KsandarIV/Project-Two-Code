@@ -36,3 +36,10 @@ def test_the_sparkles_are_dimmer_once_seen_and_on_a_wide_screen() -> None:
     seen = sparkles.sparkle_button(lambda _: None, unseen=False, wide=False)
     wide = sparkles.sparkle_button(lambda _: None, unseen=True, wide=True)
     assert lit.data["level"] > seen.data["level"] and lit.data["level"] > wide.data["level"]
+
+
+def test_the_label_is_only_decoration_and_the_star_is_the_button() -> None:
+    row = sparkles.sparkle_button(lambda _: None, unseen=True, wide=False)
+    label, star_stack = row.controls
+    assert label.content.value == "Novità" and label.on_click is None
+    assert star_stack.controls[0].on_click is not None

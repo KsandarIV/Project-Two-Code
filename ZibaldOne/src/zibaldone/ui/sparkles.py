@@ -23,8 +23,8 @@ def _level(unseen: bool, wide: bool) -> float:
     return base * (0.6 if wide else 1.0)
 
 
-def sparkle_button(on_click: Callable[[Any], None], unseen: bool, wide: bool) -> ft.Stack:
-    """The button; `twinkle` can be run on its `data` list of sparkles."""
+def sparkle_button(on_click: Callable[[Any], None], unseen: bool, wide: bool) -> ft.Row:
+    """The label «Novità» (decoration) and the star, lit alike while there is something unseen; `twinkle` runs on the row's `data`."""
     star = ft.Container(
         ft.Icon(W.icon_of("AUTO_AWESOME"), size=22, color=T.ACCENT if unseen else T.TEXT_DIM),
         width=SIZE - 10,
@@ -44,9 +44,17 @@ def sparkle_button(on_click: Callable[[Any], None], unseen: bool, wide: bool) ->
         ft.Container(ft.Icon(W.icon_of("STAR"), size=8, color=T.ACCENT), left=x, top=y, opacity=0.0, animate_opacity=ft.Animation(700, ft.AnimationCurve.EASE_IN_OUT))
         for x, y in SPOTS
     ]
-    box = ft.Stack([star, *sparks], width=SIZE, height=SIZE)
-    box.data = {"sparks": sparks, "level": _level(unseen, wide)}
-    return box
+    label = ft.Container(
+        ft.Text("Novità", size=12, color=T.ACCENT if unseen else T.TEXT_DIM),
+        padding=ft.Padding.symmetric(horizontal=10, vertical=5),
+        border_radius=SIZE,
+        bgcolor=W.fade(T.ACCENT, 0.16) if unseen else None,
+        border=ft.Border.all(1, T.ACCENT if unseen else T.BORDER),
+        shadow=ft.BoxShadow(blur_radius=14, color=W.fade(T.ACCENT, 0.5)) if unseen else None,
+    )  # only decorative: the star is the button
+    row = ft.Row([label, ft.Stack([star, *sparks], width=SIZE, height=SIZE)], spacing=2, tight=True, vertical_alignment=ft.CrossAxisAlignment.CENTER)
+    row.data = {"sparks": sparks, "level": _level(unseen, wide)}
+    return row
 
 
 def _mounted(box: ft.Control) -> bool:
@@ -56,7 +64,7 @@ def _mounted(box: ft.Control) -> bool:
         return False
 
 
-async def twinkle(page: Any, box: ft.Stack, rng: Optional[random.Random] = None) -> None:
+async def twinkle(page: Any, box: ft.Row, rng: Optional[random.Random] = None) -> None:
     """Light one random sparkle at a time until the button leaves the page."""
     rng = rng or random.Random()
     sparks: List[ft.Container] = box.data["sparks"]

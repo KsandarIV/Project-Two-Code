@@ -199,7 +199,7 @@ def screen_header(
     head.append(ft.Column(texts, spacing=2, expand=True))
     if trailing is not None:
         head.append(trailing)
-    rows: List[ft.Control] = [ft.Row(head, vertical_alignment=ft.CrossAxisAlignment.CENTER, spacing=4)]
+    rows: List[ft.Control] = [ft.Row(head, vertical_alignment=ft.CrossAxisAlignment.START if trailing is not None else ft.CrossAxisAlignment.CENTER, spacing=4)]
     if actions:
         rows.append(ft.Row(list(actions), wrap=True, spacing=8, run_spacing=8))
     return ft.Column(rows, spacing=10)
