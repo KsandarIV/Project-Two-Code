@@ -1,4 +1,4 @@
-"""Theoria (0.2.8): saved searches, with a filter on one block and no peeking at secrets."""
+"""Lente (0.2.8): saved searches, with a filter on one block and no peeking at secrets."""
 
 import pytest
 from typer.testing import CliRunner
@@ -122,3 +122,21 @@ def test_cli_save_show_and_remove(isolated_data_dir) -> None:
     assert runner.invoke(app, ["viste", "mostra", "zzz"]).exit_code == 1
     assert "tolta" in runner.invoke(app, ["viste", "togli", "in corso"]).output
     assert "Nessuna vista" in runner.invoke(app, ["viste"]).output
+
+
+def test_a_template_still_named_theoria_becomes_lente_at_open(isolated_data_dir) -> None:
+    folder = data_dir()
+    with Store.open(folder) as opened:
+        apply_install(plan_install(find_builtin_pack(V.PACK_NAME), opened), opened)
+        assert opened.get_template(V.TEMPLATE).name == "Lente"
+        old = opened.get_template(V.TEMPLATE)
+        old.name, old.description = "Theoria", "Una ricerca salvata. Theoria è lo sguardo che contempla."
+        opened.save_template(old, replace=True)
+    with Store.open(folder) as reopened:
+        renamed = reopened.get_template(V.TEMPLATE)
+        assert renamed.name == "Lente" and "Theoria" not in renamed.description and "La Lente mette a fuoco" in renamed.description
+        mine = reopened.get_template(V.TEMPLATE)
+        mine.name = "Le mie ricerche"
+        reopened.save_template(mine, replace=True)
+    with Store.open(folder) as again:
+        assert again.get_template(V.TEMPLATE).name == "Le mie ricerche"  # a name the user chose stays

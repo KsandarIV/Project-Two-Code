@@ -1,4 +1,4 @@
-"""`zbone viste …`: Theoria (0.2.8), saved searches."""
+"""`zbone viste …`: Lente (0.2.8, named Theoria until 0.3.0), saved searches."""
 
 from typing import List, Optional
 
@@ -8,7 +8,7 @@ from zibaldone.cli.common import fail, open_store
 from zibaldone.core import views as V
 from zibaldone.storage.database import StoreError
 
-view_app = typer.Typer(help="Theoria: ricerche salvate («tutti i libri in corso») da riaprire con un tocco.", no_args_is_help=False)
+view_app = typer.Typer(help="Lente: ricerche salvate («tutti i libri in corso») da riaprire con un tocco.", no_args_is_help=False)
 
 
 def _filters(view: V.View) -> str:
@@ -18,7 +18,7 @@ def _filters(view: V.View) -> str:
 
 def _views(store) -> List[V.View]:
     if store.find_template(V.TEMPLATE) is None:
-        fail(f"manca la Scuola «Theoria · Viste»: zbone pack install {V.PACK_NAME}")
+        fail(f"manca la Scuola «Lente · Viste»: zbone pack install {V.PACK_NAME}")
     return V.load_views(store)
 
 

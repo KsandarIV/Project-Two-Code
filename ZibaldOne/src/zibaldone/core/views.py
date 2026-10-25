@@ -1,4 +1,4 @@
-"""Theoria (0.2.8): saved searches, «tutti i libri in corso» one tap away.
+"""Lente (0.2.8, named Theoria until 0.3.0): saved searches, «tutti i libri in corso» one tap away.
 
 A `vista` entry keeps the filters; running it is a search plus one optional
 filter on a block, sorted by recency or by title. Secret blocks are never read:
@@ -42,7 +42,7 @@ def _text(values: Dict[str, Any], key: str) -> str:
 
 def _template_check(store: Any) -> None:
     if store.find_template(TEMPLATE) is None:
-        raise ViewError(f"manca il modello '{TEMPLATE}': installa la Scuola «Theoria · Viste» (`zbone pack install {PACK_NAME}`)")
+        raise ViewError(f"manca il modello '{TEMPLATE}': installa la Scuola «Lente · Viste» (`zbone pack install {PACK_NAME}`)")
 
 
 def _no_template(slug: str) -> ViewError:

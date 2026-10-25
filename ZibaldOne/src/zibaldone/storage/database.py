@@ -147,6 +147,8 @@ MIGRATIONS: Sequence[str] = (
 # Python steps run right after a migration, inside its transaction (method names).
 BACKFILLS: Dict[int, str] = {2: "_reindex_all", 3: "_reindex_areas"}
 AREAS_SCHEMA = 3
+# Templates of the built-in packs that changed their name: slug -> (old name, old words, new words). Applied at open.
+TEMPLATE_RENAMES = {"vista": ("Theoria", "Theoria è lo sguardo che contempla.", "La Lente mette a fuoco ciò che cerchi.", "Lente")}
 # Bump when the rules that give an entry its areas change: the index is rebuilt at open.
 # 1 — 0.2.0 (own, template, `aree` tags); 2 — 0.2.1 (people's bond and roles, template as fallback).
 AREA_RULES = "2"
@@ -245,6 +247,18 @@ class Store:
                     getattr(self, backfill)()
                 cursor.execute(f"PRAGMA user_version = {number}")
         self._prepare_indexes()
+        self._apply_template_renames()
+
+    def _apply_template_renames(self) -> None:
+        """A template still carrying its old name (Theoria, now Lente) gets the new one. A name the user changed is left alone."""
+        if self.schema_version < 1:
+            return
+        for slug, (old_name, old_words, new_words, new_name) in TEMPLATE_RENAMES.items():
+            template = self.find_template(slug)
+            if template is not None and template.name == old_name:
+                template.name = new_name
+                template.description = template.description.replace(old_words, new_words)
+                self.save_template(template, replace=True)
 
     @contextmanager
     def transaction(self) -> Iterator[sqlite3.Cursor]:
