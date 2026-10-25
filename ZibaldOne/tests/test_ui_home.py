@@ -17,7 +17,6 @@ from zibaldone.storage.database import Store  # noqa: E402
 from zibaldone.ui.app import Shell  # noqa: E402
 from zibaldone.ui.navigation import SETTINGS_KEYS, parse_route  # noqa: E402
 from zibaldone.ui.views import SCREENS  # noqa: E402
-from zibaldone.ui.views.home_layout import moved  # noqa: E402
 from zibaldone.ui.views.tiles import in_days_label  # noqa: E402
 
 
@@ -37,9 +36,8 @@ def test_routes_and_screens() -> None:
     assert {"viste", "vista"} <= set(SCREENS) and "home" in SETTINGS_KEYS
 
 
-def test_in_days_label_and_move() -> None:
+def test_in_days_label() -> None:
     assert [in_days_label(n) for n in (0, 1, 5)] == ["oggi", "domani", "tra 5 giorni"]
-    assert moved(["a", "b", "c"], 1, -1) == ["b", "a", "c"] and moved(["a", "b"], 0, -1) == ["a", "b"] and moved(["a", "b"], 1, 1) == ["a", "b"]
 
 
 def test_oggi_follows_the_layout(base: Path) -> None:  # noqa: F811
@@ -51,10 +49,10 @@ def test_oggi_follows_the_layout(base: Path) -> None:  # noqa: F811
     shown = texts(shell.body.content)
     assert "RICORRENZE" in shown and "Giulia" in shown and "compleanno · tra 3 giorni · 36 anni" in shown
     assert "OBIETTIVI" in shown and any(text.startswith("Salute · tra 20 giorni") or "tra 20 giorni · 40%" in text for text in shown)
-    home_log.save_layout(base, ["obiettivi", "ricorrenze"])
+    home_log.save_layout(base, home.from_list(["obiettivi", "ricorrenze"]))
     shell.start("/oggi")
     shown = texts(shell.body.content)
-    assert shown.index("I TRE MOMENTI") < shown.index("OBIETTIVI") < shown.index("RICORRENZE")
+    assert shown.index("OBIETTIVI") < shown.index("RICORRENZE") < shown.index("I TRE MOMENTI")  # the moments sit under the grid
     assert "PENSIERO DEL GIORNO" not in shown and "Pensiero del giorno" not in shown
     assert "LE VOCI DI OGGI" in shown
 
@@ -73,7 +71,7 @@ def test_view_tile_and_screens(base: Path) -> None:  # noqa: F811
     assert "Vista salvata." in shell.ctx.toasts and "Persone Marco" in texts(shell.body.content)
     with Store.open(base) as store:
         view_id = next(entry.id for entry in store.list_entries(template="vista"))
-    home_log.save_layout(base, [f"vista:{view_id}", "citazione"])
+    home_log.save_layout(base, home.from_list([f"vista:{view_id}", "citazione"]))
     shell.start("/oggi")
     shown = texts(shell.body.content)
     assert "VISTA: PERSONE MARCO" in shown and "Marco" in shown and "Apri la vista" in shown
@@ -89,21 +87,43 @@ def test_view_tile_and_screens(base: Path) -> None:  # noqa: F811
     assert "VISTA: PERSONE MARCO" not in texts(shell.body.content)
 
 
-def test_home_settings_move_hide_show_reset(base: Path) -> None:  # noqa: F811
+def _tip(shell: Shell, tooltip: str, nth: int = 0) -> ft.IconButton:
+    return [item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == tooltip][nth]
+
+
+def test_home_grid_edit_mode_move_resize_hide_add_order_reset(base: Path) -> None:  # noqa: F811
     shell = Shell(FakePage(), base)
     shell.start("/organon/home")
-    assert home_log.load_layout(base) == list(home.TILES)
-    up = [item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Sposta su" and not item.disabled]
-    click(up[0])  # «citazione» goes above «promemoria»
-    assert home_log.load_layout(base)[:2] == ["citazione", "promemoria"]
-    hide = [item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Nascondi"]
-    click(hide[0])
-    assert "citazione" not in home_log.load_layout(base)
-    click(button(shell.body.content, "Mostra"))
-    assert home_log.load_layout(base)[-1] == "citazione"
+    click(button(shell.body.content, "Modifica la home"))
+    assert shell.current.path == "/oggi" and "Modifica la home" in texts(shell.body.content)
+    assert home_log.load_layout(base) == home.default_layout()
+    click(_tip(shell, "Meno largo", 3))  # abitudini 3x1 -> 2x1
+    assert next(p for p in home_log.load_layout(base) if p.key == "abitudini").w == 2
+    click(_tip(shell, "A destra", 3))  # now it fits one cell to the right
+    assert next(p for p in home_log.load_layout(base) if p.key == "abitudini").col == 1
+    click(_tip(shell, "Più largo", 3))  # 3 wide would touch ricorrenze: a notice, nothing changes
+    assert next(p for p in home_log.load_layout(base) if p.key == "abitudini").w == 2 and any("sopra" in t for t in shell.ctx.toasts)
+    click(_tip(shell, "Nascondi", 0))
+    assert "promemoria" not in {p.key for p in home_log.load_layout(base)}
+    click(button(shell.body.content, "Aggiungi"))  # the first hidden one comes back where there is room
+    assert "promemoria" in {p.key for p in home_log.load_layout(base)}
+    click(button(shell.body.content, "Ordina"))
+    assert home_log.load_layout(base) == home.compact(home_log.load_layout(base))
     click(button(shell.body.content, "Ripristina"))
     click(button(shell.ctx.page.dialogs[-1], "Ripristina"))
-    assert home_log.load_layout(base) == list(home.TILES)
+    assert home_log.load_layout(base) == home.default_layout()
+    click(button(shell.body.content, "Fine"))
+    assert "Modifica la home" not in texts(shell.body.content)
+
+
+def test_the_grid_follows_the_width_and_drops_empty_rows(base: Path) -> None:  # noqa: F811
+    from zibaldone.ui.views import home_grid
+
+    phone = Shell(FakePage(width=412), base)
+    phone.start("/oggi")
+    stack = next(item for item in walk(phone.body.content) if isinstance(item, ft.Stack) and (item.width or 0) > 100)
+    assert stack.width <= 412 - 32 and all(box.left + box.width <= stack.width + 0.01 for box in stack.controls)
+    assert home_grid.grid_width(phone.ctx) == 412 - 32
 
 
 def test_bilancio_tile_is_closed_without_the_pin(base: Path, monkeypatch) -> None:  # noqa: F811
