@@ -15,6 +15,7 @@ from zibaldone.ui import theme as T
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route
+from zibaldone.ui.views import backup_file
 
 
 def _brand() -> ft.Control:
@@ -96,6 +97,11 @@ def sign_in(ctx: AppContext, route: Route) -> ft.Control:
             return
         ctx.advance()
 
+    def restored() -> None:
+        services.skip_login(ctx.folder)  # the data came back: no account is asked for now
+        services.save_ui_settings(ctx.folder, diario_suggested=True)  # nor the base packs: they came with the data
+        ctx.go("/oggi")
+
     why = ft.ExpansionTile(
         title=ft.Text("A che cosa serve l'accesso?", size=14, color=T.TEXT),
         controls=[
@@ -127,6 +133,7 @@ def sign_in(ctx: AppContext, route: Route) -> ft.Control:
                     spacing=8,
                 )
             ),
+            ft.Row([W.text_button("Ho già un backup", lambda _: backup_file.import_file(ctx, restored), icon="SETTINGS_BACKUP_RESTORE")], alignment=ft.MainAxisAlignment.END),
             ft.Row(
                 [
                     W.secondary_button("Continua senza account", without_account),

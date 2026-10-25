@@ -19,7 +19,7 @@ from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import SETTINGS_PARTS, Route, section, settings_part
-from zibaldone.ui.views import anonymizer, home_layout, personalize
+from zibaldone.ui.views import anonymizer, backup_file, home_layout, personalize
 from zibaldone.ui.views.cloud import CloudScreen
 from zibaldone.ui.views.common import not_found
 
@@ -290,26 +290,57 @@ class MnemosyneScreen:
         self.button = W.primary_button("Crea ora", self.create, icon="BACKUP_OUTLINED")
 
     def build(self) -> ft.Control:
-        controls: List[ft.Control] = [_header(self.ctx, "mnemosyne", "istantanee complete dei tuoi dati, come i commit")]
+        controls: List[ft.Control] = [_header(self.ctx, "mnemosyne", "istantanee complete dei tuoi dati")]
         api = services.backups_api()
         if api is None:
             controls.append(W.coming_soon("I backup di Mnemosyne arrivano a breve. Intanto i tuoi dati restano nella cartella dati."))
             return W.screen(controls, self.ctx.wide)
         self.api = api
+        controls.append(self.mode_panel())
         controls.append(self.encryption_panel())
         if services.encryption_on(self.ctx.folder):
             from zibaldone.ui.views.vault import secrets_panel
 
             controls.append(secrets_panel(self.ctx))
+        importer = W.secondary_button("Importa da un file", lambda _: backup_file.import_file(self.ctx), icon="FILE_DOWNLOAD_OUTLINED")
         if self.ctx.wide:
-            maker = ft.Row([self.note, self.button], spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER)
+            maker = ft.Row([self.note, self.button, importer], spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER)
         else:
-            maker = ft.Column([self.note, ft.Row([self.button], alignment=ft.MainAxisAlignment.END)], spacing=10)
+            maker = ft.Column([self.note, ft.Row([importer, self.button], alignment=ft.MainAxisAlignment.END, wrap=True, spacing=8)], spacing=10)
         controls.append(W.panel(maker, padding=14))
         controls.append(W.section_label("Le istantanee"))
         controls.append(self.list_column)
         self.reload(update=False)
         return W.screen(controls, self.ctx.wide)
+
+    def mode_panel(self) -> ft.Control:
+        """Automatic or by hand: what each one does, said plainly."""
+        settings = self.api.load_backup_settings(self.ctx.folder)
+        explain = ft.Column(spacing=4)
+
+        def text(auto: bool) -> List[ft.Control]:
+            if auto:
+                return [
+                    W.body("Automatico: ogni giorno, dopo l'1:00 e con l'app aperta, la copia di oggi prende il posto di quella di ieri."),
+                    W.caption("In più restano 4 copie della settimana, 3 del mese e 3 dell'anno. Quelle che fai a mano non si toccano."),
+                ]
+            return [W.body("Manuale: non nasce nessuna copia da sola. Le fai e le cancelli tu, con «Crea ora»."), W.caption("Se non fai nessuna copia, in caso di guaio non c'è niente da riportare.")]
+
+        explain.controls = text(settings.auto)
+
+        def changed(event: Any) -> None:
+            try:
+                updated = self.api.load_backup_settings(self.ctx.folder)
+                updated.auto = bool(event.control.value)
+                self.api.save_backup_settings(self.ctx.folder, updated)
+            except Exception as problem:
+                self.ctx.toast(f"Non riesco a salvare la scelta: {cm.error_text(problem)}", error=True)
+                return
+            explain.controls = text(updated.auto)
+            self.ctx.update(explain)
+
+        switch = ft.Switch(label="Copie automatiche", value=settings.auto, on_change=changed, active_color=T.ACCENT)
+        return W.panel(ft.Column([switch, explain], spacing=8), padding=14)
 
     def encryption_panel(self) -> ft.Control:
         keys = services.keys_api()
@@ -369,7 +400,11 @@ class MnemosyneScreen:
             texts.append(ft.Text(row.problem, size=12, color=T.ERROR))
         return W.panel(
             ft.Row(
-                [ft.Icon(ft.Icons.LOCK_OUTLINE if row.encrypted else ft.Icons.HISTORY, color=T.ACCENT, size=22), ft.Column(texts, spacing=2, expand=True), W.caption(row.id[-6:])],
+                [
+                    ft.Icon(ft.Icons.LOCK_OUTLINE if row.encrypted else ft.Icons.HISTORY, color=T.ACCENT, size=22),
+                    ft.Column(texts, spacing=2, expand=True),
+                    W.icon_button("FILE_UPLOAD_OUTLINED", lambda _, snapshot_id=row.id: backup_file.export_snapshot(self.ctx, snapshot_id), "Salva in un file di backup", color=T.TEXT_DIM),
+                ],
                 spacing=12,
                 vertical_alignment=ft.CrossAxisAlignment.CENTER,
             ),
