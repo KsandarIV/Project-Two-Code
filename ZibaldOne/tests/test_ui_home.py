@@ -1,4 +1,4 @@
-"""0.2.8 screens: the home from its layout, the tiles, Theoria · Viste and Impostazioni · La tua home."""
+"""0.2.8 screens: the home from its layout, the tiles, Lente · Viste and Impostazioni · La tua home."""
 
 from datetime import timedelta
 from pathlib import Path
@@ -61,7 +61,7 @@ def test_oggi_follows_the_layout(base: Path) -> None:  # noqa: F811
 def test_view_tile_and_screens(base: Path) -> None:  # noqa: F811
     shell = Shell(FakePage(), base)
     shell.start("/viste")
-    button(shell.body.content, "Installa «Theoria · Viste»")
+    button(shell.body.content, "Installa «Lente · Viste»")
     seed(base, shell.ctx.now().date())
     shell.start("/viste")
     click(button(shell.body.content, "Nuova vista"))

@@ -1,4 +1,4 @@
-"""Theoria · Viste (0.2.8): saved filters over the entries, run on demand and shown as tiles in Oggi."""
+"""Lente · Viste (0.2.8): saved filters over the entries, run on demand and shown as tiles in Oggi."""
 
 from typing import Any, Callable, List
 
@@ -37,13 +37,13 @@ def _install(ctx: AppContext) -> Callable[[Any], None]:
             with ctx.store() as store:
                 pack = find_builtin_pack(V.PACK_NAME)
                 if pack is None:
-                    raise ValueError("il pacchetto «Theoria · Viste» non è ancora in questa versione")
+                    raise ValueError("il pacchetto «Lente · Viste» non è ancora in questa versione")
                 apply_install(plan_install(pack, store), store)
         except (StoreError, ValueError) as problem:
             ctx.toast(str(problem), error=True)
             return
         ctx.data_changed()
-        ctx.toast("Theoria · Viste installato.")
+        ctx.toast("Lente · Viste installato.")
         ctx.refresh()
 
     return install
@@ -106,7 +106,7 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
         ready = installed(store)
         views = V.load_views(store) if ready else []
         templates = store.list_templates() if ready else []
-    header = W.screen_header("Viste", "Theoria", "filtri salvati sulle tue voci, da aprire o da tenere in Oggi", on_back=ctx.back)
+    header = W.screen_header("Viste", "Lente", "filtri salvati sulle tue voci, da aprire o da tenere in Oggi", on_back=ctx.back)
     if not ready:
         return W.screen(
             [
@@ -114,8 +114,8 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
                 W.panel(
                     ft.Column(
                         [
-                            W.body("Salva un filtro (modello, area, testo, un blocco) e riaprilo quando vuoi, o mettilo in Oggi. Arriva con la Scuola «Theoria · Viste»."),
-                            ft.Row([W.primary_button("Installa «Theoria · Viste»", _install(ctx), icon="DOWNLOAD")], alignment=ft.MainAxisAlignment.END),
+                            W.body("Salva un filtro (modello, area, testo, un blocco) e riaprilo quando vuoi, o mettilo in Oggi. Arriva con la Scuola «Lente · Viste»."),
+                            ft.Row([W.primary_button("Installa «Lente · Viste»", _install(ctx), icon="DOWNLOAD")], alignment=ft.MainAxisAlignment.END),
                         ],
                         spacing=10,
                     ),
@@ -156,7 +156,7 @@ def build_results(ctx: AppContext, route: Route) -> ft.Control:
             problem = ""
         except V.ViewError as error:
             found, problem = [], str(error)
-    controls: List[ft.Control] = [W.screen_header(view.name, "Theoria", summary(view), on_back=ctx.back)]
+    controls: List[ft.Control] = [W.screen_header(view.name, "Lente", summary(view), on_back=ctx.back)]
     if problem:
         controls.append(W.caption(problem))
     rows = [vm.entry_row(entry, templates[entry.template], today) for entry in found if entry.template in templates]

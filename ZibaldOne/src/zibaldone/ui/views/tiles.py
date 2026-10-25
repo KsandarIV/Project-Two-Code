@@ -124,7 +124,7 @@ def view_tile(ctx: AppContext, store: Any, view_id: str, today: date) -> Optiona
     try:
         found = run_view(store, view)
     except ViewError as problem:
-        return _tile(f"Vista: {view.name}", "Theoria", [W.caption(str(problem))])
+        return _tile(f"Vista: {view.name}", "Lente", [W.caption(str(problem))])
     templates = {template.slug: template for template in store.list_templates()}
     rows: List[ft.Control] = []
     for entry in found[:LIMIT]:
@@ -135,4 +135,4 @@ def view_tile(ctx: AppContext, store: Any, view_id: str, today: date) -> Optiona
     if not rows:
         rows = [W.caption("Nessuna voce corrisponde, per ora.")]
     footer = W.text_button(f"Vedi tutti ({len(found)})" if len(found) > LIMIT else "Apri la vista", lambda _: ctx.go(f"/viste/{view.id}"), icon="ARROW_FORWARD")
-    return _tile(f"Vista: {view.name}", "Theoria", rows, footer)
+    return _tile(f"Vista: {view.name}", "Lente", rows, footer)
