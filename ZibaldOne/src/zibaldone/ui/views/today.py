@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Optional
 import flet as ft
 
 from zibaldone.storage import home_log
-from zibaldone.ui import services
+from zibaldone.ui import novita, services, sparkles
 from zibaldone.ui import theme as T
 from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
@@ -16,6 +16,17 @@ from zibaldone.ui.views import tiles as tiles_
 from zibaldone.ui.views.common import choose_template
 
 TOP_TILES = ("promemoria", "citazione")
+
+
+def _news_button(ctx: AppContext) -> Optional[ft.Control]:
+    """The sparkling «Novità» button at the other end of the title; None when there are no notes."""
+    releases = novita.load_releases()
+    if not releases:
+        return None
+    button = sparkles.sparkle_button(lambda _: ctx.go("/novita"), novita.has_unseen(ctx.folder, releases), ctx.wide)
+    if ctx.page is not None and hasattr(ctx.page, "run_task"):
+        ctx.page.run_task(sparkles.twinkle, ctx.page, button)
+    return button
 
 
 def build(ctx: AppContext, route: Route) -> ft.Control:
@@ -50,7 +61,7 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     if model.streak_label:
         actions.append(W.pill(model.streak_label, T.ACCENT_2, icon="LOCAL_FIRE_DEPARTMENT"))
     controls: List[ft.Control] = [
-        W.screen_header(info.label, info.nickname, f"{model.greeting}, è {model.date_label}.", actions=actions),
+        W.screen_header(info.label, info.nickname, f"{model.greeting}, è {model.date_label}.", actions=actions, trailing=_news_button(ctx)),
     ]
     if shortcut_row is not None:
         controls.append(shortcut_row)

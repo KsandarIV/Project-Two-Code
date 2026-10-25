@@ -10,7 +10,7 @@ import flet as ft
 
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route
-from zibaldone.ui.views import areas, collections, entries, entry_form, finance, graph, habits, onboarding, people, saved_views, settings, stats, template_editor, templates, today
+from zibaldone.ui.views import areas, collections, entries, entry_form, finance, graph, habits, novita_view, onboarding, people, saved_views, settings, stats, template_editor, templates, today
 
 Builder = Callable[[AppContext, Route], ft.Control]
 
@@ -29,6 +29,7 @@ SCREENS: Dict[str, Builder] = {
     "theoria": stats.build,
     "finanze": finance.build,
     "abitudini": habits.build,
+    "novita": novita_view.build,
     "viste": saved_views.build_list,
     "vista": saved_views.build_results,
     "aree": areas.build_overview,

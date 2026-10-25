@@ -188,6 +188,7 @@ def screen_header(
     subtitle: str = "",
     on_back: Handler = None,
     actions: Sequence[ft.Control] = (),
+    trailing: Optional[ft.Control] = None,
 ) -> ft.Control:
     texts: List[ft.Control] = [title_with_nickname(title, nickname)]
     if subtitle:
@@ -196,6 +197,8 @@ def screen_header(
     if on_back is not None:
         head.append(ft.IconButton(icon=ft.Icons.ARROW_BACK, icon_color=T.TEXT, tooltip="Indietro", on_click=on_back))
     head.append(ft.Column(texts, spacing=2, expand=True))
+    if trailing is not None:
+        head.append(trailing)
     rows: List[ft.Control] = [ft.Row(head, vertical_alignment=ft.CrossAxisAlignment.CENTER, spacing=4)]
     if actions:
         rows.append(ft.Row(list(actions), wrap=True, spacing=8, run_spacing=8))
