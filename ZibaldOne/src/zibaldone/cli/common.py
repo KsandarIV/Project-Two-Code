@@ -61,14 +61,14 @@ def warn(message: str) -> None:
     typer.secho(f"Attenzione: {message}", fg=typer.colors.YELLOW, err=True)
 
 
-LOGIN_INTRO = """Per usare ZibaldOne entra con il tuo account Google.
-Serve solo a sapere chi sei su questo dispositivo: ZibaldOne riceve la tua email e il tuo nome,
-e li tiene qui. Il diario resta su questo dispositivo; Google Drive lo usi solo se lo scegli.
+LOGIN_INTRO = """Puoi entrare con il tuo account Google, ma non è obbligatorio.
+Serve a sapere chi sei su questo dispositivo e, se vuoi, a tenere copie cifrate su Google Drive:
+ZibaldOne riceve la tua email e il tuo nome, e li tiene qui. Senza account usi tutto in locale.
 """
 
 
 def ensure_account() -> None:
-    """At first start (and after signing out), ask to sign in with Google.
+    """At first start, offer to sign in with Google; «no» means solo locale and the question is not asked again.
 
     Only when this copy of the app has a Google client configured: during
     development it works locally without an account. Backups, export and
@@ -84,8 +84,9 @@ def ensure_account() -> None:
         return
     typer.echo(LOGIN_INTRO)
     if not ask_yes_no("Aprire adesso il browser per entrare con Google?"):
-        typer.echo("Va bene: quando vuoi, entra con `zbone account login`.")
-        raise typer.Exit(code=1)
+        account.skip_login(folder)
+        typer.echo("Va bene: continui solo in locale. Quando vuoi, entra con `zbone account login`.\n")
+        return
     from zibaldone.cli.account_cmd import run_login  # account_cmd imports this module
 
     run_login(open_browser=True)
