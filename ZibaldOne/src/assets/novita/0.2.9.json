@@ -5,19 +5,19 @@
   "voci": [
     {
       "tipo": "nuovo",
-      "testo": "Primo avvio con un solo pulsante: «Inizia con i pacchetti di base» installa Diario, Aree, Persone, Collezioni, Io, Askesis e Theoria e porta a Oggi. Dal terminale: zbone pack install --base."
+      "testo": "Primo avvio con un solo pulsante: «Inizia con i pacchetti di base» installa Diario, Aree, Persone, Collezioni, Io, Askesis e Theoria e ti porta a Oggi."
     },
     {
       "tipo": "corretto",
-      "testo": "«1 giorno di fila» e «1 giorno alla scadenza» (prima «1 giorni»)."
+      "testo": "«1 giorno di fila» e «1 giorno alla scadenza» (prima si leggeva «1 giorni»)."
     },
     {
       "tipo": "corretto",
-      "testo": "L'errore di viste salva quando manca il modello dice quale pacchetto installare."
+      "testo": "Se salvi una vista e manca il modello, l'errore dice quale pacchetto installare."
     },
     {
       "tipo": "migliorato",
-      "testo": "Tolto l'avviso «I tuoi vecchi diari · in arrivo»: l'import dalla vecchia Journal App non serve, la fase 0.2 è chiusa."
+      "testo": "Tolto l'avviso «I tuoi vecchi diari · in arrivo»: l'importazione dalla vecchia Journal App non serve più."
     }
   ]
 }

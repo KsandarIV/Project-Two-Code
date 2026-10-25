@@ -5,27 +5,23 @@
   "voci": [
     {
       "tipo": "nuovo",
-      "testo": "Theoria · Viste: ricerche salvate con un nome (modello, area, testo e un filtro su un blocco, per esempio «tutti i libri in corso»), ordinate per data o titolo. Schermata /viste e zbone viste (mostra, salva, togli). Le voci segrete non compaiono mai."
+      "testo": "Viste (Theoria): salva una ricerca con un nome, per esempio «tutti i libri in corso», e riaprila quando vuoi. Le voci segrete non compaiono mai."
     },
     {
       "tipo": "nuovo",
-      "testo": "Home su misura: Oggi si compone dei riquadri che scegli (promemoria, citazione, aree, abitudini, ricorrenze, obiettivi, bilancio e le tue viste), in questo ordine. Impostazioni → «La tua home» per riordinare, nascondere e ripristinare; zbone home."
+      "testo": "Home su misura: scegli i riquadri di Oggi (promemoria, citazione, aree, abitudini, ricorrenze, obiettivi, bilancio e le tue viste), riordinali, nascondili o ripristina l'ordine da Impostazioni → La tua home."
     },
     {
       "tipo": "nuovo",
-      "testo": "Ricorrenze: i compleanni dei prossimi 30 giorni in Oggi (zbone ricorrenze)."
+      "testo": "Ricorrenze: in Oggi i compleanni dei prossimi 30 giorni."
     },
     {
       "tipo": "nuovo",
-      "testo": "Obiettivi di tutte le aree con avanzamento e giorni alla scadenza, in Oggi e nella pagina dell'area (zbone area obiettivi)."
+      "testo": "Obiettivi di tutte le aree, con avanzamento e giorni alla scadenza, in Oggi e nella pagina dell'area."
     },
     {
       "tipo": "nuovo",
       "testo": "Il bilancio in Oggi: saldo e mese in corso con il PIN; a conti chiusi solo «Apri con il PIN»."
-    },
-    {
-      "tipo": "migliorato",
-      "testo": "«In arrivo»: escono le righe della 0.2.8; le aree senza novità previste non mostrano l'elenco."
     }
   ]
 }

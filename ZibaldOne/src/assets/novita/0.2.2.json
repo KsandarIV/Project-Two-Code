@@ -5,31 +5,23 @@
   "voci": [
     {
       "tipo": "nuovo",
-      "testo": "Legami tra persone: Genitori, Fratelli e sorelle, Colleghi e Conosce nella Persona; ogni legame vale nei due sensi (i genitori di Luca hanno Luca tra i figli). Chi incontri nello stesso Simposio si lega da solo."
+      "testo": "Legami tra persone: genitori, fratelli e sorelle, colleghi, conoscenti. Ogni legame vale nei due sensi."
     },
     {
       "tipo": "nuovo",
-      "testo": "Albero di famiglia (/albero): generazione per generazione intorno a te, dai ruoli (madre, nonno, figlia …) e dai Genitori e Fratelli scritti nelle persone."
+      "testo": "Albero di famiglia: generazione per generazione intorno a te, costruito dai ruoli e dai legami che hai scritto."
     },
     {
       "tipo": "nuovo",
-      "testo": "Rete (/rete, /rete/<area>): chi conosce chi, disegnato come il grafo e toccabile; per area, così Lavoro mostra chi lavora con chi."
+      "testo": "La rete: chi conosce chi, disegnato come un grafo che puoi toccare e filtrare per area. In Lavoro vedi chi lavora con chi."
     },
     {
       "tipo": "nuovo",
-      "testo": "Contatti in comune e forza del legame (0–10, da quanto spesso e quanto di recente vi sentite, e dall'umore degli incontri): nella pagina della persona, nella rete e in zbone persona show."
-    },
-    {
-      "tipo": "nuovo",
-      "testo": "zbone persona albero, zbone persona rete [NOME] [--area], zbone persona lega ANNA genitore LUCA."
+      "testo": "Contatti in comune e forza del legame (da 0 a 10), calcolata da quanto spesso e di recente vi sentite e dall'umore degli incontri."
     },
     {
       "tipo": "migliorato",
-      "testo": "Agorà · Persone 1.3.0: L'Altro ha i quattro blocchi dei legami. Le voci di prima restano valide."
-    },
-    {
-      "tipo": "migliorato",
-      "testo": "\"Tutto di Marco\" non elenca più le altre persone tra le voci che lo collegano: sono nei suoi Legami."
+      "testo": "La pagina di una persona non elenca più le altre persone tra le voci collegate: le trovi nei suoi legami."
     }
   ]
 }

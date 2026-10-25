@@ -5,23 +5,15 @@
   "voci": [
     {
       "tipo": "nuovo",
-      "testo": "Askesis · Abitudini: pacchetto con i rituali (*Askesis*: ogni giorno o più volte a settimana, con quantità e traguardo facoltativi) e le pratiche (*Praxis*: un giorno segnato). Hexis, l'abitudine a testo libero di Delfi · Io, resta com'è."
+      "testo": "Il modello Askesis · Abitudini: rituali che ripeti ogni giorno o più volte a settimana, con quantità e traguardo facoltativi, e pratiche da segnare un giorno alla volta."
     },
     {
       "tipo": "nuovo",
-      "testo": "Serie di giorni di fila (o di settimane che raggiungono le volte volute); oggi non ancora segnato non spezza la serie. Il tono è neutro: numeri, mai rimproveri."
+      "testo": "Serie di giorni di fila (o di settimane che raggiungono le volte volute): se oggi non hai ancora segnato, la serie non si spezza. Solo numeri, mai rimproveri."
     },
     {
       "tipo": "nuovo",
-      "testo": "Riquadro «Abitudini di oggi» in Oggi, schermata /abitudini (serie attuale e più lunga, ultimi 7 giorni, nuovo rituale) e riga nella pagina dell'area."
-    },
-    {
-      "tipo": "nuovo",
-      "testo": "zbone abitudini (da fare oggi e serie), abitudini segna NOME [QUANTITÀ] [--giorno], togli, serie."
-    },
-    {
-      "tipo": "migliorato",
-      "testo": "«In arrivo»: le abitudini escono; gli obiettivi con traguardi slittano alla 0.2.8."
+      "testo": "In Oggi il riquadro «Abitudini di oggi»; la schermata Abitudini mostra serie attuale, la più lunga e gli ultimi 7 giorni; e una riga nella pagina dell'area."
     }
   ]
 }

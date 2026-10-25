@@ -5,39 +5,27 @@
   "voci": [
     {
       "tipo": "nuovo",
-      "testo": "Voto a mezzi punti: l'opzione half del voto a stelle (4,5); nel modulo la stella si tocca intera, poi mezza, poi si toglie."
+      "testo": "Voto a mezze stelle (4,5): tocca la stella una volta per intera, due per metà, tre per toglierla."
     },
     {
       "tipo": "nuovo",
-      "testo": "Recensione con spoiler: l'opzione spoiler del testo lungo nasconde il testo nella pagina della voce finché non lo apri."
+      "testo": "Recensioni con spoiler: il testo resta nascosto finché non lo apri."
     },
     {
       "tipo": "nuovo",
-      "testo": "Blocco Preferito (*Philia*): un cuore per le cose a cui tieni di più."
+      "testo": "Il cuore per i tuoi preferiti, e l'inizio e la fine di una lettura o di un film che si segnano da soli quando cambi lo stato."
     },
     {
       "tipo": "nuovo",
-      "testo": "Inizio e fine dell'avanzamento: si scrivono da soli quando lo stato cambia, e si leggono nella pagina della voce."
+      "testo": "Nelle Collezioni: i riquadri Preferiti, Lista dei desideri e Tempo speso (ore di lettura, visione o gioco)."
     },
     {
       "tipo": "nuovo",
-      "testo": "Collezioni: i riquadri *Preferiti*, *Lista dei desideri* e *Tempo speso* (somma dei blocchi in ore o minuti per raccolta)."
-    },
-    {
-      "tipo": "nuovo",
-      "testo": "Importa da un file (Collezioni, o zbone importa FONTE FILE [--prova]): libri da Goodreads, film da Letterboxd, anime da MyAnimeList, videogiochi da Steam, con anteprima, date del file e senza doppioni."
+      "testo": "Importa le tue raccolte da un file: libri da Goodreads, film da Letterboxd, anime da MyAnimeList, videogiochi da Steam. Vedi un'anteprima prima di confermare e non entrano doppioni."
     },
     {
       "tipo": "migliorato",
-      "testo": "Museion · Collezioni 1.2.0: mezzi punti nel voto, *Preferito*, *Recensione con spoiler* e le ore (*Ore di lettura*, *Ore di visione*, *Ore di gioco*) dove servono. Le voci di prima restano valide."
-    },
-    {
-      "tipo": "migliorato",
-      "testo": "Store.add_entry ha stamp=False per chi porta voci con date proprie."
-    },
-    {
-      "tipo": "corretto",
-      "testo": "Un test dei backup con gli allegati dipendeva dall'ordine di due istantanee fatte nello stesso secondo."
+      "testo": "I modelli delle collezioni hanno i nuovi campi; le voci di prima restano valide."
     }
   ]
 }
