@@ -4,8 +4,9 @@ from typing import Any, List, Optional
 
 import flet as ft
 
+from zibaldone.core.areas import area_label
 from zibaldone.core.blocks import BLOCK_TYPES
-from zibaldone.core.brand import NOMENCLATURE
+from zibaldone.core.brand import NOMENCLATURE, mascot_for
 from zibaldone.core.templates import slugify
 from zibaldone.storage.database import StoreError
 from zibaldone.ui import theme as T
@@ -28,6 +29,7 @@ class TemplateEditor:
         self.error = W.error_text()
         self.title_menu: Optional[ft.Dropdown] = None
         self.color_row = ft.Row(spacing=8, wrap=True, run_spacing=8)
+        self.area_badge = ft.Row(spacing=8, vertical_alignment=ft.CrossAxisAlignment.CENTER)
         self.dirty = False
 
     # — layout —
@@ -51,7 +53,7 @@ class TemplateEditor:
             vm.area_options(),
             state.area or vm.NO_AREA,
             label="Area della vita delle sue voci",
-            on_select=lambda e: self._set("area", vm.area_from_option(e.control.value)),
+            on_select=self.pick_area,
             expand=True,
         )
         icons = list(vm.TEMPLATE_ICONS)
@@ -69,6 +71,7 @@ class TemplateEditor:
             expand=True,
         )
         self._draw_colors()
+        self._draw_area()
         look = W.panel(
             ft.Column(
                 [
@@ -80,7 +83,7 @@ class TemplateEditor:
                         run_spacing=12,
                     ),
                     ft.Row([area_menu]),
-                    ft.Column([W.caption("Colore"), self.color_row], spacing=6),
+                    ft.Row([ft.Column([W.caption("Colore"), self.color_row], spacing=6, expand=True), self.area_badge], vertical_alignment=ft.CrossAxisAlignment.START),
                 ],
                 spacing=14,
             )
@@ -105,6 +108,16 @@ class TemplateEditor:
     def _set(self, attribute: str, value: Any) -> None:
         setattr(self.state, attribute, value or "")
         self.dirty = True
+
+    def _draw_area(self) -> None:
+        """The mascot and name of the template's area, next to the colour; nothing without an area."""
+        area = self.state.area
+        self.area_badge.controls = [W.mascot_avatar(mascot_for(area), 36), W.body(area_label(area), size=13)] if area else []
+
+    def pick_area(self, event: Any) -> None:
+        self._set("area", vm.area_from_option(event.control.value))
+        self._draw_area()
+        self.ctx.update(self.area_badge)
 
     def _draw_colors(self) -> None:
         swatches = []

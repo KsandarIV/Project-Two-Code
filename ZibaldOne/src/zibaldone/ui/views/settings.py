@@ -7,7 +7,7 @@ from typing import Any, List, Optional
 import flet as ft
 
 from zibaldone import __version__
-from zibaldone.core.brand import APP_MOTTO, APP_NAME, APP_TAGLINE, NOMENCLATURE
+from zibaldone.core.brand import APP_MOTTO, APP_NAME, APP_TAGLINE, MASCOTS, NOMENCLATURE
 from zibaldone.core.privacy import notice_text
 from zibaldone.core.reminders import MOMENT_LABELS, ReminderConfig, keep_frequency, thin_out
 from zibaldone.storage.paths import folder_usage, human_size
@@ -287,7 +287,7 @@ class MnemosyneScreen:
         self.ctx = ctx
         self.list_column = ft.Column(spacing=8, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
         self.note = W.text_input("", label="Nota (facoltativa)", hint_text="per esempio: prima di riorganizzare i modelli", expand=True)
-        self.button = W.primary_button("Crea ora", self.create, icon="ADD_A_PHOTO_OUTLINED")
+        self.button = W.primary_button("Crea ora", self.create, icon="BACKUP_OUTLINED")
 
     def build(self) -> ft.Control:
         controls: List[ft.Control] = [_header(self.ctx, "mnemosyne", "istantanee complete dei tuoi dati, come i commit")]
@@ -473,14 +473,7 @@ def about(ctx: AppContext) -> ft.Control:
             W.panel(
                 ft.Row(
                     [
-                        ft.Container(
-                            ft.Text(mascot.name[0], size=22, weight=ft.FontWeight.W_700, color=T.readable_on(mascot.color)),
-                            width=48,
-                            height=48,
-                            bgcolor=mascot.color,
-                            border_radius=24,
-                            alignment=ft.Alignment.CENTER,
-                        ),
+                        W.mascot_avatar(next((item for item in MASCOTS if item.name == mascot.name), None), 48),
                         ft.Column(
                             [
                                 ft.Row([ft.Text(mascot.name, size=16, weight=ft.FontWeight.W_600, color=T.TEXT), badge], spacing=8, wrap=True),

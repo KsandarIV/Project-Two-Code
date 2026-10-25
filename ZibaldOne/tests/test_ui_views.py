@@ -784,3 +784,30 @@ def test_finance_screen_installs_asks_the_pin_and_adds_up(ready: Path, monkeypat
         assert F.load(store, lambda value: vault_of(shell.ctx).reveal(value, shell.ctx.now())).movements[0].amount == Decimal("12.50")
     click(button(shell.body.content, "Richiudi"))
     assert any("I conti sono chiusi" in text for text in texts(shell.body.content))
+
+
+def test_about_shows_the_mascot_drawings(ready: Path) -> None:
+    shell = Shell(FakePage(), ready)
+    shell.start("/organon/info")
+    images = [item for item in walk(shell.body.content) if isinstance(item, ft.Image)]
+    assert len(images) >= 8  # the eight drawn mascots; Zibby keeps its initial until it has a drawing
+
+
+def test_backup_button_does_not_use_a_camera(ready: Path) -> None:
+    shell = Shell(FakePage(), ready)
+    shell.start("/organon/mnemosyne")
+    create = button(shell.body.content, "Crea ora")
+    assert create.icon == ft.Icons.BACKUP_OUTLINED
+
+
+def test_template_editor_shows_the_area_mascot(ready: Path) -> None:
+    shell = Shell(FakePage(), ready)
+    shell.start("/modelli/nuovo")
+    assert "Salute" not in texts(shell.body.content)  # no area yet, no badge
+    menu = next(item for item in walk(shell.body.content) if isinstance(item, ft.Dropdown) and item.label == "Area della vita delle sue voci")
+    menu.value = "salute"
+    menu.on_select(SimpleNamespace(control=menu))
+    assert "Salute" in texts(shell.body.content)
+    from zibaldone.core.brand import mascot_for
+
+    assert any(isinstance(item, ft.Container) and (item.tooltip or "").startswith(mascot_for("salute").name) for item in walk(shell.body.content))
