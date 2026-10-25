@@ -1,0 +1,39 @@
+{
+  "versione": "0.2.3",
+  "data": "2026-10-17",
+  "titolo": "Segreti cifrati",
+  "voci": [
+    {
+      "tipo": "nuovo",
+      "testo": "Blocco Segreto (*Echemythia*): un testo cifrato con la tua chiave prima di essere salvato, con la stessa cifratura dei backup. Due livelli: *protetto* (si apre con il PIN o la passphrase) e *massimo* (solo con la passphrase o il codice di recupero)."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "PIN dei segreti (6–12 cifre): apre solo il livello protetto e si toglie da solo dopo 5 errori di fila."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "App: i segreti chiusi con Apri nella pagina della voce, che si richiudono da soli dopo 5 minuti; nel modulo un campo segreto lasciato vuoto resta com'è; il riquadro Segreti · Arcana in Impostazioni · Mnemosyne (PIN, apri e chiudi)."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Nuova Scuola Adyton · Segreti (segreti): *A se stesso*, il diario segreto, e *Ippocrate*, le note mediche."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "zbone segreti (stato), segreti pin [--togli], segreti apri [ID]."
+    },
+    {
+      "tipo": "migliorato",
+      "testo": "Agorà · Persone 1.4.0: L'Altro ha Indirizzo (protetto), Documenti e Salute (massimo). Le voci di prima restano valide."
+    },
+    {
+      "tipo": "migliorato",
+      "testo": "I segreti restano fuori da ricerca, collegamenti, statistiche, esportazioni e anonimizzatore: ovunque si legge «🔒 cifrato». zbone entry show non li mostra; entry add li chiede senza farli vedere."
+    },
+    {
+      "tipo": "migliorato",
+      "testo": "«In arrivo» in Personale: lo sblocco con l'impronta, più avanti."
+    }
+  ]
+}

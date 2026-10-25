@@ -1,0 +1,27 @@
+{
+  "versione": "0.2.6",
+  "data": "2026-10-24",
+  "titolo": "Finanze",
+  "voci": [
+    {
+      "tipo": "nuovo",
+      "testo": "Oikonomia · Finanze: pacchetto con conti (*Oikos*), movimenti (*Chrematistica*), budget (*Giusto mezzo*), obiettivi di risparmio (*Formica*), debiti e crediti con le persone (*Schuld*), spese ricorrenti condivise (*Koinonia*) e liste della spesa (*Emporio*)."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Il bilancio (/finanze, da Aree → Finanze): saldo, mese per categoria con i budget, obiettivi, debiti e crediti, spese condivise da registrare, liste della spesa; Spesa ed Entrata rapide. Gli importi si leggono solo dopo il PIN."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "zbone finanze (riepilogo), finanze spesa, entrata, debiti, salda, ricorrenti [--registra]."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Opzione format (importo o saldo) dei blocchi segreti: l'importo si normalizza (1.234,50 → 1234.50) prima di cifrare."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Le mascotte disegnate da Alex (SVG) negli avatar."
+    }
+  ]
+}
