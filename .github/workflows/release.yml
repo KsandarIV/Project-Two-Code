@@ -209,7 +209,13 @@ jobs:
           else
             unset FLET_ANDROID_SIGNING_KEY_STORE_PASSWORD FLET_ANDROID_SIGNING_KEY_PASSWORD FLET_ANDROID_SIGNING_KEY_ALIAS
           fi
-          flet build apk --yes --build-version "$VERSION" --build-number "$BUILD_NUMBER"
+          # Gradle scarica le distribuzioni Python per ABI in parallelo e a volte ne legge una corrotta (0.3.2: due volte di fila, su ABI diverse): senza parallelismo e con qualche tentativo, i download riusciti restano sul runner.
+          export GRADLE_OPTS="${GRADLE_OPTS:-} -Dorg.gradle.parallel=false"
+          for attempt in 1 2 3; do
+            flet build apk --yes --build-version "$VERSION" --build-number "$BUILD_NUMBER" && break
+            if [ "$attempt" = 3 ]; then exit 1; fi
+            echo "::warning::build dell'APK non riuscita (tentativo $attempt), riprovo"
+          done
           mkdir -p dist
           APK=$(find build/apk -name '*.apk' | head -n 1)
           if [ -z "$APK" ]; then echo "::error::flet build non ha prodotto un APK"; exit 1; fi
