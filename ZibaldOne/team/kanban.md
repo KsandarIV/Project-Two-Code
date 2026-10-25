@@ -1,9 +1,11 @@
-# ZibaldOne: kanban e sprint (2026-10-25)
+# ZibaldOne: kanban e sprint
+
+Aggiornato 2026-10-25 · Lo tiene l'Orchestratore (nessun thread dedicato). Copia di lavoro qui; sul PC c'è il ramo `docs/kanban` (non unito, non pushato) con la prima versione.
 
 Colonne: **Backlog** · **In corso** · **In revisione** · **Fatto**. Un task fermo in attesa di Alex è **🔒 Bloccato** (con il motivo).
 Thread: Frontend (`ui/`), Backend (core, cloud, cli, storage, test), DevOps/SecOps (`.github/`, `.gitignore`), Git master (merge, tag, worktree), Vibe Coding (versione, CHANGELOG, docs).
 Fonti: `team/feature-e-prossimi-passi.md`, `docs/tecnica/roadmap.md`, `team/google-drive-auth.md`, `team/handoffs/0.2.9-piano.md` e le richieste di Alex in chat. Regole: una versione = una capacità (ADR-0010); push e tag solo con l'ok esplicito di Alex; merge uno alla volta.
-Lo stato di ogni riga è quello che risulta dai documenti, non l'ho riprovato sull'app. Il contenuto delle versioni 0.3.x e 0.4.0 è una proposta.
+Lo stato di ogni riga è quello che risulta dai documenti e dai thread, non l'ho riprovato sull'app. Il contenuto delle versioni 0.3.x e 0.4.0 è una proposta.
 
 ## Sprint 0.2.9 (corrente): fix residui
 Obiettivo: versione per i tester senza regressioni nelle schermate toccate da Alex.
@@ -11,14 +13,20 @@ Obiettivo: versione per i tester senza regressioni nelle schermate toccate da Al
 | Task | Thread | Stato | Dipende da |
 |---|---|---|---|
 | Patch 0.2.9 (plurali, errore viste, `install_base_packs`, onboarding, docs) | Backend, Frontend, Vibe Coding | In revisione (patch `finale/` pronte) | merge in `main` |
+| Mascotte come asset (assets-mascotte) | Frontend | In revisione (patch pronta) | — |
+| Accesso facoltativo (login-facoltativo) | Frontend, Backend | In revisione (patch pronta) | — |
+| File Novità per le versioni 0.2.0–0.2.9 e test | Vibe Coding | In revisione (patch `novita/` pronta) | accesso facoltativo |
+| Pulsante Novità (brillantini accanto a «Hic et nunc») | Frontend | In corso | file Novità in `main` |
+| Carosello delle aree dentro Modelli (nona scheda per i modelli senza area) | Frontend | In revisione (patch `carosello-aree`, dopo assets-mascotte e login-facoltativo) | assets-mascotte, accesso facoltativo |
+| Impostazioni di personalizzazione (sezione con vista predefinita del carosello) | Frontend | In corso | carosello |
+| Carosello in Collezioni (tipi di collezione al posto delle aree, sfondo col colore dell'icona) | Frontend | In corso | carosello Modelli |
 | Merge 0.2.9 in `main` e tag `zibaldone-v0.2.9` | Git master | Backlog 🔒 tag e push solo con ok esplicito di Alex | patch 0.2.9 |
-| Tasto indietro del telefono: torna alla schermata precedente | Frontend | Backlog | — |
+| Tasto indietro del telefono (area → pagina 9 → Oggi → uscita) | Frontend | Backlog | carosello |
 | Bozza salvata al tasto indietro (non si perde il testo) | Frontend | Backlog | tasto indietro |
 | Modelli con icona invertita: correggere | Frontend | Backlog | — |
 | Collezioni come pagine figlie (navigazione e indietro) | Frontend | Backlog | tasto indietro |
 | Scorciatoie ai modelli in home | Frontend | Backlog | — |
 | Versioni nei pacchetti Scuole (campo versione e aggiornamento) | Backend | Backlog | — |
-| Carosello delle aree dentro Modelli: trascinando a destra o a sinistra cambia area, come il cambio di desktop su Arch Linux | Frontend | Backlog | — |
 | Barra con le 8 mascotte in fondo come scorciatoia tra le aree | Frontend | Backlog | carosello |
 | Test per i fix sopra | Backend | Backlog | i fix UI |
 
@@ -26,6 +34,7 @@ Obiettivo: versione per i tester senza regressioni nelle schermate toccate da Al
 | Task | Thread | Stato | Dipende da |
 |---|---|---|---|
 | `release.yml`: zip Windows, APK e wheel con `SHA256SUMS`, «prerelease» fino alla 1.0 | DevOps/SecOps | Backlog | 0.2.9 in `main`; repo pubblico per Releases |
+| Eseguibile Windows (piano pronto in `.patches/exe-windows`) | thread eseguibile | 🔒 Bloccato: attende 4 decisioni di Alex | decisioni |
 | Repo pubblico, licenza, protezione del ramo `main`, segreti | Alex | Backlog 🔒 solo Alex | decisione sulla licenza |
 | Nota di versione, CHANGELOG, guida tester | Vibe Coding | Backlog | release.yml |
 | Tag e push | Git master | Backlog 🔒 ok esplicito di Alex | tutto sopra |
@@ -43,7 +52,7 @@ Obiettivo: versione per i tester senza regressioni nelle schermate toccate da Al
 | Task | Thread | Stato | Dipende da |
 |---|---|---|---|
 | Client OAuth di Google, utenti di test, keystore Android | Alex | Backlog 🔒 solo Alex | — |
-| Accesso Google per Drive: obbligatorio o «continua solo in locale»? | Backend, Frontend | Backlog 🔒 decisione di Alex (ADR-0007) | decisione |
+| Accesso Google per Drive: obbligatorio o «continua solo in locale»? | Backend, Frontend | In revisione: accesso facoltativo in patch; resta da confermare per Drive (ADR-0007) | decisione di Alex |
 | Google in produzione o in test (token a 7 giorni) | Backend | Backlog 🔒 decisione di Alex | decisione |
 | Token in chiaro su Android e Linux: spazio protetto del sistema | Backend, DevOps/SecOps | Backlog | prima della 1.0 |
 | APK installato su telefono; flusso OAuth loopback su Android | Frontend, DevOps/SecOps | Backlog | client OAuth |
@@ -68,10 +77,12 @@ Obiettivo: versione per i tester senza regressioni nelle schermate toccate da Al
 
 ## Decisioni di Alex ancora aperte
 1. Home 5×6 ridimensionabile: versione in cui metterla.
-2. Accesso Google obbligatorio o facoltativo; Google in produzione o in test.
+2. Accesso Google obbligatorio o facoltativo per Drive; Google in produzione o in test.
 3. Firma di Windows (a pagamento).
 4. Licenza e repository pubblico.
 5. Capacità della 0.4.0.
+6. Le 4 decisioni sull'eseguibile Windows (nel suo thread).
+7. Pulizia di 5 worktree vecchi segnati come eliminabili (la decide Alex, la esegue il Git master).
 
 ## Non verificato
-Stato reale dei fix UI e delle patch 0.2.9 sul PC; se i thread di WhatsApp e Drive hanno già prodotto codice; l'assegnazione di versione dei task fuori roadmap è una mia proposta.
+Stato reale delle patch e dei fix UI sul PC; se i thread di WhatsApp e Drive hanno già prodotto codice; l'assegnazione di versione dei task fuori roadmap è una proposta.
