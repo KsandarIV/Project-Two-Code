@@ -1,0 +1,31 @@
+{
+  "versione": "0.3.2",
+  "data": "2026-10-25",
+  "titolo": "Aree multiple e icona",
+  "voci": [
+    {
+      "tipo": "nuovo",
+      "testo": "Un modello può stare in più aree: scegli le mascotte nell'editor. Senza area sta in Generale."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "L'icona di ZibaldOne, nell'app e nell'eseguibile Windows."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Scegli la cartella dei file di backup e i pacchetti da installare al primo avvio."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Home: sblocca il lucchetto, trascina i riquadri, aggiungine o toglili. In Kosmesis vedi l'anteprima e accendi o spegni ogni riquadro."
+    },
+    {
+      "tipo": "migliorato",
+      "testo": "Il carosello si gira trascinando di lato, con la pagina che si muove sotto il dito."
+    },
+    {
+      "tipo": "corretto",
+      "testo": "Il tasto indietro non esce più dall'app, le mascotte riempiono la larghezza della home, riccio e lupo ridisegnati."
+    }
+  ]
+}

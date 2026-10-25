@@ -4,6 +4,23 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.3.2] — 2026-10-25
+Aree multiple, icona dell'app e correzioni dopo la prova su Android.
+### Aggiunto
+- **Aree multiple per i modelli**: un modello può stare in più aree, scelte con i chip delle mascotte nell'editor. Un modello senza area sta in Generale: l'area non si indovina più dalla categoria.
+- **Icona di ZibaldOne** nell'app e nell'eseguibile Windows (le quattro proposte in `docs/brand/icona`, predefinita la C).
+- **Cartella dei file di backup**: si sceglie al primo avvio (o da Mnemosyne) e ogni backup diventa lì un file `.zbbackup`; l'importazione resta.
+- **Pacchetti scelti al primo avvio**: l'elenco di tutti i pacchetti, con quelli di base già spuntati.
+- **Home**: lucchetto per spostare i riquadri trascinandoli (quelli veri, non un elenco di scritte), «Aggiungi un riquadro» e «Togli da Oggi»; fissi su Oggi restano promemoria, pensiero del giorno, i tre momenti e le otto aree. Kosmesis mostra l'anteprima della home e gli interruttori per accendere e spegnere ogni riquadro.
+### Cambiato
+- **Carosello**: si gira con un trascinamento laterale (niente più tocco lungo), la pagina segue il dito e la nuova scivola dentro.
+- Le mascotte e i pulsanti «Le otto aree» e «Fai il check-in» occupano tutta la larghezza della home.
+- Riccio con quattro aculei lungo il dorso; lupo rifatto (muso frontale con il collo di pelo, senza sorriso).
+### Corretto
+- Il tasto indietro di Android non esce più dall'app da ogni pagina (da provare sul telefono).
+- Installare un pacchetto dalle Scuole non riporta più la pagina in alto.
+- Lente: il pulsante «Provala con degli esempi» si trova anche in Modelli, sotto Viste.
+
 ## [0.3.1] — 2026-10-25
 Solo correzioni, dopo la prova su Android.
 ### Cambiato
