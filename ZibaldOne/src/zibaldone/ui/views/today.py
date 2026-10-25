@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 
 import flet as ft
 
+from zibaldone.core import views as V
 from zibaldone.storage import home_log
 from zibaldone.ui import novita, services, sparkles
 from zibaldone.ui import theme as T
@@ -11,11 +12,12 @@ from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route, section
-from zibaldone.ui.views import habits
+from zibaldone.ui.views import habits, home_layout
 from zibaldone.ui.views import tiles as tiles_
 from zibaldone.ui.views.common import choose_template
 
 TOP_TILES = ("promemoria", "citazione")
+ARRANGE_KEY = "oggi_riordina"
 
 
 def _news_button(ctx: AppContext) -> Optional[ft.Control]:
@@ -45,6 +47,7 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
             "obiettivi": lambda: tiles_.goals_tile(ctx, store, today),
             "bilancio": lambda: tiles_.balance_tile(ctx, store, now),
         }
+        view_names = {item.id: item.name for item in V.load_views(store)} if store.find_template(V.TEMPLATE) is not None else {}
         tiles: Dict[str, Optional[ft.Control]] = {}
         for key in layout:  # only what the layout shows is worked out
             if key.startswith("vista:"):
@@ -65,17 +68,35 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     ]
     if shortcut_row is not None:
         controls.append(shortcut_row)
-    # shortcut: the three moments sit before the first tile that is not the reminder or the quote; a layout cannot move them
-    moments_done = False
-    for key in layout:
-        if key not in TOP_TILES and not moments_done:
-            controls.append(_moments(ctx, model))
-            moments_done = True
-        block = _tile(ctx, key, model, tiles)
-        if block is not None:
-            controls.append(block)
-    if not moments_done:
+    arranging = bool(ctx.memory.get(ARRANGE_KEY))
+
+    def toggle_arranging(_: Any) -> None:
+        ctx.memory[ARRANGE_KEY] = not arranging
+        ctx.refresh()
+
+    controls.append(ft.Row([W.text_button("Fine" if arranging else "Riordina i riquadri", toggle_arranging, icon="CHECK" if arranging else "DRAG_INDICATOR")], alignment=ft.MainAxisAlignment.END))
+    if arranging:
+        shown = [key for key in layout if not key.startswith("vista:") or key.split(":", 1)[1] in view_names]
+
+        def save(order: List[str]) -> None:
+            home_log.save_layout(ctx.folder, order)
+            ctx.refresh()
+
+        controls.append(W.caption("Tieni premuto il quadratino di un riquadro e trascinalo dove vuoi. Gli altri si spostano."))
+        controls.append(home_layout.reorder_list(ctx, shown, view_names, save))
         controls.append(_moments(ctx, model))
+    else:
+        # shortcut: the three moments sit before the first tile that is not the reminder or the quote; a layout cannot move them
+        moments_done = False
+        for key in layout:
+            if key not in TOP_TILES and not moments_done:
+                controls.append(_moments(ctx, model))
+                moments_done = True
+            block = _tile(ctx, key, model, tiles)
+            if block is not None:
+                controls.append(block)
+        if not moments_done:
+            controls.append(_moments(ctx, model))
     controls.append(W.section_label("Le voci di oggi"))
     if model.entries:
         for row in model.entries:

@@ -30,6 +30,31 @@ def label_of(key: str, view_names: Dict[str, str]) -> str:
     return LABELS.get(key, key)
 
 
+ROW_HEIGHT = 52
+
+
+def reorder_list(ctx: AppContext, shown: List[str], view_names: Dict[str, str], save: Callable[[List[str]], None], trailing: Callable[[str], ft.Control] = lambda key: ft.Container()) -> ft.Control:
+    """The tiles of Oggi as a list to drag into a new order; `save` gets the new order of keys."""
+
+    def reorder(event: Any) -> None:
+        tiles = list(shown)
+        tiles.insert(event.new_index, tiles.pop(event.old_index))
+        save(tiles)
+
+    def row(key: str) -> ft.Control:
+        return ft.Container(
+            ft.Row([W.body(label_of(key, view_names), expand=True), trailing(key)], vertical_alignment=ft.CrossAxisAlignment.CENTER),
+            padding=ft.Padding.symmetric(horizontal=12, vertical=4),
+            bgcolor=T.PANEL,
+            border_radius=T.RADIUS_SMALL,
+            key=key,
+        )
+
+    order = ft.ReorderableListView([row(key) for key in shown], on_reorder=reorder, show_default_drag_handles=True, item_extent=ROW_HEIGHT)
+    order.height = ROW_HEIGHT * len(shown)
+    return order
+
+
 def build(ctx: AppContext) -> ft.Control:
     part = settings_part("home")
     with ctx.store() as store:
@@ -42,11 +67,6 @@ def build(ctx: AppContext) -> ft.Control:
         home_log.save_layout(ctx.folder, tiles)
         ctx.refresh()
 
-    def reorder(event: Any) -> None:
-        tiles = list(shown)
-        tiles.insert(event.new_index, tiles.pop(event.old_index))
-        save(tiles)
-
     def switch(key: str, visible: bool) -> ft.Switch:
         def changed(event: Any) -> None:
             save(shown + [key] if event.control.value else [item for item in shown if item != key])
@@ -58,17 +78,7 @@ def build(ctx: AppContext) -> ft.Control:
         ctx.toast("La home è tornata com'era all'inizio.")
         ctx.refresh()
 
-    def row(key: str, visible: bool) -> ft.Control:
-        return ft.Container(
-            ft.Row([W.body(label_of(key, view_names), expand=True, dim=not visible), switch(key, visible)], vertical_alignment=ft.CrossAxisAlignment.CENTER),
-            padding=ft.Padding.symmetric(horizontal=12, vertical=4),
-            bgcolor=T.PANEL,
-            border_radius=T.RADIUS_SMALL,
-            key=key,
-        )
-
-    order = ft.ReorderableListView([row(key, True) for key in shown], on_reorder=reorder, show_default_drag_handles=True, item_extent=52)
-    order.height = 52 * len(shown)
+    order = reorder_list(ctx, shown, view_names, save, lambda key: switch(key, True))
     controls: List[ft.Control] = [
         W.screen_header(part.nickname, part.label, part.description, on_back=ctx.back),
         W.caption("«I tre momenti» e «Le voci di oggi» restano sempre. Tieni premuto il quadratino di un riquadro e trascinalo per cambiarne l'ordine."),

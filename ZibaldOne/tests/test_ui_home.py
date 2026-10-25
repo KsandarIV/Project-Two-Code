@@ -125,3 +125,15 @@ def test_bilancio_tile_is_closed_without_the_pin(base: Path, monkeypatch) -> Non
     shell.start("/oggi")
     shown = texts(shell.body.content)
     assert "BILANCIO" in shown and "Apri con il PIN" in shown and not any("1.000" in text for text in shown)
+
+
+def test_oggi_can_be_reordered_by_dragging_right_there(base: Path) -> None:  # noqa: F811
+    shell = Shell(FakePage(width=412), base)
+    shell.start("/oggi")
+    click(button(shell.body.content, "Riordina i riquadri"))
+    order = next(item for item in walk(shell.body.content) if isinstance(item, ft.ReorderableListView))
+    order.on_reorder(SimpleNamespace(old_index=2, new_index=0))  # «aree» goes first
+    assert home_log.load_layout(base)[0] == "aree"
+    assert any(isinstance(item, ft.ReorderableListView) for item in walk(shell.body.content))  # still arranging
+    click(button(shell.body.content, "Fine"))
+    assert not any(isinstance(item, ft.ReorderableListView) for item in walk(shell.body.content))
