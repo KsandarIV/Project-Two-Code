@@ -160,7 +160,7 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
             controls.append(ft.Row([_icon_tile(ctx, row) for row in rows], wrap=True, spacing=6, run_spacing=6))
         else:
             controls.append(ft.ResponsiveRow([_template_tile(ctx, row, pinned, pin) for row in rows], spacing=10, run_spacing=10))
-    return carousel.page_body(W.screen(controls, ctx.wide), _page_bar(page, choose), _page_color(page), step)
+    return carousel.page_body(W.screen(controls, ctx.wide), _page_bar(page, choose), _page_color(page), step, ctx)
 
 
 # * — export —

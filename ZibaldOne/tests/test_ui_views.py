@@ -946,9 +946,10 @@ def test_pack_list_does_not_show_pack_version_numbers(ready: Path) -> None:
 
 
 def swipe(detector: ft.GestureDetector, dx: float) -> None:
-    """A long press, then a drag of `dx` pixels, as the device reports it (positions at the start and at the end)."""
-    detector.on_long_press_start(SimpleNamespace(global_position=SimpleNamespace(x=200.0)))
-    detector.on_long_press_end(SimpleNamespace(global_position=SimpleNamespace(x=200.0 + dx)))
+    """A sideways drag of `dx` pixels, as the device reports it: some updates, then the end."""
+    for _ in range(4):
+        detector.on_horizontal_drag_update(SimpleNamespace(primary_delta=dx / 4))
+    detector.on_horizontal_drag_end(SimpleNamespace())
 
 
 def test_models_sit_in_area_pages_and_back_goes_to_the_general_one_first(ready: Path) -> None:
@@ -963,7 +964,7 @@ def test_models_sit_in_area_pages_and_back_goes_to_the_general_one_first(ready: 
     assert shell.ctx.back_hook is None
 
 
-def test_a_long_press_and_drag_changes_the_area_page_in_a_loop(ready: Path) -> None:
+def test_a_sideways_drag_changes_the_area_page_in_a_loop(ready: Path) -> None:
     shell = Shell(FakePage(), ready)
     shell.start("/modelli")
     detector = next(item for item in walk(shell.body.content) if isinstance(item, ft.GestureDetector))
