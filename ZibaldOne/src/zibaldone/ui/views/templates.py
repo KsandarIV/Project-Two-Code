@@ -21,7 +21,7 @@ GENERAL = ""  # the ninth page: templates with no area
 
 
 def _pages() -> List[str]:
-    return [GENERAL] + [area.key for area in AREA_LIST]
+    return carousel.centered(GENERAL, [area.key for area in AREA_LIST])
 
 
 def _page_color(page: str) -> str:

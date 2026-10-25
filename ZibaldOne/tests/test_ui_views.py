@@ -921,6 +921,12 @@ def test_pack_list_does_not_show_pack_version_numbers(ready: Path) -> None:
     assert not any(text.startswith("versione ") for text in texts(shell.body.content))
 
 
+def swipe(detector: ft.GestureDetector, dx: float) -> None:
+    """A long press, then a drag of `dx` pixels, as the device reports it (positions at the start and at the end)."""
+    detector.on_long_press_start(SimpleNamespace(global_position=SimpleNamespace(x=200.0)))
+    detector.on_long_press_end(SimpleNamespace(global_position=SimpleNamespace(x=200.0 + dx)))
+
+
 def test_models_sit_in_area_pages_and_back_goes_to_the_general_one_first(ready: Path) -> None:
     shell = Shell(FakePage(), ready)
     shell.start("/modelli")
@@ -937,17 +943,14 @@ def test_a_long_press_and_drag_changes_the_area_page_in_a_loop(ready: Path) -> N
     shell = Shell(FakePage(), ready)
     shell.start("/modelli")
     detector = next(item for item in walk(shell.body.content) if isinstance(item, ft.GestureDetector))
-    detector.on_long_press_move_update(SimpleNamespace(offset_from_origin=SimpleNamespace(x=-120)))
-    detector.on_long_press_end(None)
-    assert shell.ctx.memory["modelli_area"] == "personale"
+    swipe(detector, -120)
+    assert shell.ctx.memory["modelli_area"] == "sociale"  # the general page sits in the middle
     detector = next(item for item in walk(shell.body.content) if isinstance(item, ft.GestureDetector))
-    detector.on_long_press_move_update(SimpleNamespace(offset_from_origin=SimpleNamespace(x=120)))
-    detector.on_long_press_end(None)
+    swipe(detector, 120)
     assert shell.ctx.memory["modelli_area"] == ""
     detector = next(item for item in walk(shell.body.content) if isinstance(item, ft.GestureDetector))
-    detector.on_long_press_move_update(SimpleNamespace(offset_from_origin=SimpleNamespace(x=120)))
-    detector.on_long_press_end(None)
-    assert shell.ctx.memory["modelli_area"] == "svago"
+    swipe(detector, 120)
+    assert shell.ctx.memory["modelli_area"] == "famiglia"
 
 
 def test_the_view_of_the_models_is_saved_from_the_personalize_page(ready: Path) -> None:
@@ -976,6 +979,5 @@ def test_collections_have_pages_per_kind_with_the_collection_colour_and_back_to_
     shell.back()
     assert shell.ctx.memory["collezioni_pagina"] == "" and "Dune" not in texts(shell.body.content)
     detector = next(item for item in walk(shell.body.content) if isinstance(item, ft.GestureDetector))
-    detector.on_long_press_move_update(SimpleNamespace(offset_from_origin=SimpleNamespace(x=-120)))
-    detector.on_long_press_end(None)
+    swipe(detector, -120)
     assert shell.ctx.memory["collezioni_pagina"] != ""

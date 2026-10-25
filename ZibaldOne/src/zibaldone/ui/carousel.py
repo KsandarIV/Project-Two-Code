@@ -29,19 +29,28 @@ def bar_item(face: ft.Control, color: str, label: str, selected: bool, choose: C
 
 def page_body(content: ft.Control, items: List[ft.Control], color: str, step: Callable[[int], None]) -> ft.Control:
     """`content` in a tinted page with the bar `items` fixed under it; `step(±1)` is called on a long press and drag."""
-    drag: Dict[str, float] = {"dx": 0.0}
+    origin: Dict[str, float] = {}
 
-    def moved(event: Any) -> None:
-        drag["dx"] = event.offset_from_origin.x
+    def x_of(event: Any) -> Optional[float]:
+        position = getattr(event, "global_position", None)
+        return getattr(position, "x", None)
 
-    def released(_: Any) -> None:
-        dx, drag["dx"] = drag["dx"], 0.0
+    def pressed(event: Any) -> None:
+        start = x_of(event)
+        if start is not None:
+            origin["x"] = start
+
+    def released(event: Any) -> None:
+        end, start = x_of(event), origin.pop("x", None)
+        if end is None or start is None:
+            return
+        dx = end - start
         if dx <= -SWIPE_DISTANCE:
             step(1)
         elif dx >= SWIPE_DISTANCE:
             step(-1)
 
-    pages = ft.GestureDetector(content=content, on_long_press_move_update=moved, on_long_press_end=released, expand=True)
+    pages = ft.GestureDetector(content=content, on_long_press_start=pressed, on_long_press_end=released, expand=True)
     bar = ft.Container(
         ft.Row(items, alignment=ft.MainAxisAlignment.SPACE_AROUND, spacing=2, scroll=ft.ScrollMode.AUTO),
         padding=ft.Padding.symmetric(horizontal=8, vertical=6),
@@ -64,3 +73,9 @@ def hook_back(ctx: Any, home: str, current: str, go_home: Callable[[], None]) ->
         return True
 
     return back
+
+
+def centered(home: str, others: List[str]) -> List[str]:
+    """The pages in order, with the home one in the middle: half of the others before it, half after."""
+    half = len(others) // 2
+    return [*others[:half], home, *others[half:]]

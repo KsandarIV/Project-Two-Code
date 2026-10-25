@@ -31,7 +31,7 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
             )
         )
         return W.screen(controls, ctx.wide)
-    pages = [ALL] + [group.slug for group in groups]
+    pages = carousel.centered(ALL, [group.slug for group in groups])
     page = ctx.memory.get("collezioni_pagina", ALL)
     if page not in pages:
         page = ALL
