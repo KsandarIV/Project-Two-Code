@@ -14,6 +14,7 @@ from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route, section
+from zibaldone.ui.views import personalize
 
 
 GENERAL = ""  # the ninth page: templates with no area
@@ -93,7 +94,7 @@ def _page_bar(ctx: AppContext, page: str, choose: Callable[[str], None]) -> ft.C
 def build_list(ctx: AppContext, route: Route) -> ft.Control:
     info = section("modelli")
     page = ctx.memory.get("modelli_area", GENERAL)
-    compact = ctx.memory.get("modelli_vista", "completa") == "icone"
+    compact = personalize.templates_view(ctx) == "icone"
     with ctx.store() as store:
         templates = store.list_templates()
         counts = {template.slug: store.count_entries(template.slug) for template in templates}
@@ -116,7 +117,7 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
         choose(pages[(pages.index(page) + delta) % len(pages)])
 
     def toggle_view(_: Any) -> None:
-        ctx.memory["modelli_vista"] = "completa" if compact else "icone"
+        personalize.set_templates_view(ctx, "completa" if compact else "icone")
         ctx.refresh()
 
     drag = {"dx": 0.0}
@@ -138,6 +139,7 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
         W.primary_button("Nuovo modello", lambda _: ctx.go("/modelli/nuovo"), icon="ADD"),
         W.secondary_button(f"{NOMENCLATURE['pack'].name} · pacchetti", lambda _: ctx.go("/scuole"), icon="SCHOOL_OUTLINED"),
         W.secondary_button("Esporta", lambda _: export_dialog(ctx), icon="DOWNLOAD", disabled=not templates),
+        W.icon_button("SETTINGS_OUTLINED", lambda _: ctx.go("/organon/personalizza"), "Personalizza"),
         W.icon_button("GRID_VIEW" if compact else "VIEW_AGENDA_OUTLINED", toggle_view, "Mostra la vista completa" if compact else "Mostra solo le icone"),
     ]
     note = "i modelli senza un'area" if page == GENERAL else AREA_BY_KEY[page].covers

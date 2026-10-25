@@ -19,7 +19,7 @@ from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import SETTINGS_PARTS, Route, section, settings_part
-from zibaldone.ui.views import anonymizer, home_layout
+from zibaldone.ui.views import anonymizer, home_layout, personalize
 from zibaldone.ui.views.cloud import CloudScreen
 from zibaldone.ui.views.common import not_found
 
@@ -57,7 +57,7 @@ def build_index(ctx: AppContext, route: Route) -> ft.Control:
 
 
 def build_part(ctx: AppContext, route: Route) -> ft.Control:
-    builders = {"parresia": parresia, "daimon": lambda c: DaimonScreen(c).build(), "mnemosyne": lambda c: MnemosyneScreen(c).build(), "nuvole": lambda c: CloudScreen(c).build(), "velo": anonymizer.build, "home": home_layout.build, "info": about}
+    builders = {"parresia": parresia, "daimon": lambda c: DaimonScreen(c).build(), "mnemosyne": lambda c: MnemosyneScreen(c).build(), "nuvole": lambda c: CloudScreen(c).build(), "velo": anonymizer.build, "home": home_layout.build, "personalizza": personalize.build, "info": about}
     builder = builders.get(route.arg)
     if builder is None:
         return not_found(ctx, "Questa parte delle impostazioni non esiste.")

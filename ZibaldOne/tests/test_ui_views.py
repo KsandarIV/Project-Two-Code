@@ -948,3 +948,17 @@ def test_a_long_press_and_drag_changes_the_area_page_in_a_loop(ready: Path) -> N
     detector.on_long_press_move_update(SimpleNamespace(offset_from_origin=SimpleNamespace(x=120)))
     detector.on_long_press_end(None)
     assert shell.ctx.memory["modelli_area"] == "svago"
+
+
+def test_the_view_of_the_models_is_saved_from_the_personalize_page(ready: Path) -> None:
+    shell = Shell(FakePage(), ready)
+    shell.start("/organon/personalizza")
+    picker = next(item for item in walk(shell.body.content) if isinstance(item, ft.Dropdown))
+    picker.value = "icone"
+    picker.on_select(SimpleNamespace(control=picker))
+    from zibaldone.ui import services
+
+    assert services.ui_settings(ready)["modelli_vista"] == "icone"
+    fresh = Shell(FakePage(), ready)
+    fresh.start("/modelli")
+    assert any(isinstance(item, ft.Row) and item.wrap for item in walk(fresh.body.content))
