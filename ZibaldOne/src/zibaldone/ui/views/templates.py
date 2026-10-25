@@ -1,12 +1,13 @@
 """Modelli · Forme: the templates by category, the built-in packs (Scuole) and the export."""
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 import flet as ft
 
 from zibaldone.core.brand import NOMENCLATURE
 from zibaldone.core.packs import apply_install, builtin_packs, plan_install
 from zibaldone.storage.database import StoreError
+from zibaldone.ui import services
 from zibaldone.ui import theme as T
 from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
@@ -20,6 +21,15 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
         templates = store.list_templates()
         counts = {template.slug: store.count_entries(template.slug) for template in templates}
     groups = vm.group_templates(templates, counts)
+    pinned = services.shortcuts(ctx.folder)
+
+    def pin(slug: str) -> Callable[[Any], None]:
+        def toggle(_: Any) -> None:
+            ctx.toast("Aggiunto alle scorciatoie di Oggi." if services.toggle_shortcut(ctx.folder, slug) else "Tolto dalle scorciatoie di Oggi.")
+            ctx.refresh()
+
+        return toggle
+
     actions = [
         W.primary_button("Nuovo modello", lambda _: ctx.go("/modelli/nuovo"), icon="ADD"),
         W.secondary_button(f"{NOMENCLATURE['pack'].name} · pacchetti", lambda _: ctx.go("/scuole"), icon="SCHOOL_OUTLINED"),
@@ -52,13 +62,14 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
                                 spacing=2,
                                 expand=True,
                             ),
-                            W.icon_button("EDIT_NOTE", lambda _, slug=row.slug: ctx.go(f"/scrivi/{slug}"), "Scrivi una voce", color=T.ACCENT),
+                            W.icon_button("PUSH_PIN" if row.slug in pinned else "PUSH_PIN_OUTLINED", pin(row.slug), "Togli da Oggi" if row.slug in pinned else "Metti in Oggi", color=T.ACCENT if row.slug in pinned else T.TEXT_DIM),
+                            W.icon_button("TUNE", lambda _, slug=row.slug: ctx.go(f"/modelli/{slug}"), "Modifica il modello", color=T.TEXT_DIM),
                         ],
                         spacing=12,
                         vertical_alignment=ft.CrossAxisAlignment.CENTER,
                     ),
                     padding=ft.Padding.symmetric(horizontal=14, vertical=12),
-                    on_click=lambda _, slug=row.slug: ctx.go(f"/modelli/{slug}"),
+                    on_click=lambda _, slug=row.slug: ctx.go(f"/scrivi/{slug}"),
                     col={"xs": 12, "lg": 6},
                 )
             )
@@ -167,7 +178,7 @@ class PacksScreen:
             ft.Column(
                 [
                     ft.Row(
-                        [ft.Column([W.h2(card.name), W.caption(f"versione {card.version} · {card.installed_label}")], spacing=2, expand=True)],
+                        [ft.Column([W.h2(card.name), W.caption(card.installed_label)], spacing=2, expand=True)],
                     ),
                     W.body(card.description, dim=True),
                     names,

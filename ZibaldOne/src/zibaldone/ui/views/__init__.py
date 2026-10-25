@@ -21,6 +21,7 @@ SCREENS: Dict[str, Builder] = {
     "scrivi": entry_form.build_new,
     "modifica": entry_form.build_edit,
     "collezioni": collections.build,
+    "raccolta": collections.build_group,
     "modelli": templates.build_list,
     "modello": template_editor.build,
     "scuole": templates.build_packs,

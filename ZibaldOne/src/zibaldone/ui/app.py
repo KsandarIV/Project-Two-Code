@@ -13,6 +13,7 @@ the current screen, and anything typed in it, stays.
 import asyncio
 import logging
 import os
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import Any, List, Optional
@@ -36,6 +37,8 @@ logger = logging.getLogger("zibaldone.ui")
 REMINDER_FIRST_CHECK_SECONDS = 60
 UPDATE_CHECK_DELAY_SECONDS = 5
 REMINDER_INTERVAL_SECONDS = 300
+EXIT_WINDOW_SECONDS = 2.0  # the second Android back within this leaves the app
+HISTORY_KEEP = 50
 
 
 class Shell:
@@ -51,6 +54,8 @@ class Shell:
         self.backup_running = False
         self.migration_checked = False
         self.history: List[str] = []
+        self.clock = time.monotonic
+        self.exit_asked = float("-inf")
         self.current: Route = HOME
         self.section_key = "oggi"
         self.layout = layout_for(page.width)
@@ -139,6 +144,7 @@ class Shell:
             self.history.append(self.current.path)
         while self.history and self.history[-1] == route.path:
             self.history.pop()
+        del self.history[:-HISTORY_KEEP]
         self.show(route)
 
     def back(self) -> None:
@@ -157,6 +163,9 @@ class Shell:
         return bool(self.history) or not self.current.is_top_level
 
     def show(self, route: Route) -> None:
+        guard, self.ctx.leave_guard = self.ctx.leave_guard, None
+        if guard is not None and route.path != self.current.path:
+            guard()
         self.current = route
         if route.section:
             self.section_key = route.section
@@ -250,9 +259,7 @@ class Shell:
 
     def on_nav(self, event: Any) -> None:
         index = event.control.selected_index or 0
-        target = SECTIONS[index]
-        self.history.clear()
-        self.show(parse_route(target.route))
+        self.navigate(SECTIONS[index].route)  # the section left stays in the history: back returns to it
 
     def on_route_change(self, event: Any) -> None:
         """The address changed from outside (web: typed URL, reload, browser history)."""
@@ -283,13 +290,19 @@ class Shell:
             self.back()
 
     async def on_confirm_pop(self, event: Any) -> None:
-        """Android back: go back inside the app; leave only from a top section with no history."""
+        """Android back: go back inside the app; with nothing left to go back to, the second press within two seconds leaves."""
         view = event.control
         if self.can_go_back():
             await view.confirm_pop(False)
             self.back()
-        else:
+            return
+        now = self.clock()
+        if now - self.exit_asked <= EXIT_WINDOW_SECONDS:
             await view.confirm_pop(True)
+            return
+        self.exit_asked = now
+        self.ctx.toast("Premi ancora indietro per uscire.")
+        await view.confirm_pop(False)
 
     # — Mnemosyne in the background —
 

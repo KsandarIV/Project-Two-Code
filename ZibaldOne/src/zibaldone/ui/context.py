@@ -35,6 +35,7 @@ class AppContext:
         self._refresh: Callable[[], None] = lambda: None
         self._advance: Callable[[], None] = lambda: None
         self._data_changed: Callable[[], None] = lambda: None
+        self.leave_guard: Optional[Callable[[], None]] = None  # the open form keeps its draft when the screen changes
 
     # — time and data —
 

@@ -6,6 +6,7 @@ import flet as ft
 
 from zibaldone.core import home
 from zibaldone.storage import home_log
+from zibaldone.ui import services
 from zibaldone.core import views as V
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
@@ -86,6 +87,18 @@ def build(ctx: AppContext) -> ft.Control:
                 )
             )
         )
+    pinned = services.shortcuts(ctx.folder)
+    with ctx.store() as store:
+        names = {slug: store.find_template(slug) for slug in pinned}
+    controls.append(W.section_label("Scorciatoie ai modelli"))
+    pinned_rows = [
+        ft.Row(
+            [W.body(names[slug].name, expand=True), W.text_button("Togli", lambda _, slug=slug: (services.toggle_shortcut(ctx.folder, slug), ctx.refresh()), icon="PUSH_PIN")]
+        )
+        for slug in pinned
+        if names[slug] is not None
+    ]
+    controls.append(W.panel(ft.Column(pinned_rows or [W.caption("Nessuna. Da Modelli, la puntina mette un modello in Oggi: un tocco e scrivi.")], spacing=2)))
     controls.append(
         ft.Row(
             [W.secondary_button("Ripristina", lambda _: ctx.confirm("Ripristinare la home?", "I riquadri tornano tutti visibili, nell'ordine di partenza.", "Ripristina", reset, danger=False), icon="RESTART_ALT")],

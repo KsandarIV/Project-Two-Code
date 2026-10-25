@@ -9,7 +9,7 @@ from zibaldone.core import secrets
 from zibaldone.core.brand import mascot_for
 from zibaldone.core.links import is_person_template
 from zibaldone.storage.database import StoreError
-from zibaldone.ui import forms
+from zibaldone.ui import drafts, forms
 from zibaldone.ui import theme as T
 from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
@@ -21,6 +21,14 @@ from zibaldone.ui.views.vault import unlock_secrets, vault_of
 
 ALL = "*"
 SEARCH_NOTE = "Cerca in tutti i blocchi. Più parole: le voci che le hanno tutte; «\"frase esatta\"», parol* per l'inizio, -parola per escluderla."
+
+
+def _exists(store: Any, entry_id: str) -> bool:
+    try:
+        store.get_entry(entry_id)
+    except StoreError:
+        return False
+    return True
 
 
 class EntryList:
@@ -70,12 +78,30 @@ class EntryList:
         return W.screen(
             [
                 W.screen_header(info.label, info.nickname, "tutto ciò che hai scritto, dal più recente", actions=[W.primary_button("Nuova voce", lambda _: choose_template(self.ctx), icon="ADD"), W.secondary_button("Grafo", lambda _: self.ctx.go("/grafo"), icon="HUB")]),
+                *self._drafts(),
                 filters,
                 self.count,
                 self.list_column,
             ],
             self.ctx.wide,
         )
+
+    def _drafts(self) -> List[ft.Control]:
+        """The half-written entries kept when a form was left; a tap resumes one."""
+        with self.ctx.store() as store:
+            templates = {template.slug: template for template in store.list_templates()}
+            rows: List[ft.Control] = []
+            for key, draft in sorted(drafts.load_all(self.ctx.folder).items(), key=lambda item: item[1].get("saved", ""), reverse=True):
+                template = templates.get(draft.get("template", ""))
+                entry_id = draft.get("entry", "")
+                if template is None or (entry_id and not _exists(store, entry_id)):
+                    continue  # its template or entry is gone: nothing to resume
+                text = next((str(value) for value in draft["values"].values() if isinstance(value, str) and value), "")
+                path = f"/voci/{entry_id}/modifica" if entry_id else f"/scrivi/{template.slug}"
+                rows.append(W.entry_tile(text or "senza testo", f"{template.name} · bozza", "", template.icon, vm.color_or(template.color), lambda _, path=path: self.ctx.go(path)))
+        if not rows:
+            return []
+        return [W.section_label("Bozze"), *rows]
 
     # — filters —
 

@@ -9,6 +9,7 @@ from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route, section
+from zibaldone.ui.views.common import not_found
 from zibaldone.ui.views.import_dialog import open_import
 
 
@@ -28,25 +29,41 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
         )
         return W.screen(controls, ctx.wide)
     controls += _overview(ctx, groups)
-    filled = [group for group in groups if group.items]
-    empty = [group for group in groups if not group.items]
-    for group in filled:
-        controls.append(_group(ctx, group))
-    if empty:
-        chips = [
-            ft.Container(
-                ft.Row([W.template_badge(group.icon, group.color, 28), W.body(group.name, size=13)], spacing=8, tight=True),
-                padding=ft.Padding.only(left=4, right=12, top=4, bottom=4),
-                border=ft.Border.all(1, T.BORDER),
-                border_radius=T.RADIUS_SMALL,
-                on_click=lambda _, slug=group.slug: ctx.go(f"/scrivi/{slug}"),
-                ink=True,
-                tooltip=group.description or None,
-            )
-            for group in empty
-        ]
-        controls.append(W.section_label("Raccolte ancora vuote"))
-        controls.append(W.panel(ft.Column([W.caption("Tocca una raccolta per aggiungere la prima voce."), ft.Row(chips, wrap=True, spacing=8, run_spacing=8)], spacing=10)))
+    controls.append(W.section_label("Le raccolte"))
+    controls.append(ft.ResponsiveRow([_card(ctx, group) for group in groups], spacing=12, run_spacing=12))
+    return W.screen(controls, ctx.wide)
+
+
+def _card(ctx: AppContext, group: vm.CollectionGroup) -> ft.Control:
+    """One collection: its page opens on a tap (the items are on the child page, not here)."""
+    return W.panel(
+        ft.Row(
+            [
+                W.template_badge(group.icon, group.color),
+                ft.Column([W.body(group.name, size=16, weight=ft.FontWeight.W_600), W.caption(group.count_label)], spacing=0, expand=True),
+                ft.Icon(ft.Icons.CHEVRON_RIGHT, color=T.TEXT_DIM, size=20),
+            ],
+            spacing=12,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        ),
+        padding=ft.Padding.symmetric(horizontal=14, vertical=12),
+        on_click=lambda _: ctx.go(f"/collezioni/{group.slug}"),
+        col={"xs": 12, "md": 6, "xl": 4},
+    )
+
+
+def build_group(ctx: AppContext, route: Route) -> ft.Control:
+    """The child page of one collection: its items, and «Aggiungi»."""
+    with ctx.store() as store:
+        group = next((item for item in vm.build_collections(store) if item.slug == route.arg), None)
+    if group is None:
+        return not_found(ctx, "Questa raccolta non esiste. Le raccolte sono i modelli della Scuola «Museion · Collezioni».")
+    add = W.primary_button("Aggiungi", lambda _: ctx.go(f"/scrivi/{group.slug}"), icon="ADD")
+    controls: List[ft.Control] = [W.screen_header(group.name, "Museion", group.description or group.count_label, on_back=ctx.back, actions=[add])]
+    if group.items:
+        controls.append(ft.ResponsiveRow([_item(ctx, group, item) for item in group.items], spacing=10, run_spacing=10))
+    else:
+        controls.append(W.empty_state("Questa raccolta è ancora vuota. Tocca «Aggiungi» per la prima voce.", group.icon))
     return W.screen(controls, ctx.wide)
 
 
@@ -77,20 +94,6 @@ def _overview(ctx: AppContext, groups: List[vm.CollectionGroup]) -> List[ft.Cont
         rows = [ft.Row([W.body(group.name, expand=True), W.body(vm.hours_label(group.hours), dim=True)]) for group in sorted(spent, key=lambda group: -group.hours)]
         panels.append(W.panel(ft.Column([W.section_label("Tempo speso"), *rows], spacing=8)))
     return panels
-
-
-def _group(ctx: AppContext, group: vm.CollectionGroup) -> ft.Control:
-    header = ft.Row(
-        [
-            W.template_badge(group.icon, group.color),
-            ft.Column([W.h2(group.name), W.caption(group.count_label)], spacing=0, expand=True),
-            W.secondary_button("Aggiungi", lambda _: ctx.go(f"/scrivi/{group.slug}"), icon="ADD"),
-        ],
-        spacing=12,
-        vertical_alignment=ft.CrossAxisAlignment.CENTER,
-    )
-    cards = [_item(ctx, group, item) for item in group.items]
-    return W.panel(ft.Column([header, ft.ResponsiveRow(cards, spacing=10, run_spacing=10)], spacing=14))
 
 
 def _item(ctx: AppContext, group: vm.CollectionGroup, item: vm.CollectionItem) -> ft.Control:

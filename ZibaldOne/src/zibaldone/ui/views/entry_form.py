@@ -16,6 +16,7 @@ from zibaldone.core.brand import mascot_for
 from zibaldone.core.templates import BlockSpec, Entry, Template
 from zibaldone.storage.database import StoreError
 from zibaldone.ui import cloud_model as cm
+from zibaldone.ui import drafts
 from zibaldone.ui import forms
 from zibaldone.ui import theme as T
 from zibaldone.ui import viewmodels as vm
@@ -546,15 +547,22 @@ EDITORS: Dict[str, Callable[["EntryForm", BlockSpec], FieldEditor]] = {
 
 
 class EntryForm:
-    def __init__(self, ctx: AppContext, template: Template, entry: Optional[Entry] = None, area: str = "") -> None:
+    def __init__(self, ctx: AppContext, template: Template, entry: Optional[Entry] = None, area: str = "", draft: Optional[Dict[str, Any]] = None) -> None:
         self.ctx = ctx
         self.template = template
         self.entry = entry
+        self.draft_key = drafts.key_of(template.slug, entry.id if entry else "")
         self.area = entry.area if entry else area  # 0.2.0: '' = the template's area
-        self.states: Dict[str, Any] = forms.initial_states(template, entry.values if entry else None)
-        self._show_open_secrets()
+        values = dict(entry.values) if entry else {}
         self.day = entry.day if entry else ctx.now().date().isoformat()
-        self.dirty = False
+        if draft is not None:  # the draft holds every block it keeps: a block missing from it was emptied
+            left_out = {spec.key for spec in template.blocks if spec.type in drafts.KEPT_OUT}
+            values = {**{key: value for key, value in values.items() if key in left_out}, **draft["values"]}
+            self.day, self.area = draft.get("day") or self.day, draft.get("area", self.area)
+        self.states: Dict[str, Any] = forms.initial_states(template, values)
+        self._show_open_secrets()
+        self.draft = draft
+        self.dirty = draft is not None
         self.errors: Dict[str, ft.Text] = {}
         self._entries: Optional[List[Entry]] = None
         self._templates: Optional[Dict[str, Template]] = None
@@ -631,7 +639,19 @@ class EntryForm:
         )
         subtitle = self.template.description or ("modifica la voce" if editing else "una nuova voce")
         header = W.screen_header(self.template.name, "modifica" if editing else "nuova voce", subtitle, on_back=self.cancel)
-        return W.screen([header, *fields, self.form_error, bottom], self.ctx.wide)
+        banner: List[ft.Control] = []
+        if self.draft is not None:
+            banner.append(
+                W.panel(
+                    ft.Row(
+                        [W.body(f"Ripresa dalla bozza di {self.draft.get('saved', '')[:16].replace('T', ' alle ')}.", size=13, expand=True), W.text_button("Scarta la bozza", self.discard_draft, color=T.TEXT_DIM)],
+                        wrap=True,
+                    ),
+                    border_color=W.fade(T.ACCENT_2, 0.5),
+                )
+            )
+        self.ctx.leave_guard = self.keep_draft
+        return W.screen([header, *banner, *fields, self.form_error, bottom], self.ctx.wide)
 
     def _field(self, spec: BlockSpec) -> ft.Control:
         editor = EDITORS.get(spec.type, TextEditor)(self, spec)
@@ -679,16 +699,26 @@ class EntryForm:
         self.dirty = True
 
     def cancel(self, _: Any = None) -> None:
+        self.ctx.back()  # leaving a half-written entry keeps it as a draft (`keep_draft`, run by the shell)
+
+    def keep_draft(self) -> None:
+        """Leaving the form (back button, another section): what was written stays as a draft."""
         if not self.dirty:
-            self.ctx.back()
             return
-        self.ctx.confirm(
-            "Lasciare senza salvare?",
-            "Quello che hai scritto qui non verrà conservato.",
-            "Lascia",
-            self.ctx.back,
-            cancel_label="Continua a scrivere",
-        )
+        result = forms.collect_values(self.template, self.states, self.day)  # values of the valid blocks, even when others still miss
+        try:
+            drafts.put(self.ctx.folder, self.template, result.values, self.day, self.area, self.entry.id if self.entry else "", self.ctx.now())
+        except OSError as problem:
+            self.ctx.toast(f"Non riesco a salvare la bozza: {problem}", error=True)
+            return
+        self.dirty = False
+        self.ctx.toast("Bozza salvata: la ritrovi in Voci.")
+
+    def discard_draft(self, _: Any = None) -> None:
+        self.dirty = False
+        drafts.discard(self.ctx.folder, self.draft_key)
+        self.ctx.toast("Bozza scartata.")
+        self.ctx.back()
 
     def show_errors(self, errors: Dict[str, str]) -> None:
         for key, text in self.errors.items():
@@ -725,6 +755,7 @@ class EntryForm:
             self.ctx.update()
             return
         self.dirty = False
+        drafts.discard(self.ctx.folder, self.draft_key)
         self.ctx.data_changed()
         self.ctx.toast("Voce salvata." if self.entry is None else "Modifiche salvate.")
         self.ctx.go(f"/voci/{saved.id}", replace=True)
@@ -735,7 +766,7 @@ def build_new(ctx: AppContext, route: Route) -> ft.Control:
         template = store.find_template(route.arg)
     if template is None:
         return not_found(ctx, f"Non c'è un modello «{route.arg}». Puoi installarlo dalle Scuole o crearlo nelle Forme.")
-    return EntryForm(ctx, template, area=route.extra).build()
+    return EntryForm(ctx, template, area=route.extra, draft=drafts.get(ctx.folder, drafts.key_of(template.slug))).build()
 
 
 def build_edit(ctx: AppContext, route: Route) -> ft.Control:
@@ -745,4 +776,4 @@ def build_edit(ctx: AppContext, route: Route) -> ft.Control:
             template = store.get_template(entry.template)
     except StoreError:
         return not_found(ctx, "Questa voce non esiste più.")
-    return EntryForm(ctx, template, entry).build()
+    return EntryForm(ctx, template, entry, draft=drafts.get(ctx.folder, drafts.key_of(template.slug, entry.id))).build()

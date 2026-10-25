@@ -10,6 +10,7 @@ from zibaldone.core import secrets
 from zibaldone.core.areas import area_label, goals_overview
 from zibaldone.core.people import load_people, occasions
 from zibaldone.core.views import ViewError, load_views, run_view
+from zibaldone.ui import services
 from zibaldone.ui import theme as T
 from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
@@ -38,6 +39,26 @@ def _line(title: str, note: str, on_click: Any, trailing: Optional[ft.Control] =
     if trailing is not None:
         row.append(trailing)
     return ft.Container(ft.Row(row, vertical_alignment=ft.CrossAxisAlignment.CENTER), padding=ft.Padding.symmetric(vertical=6, horizontal=2), on_click=on_click, ink=True, border_radius=T.RADIUS_SMALL)
+
+
+def shortcuts_row(ctx: AppContext, store: Any) -> Optional[ft.Control]:
+    """The templates pinned from Modelli: one tap opens a new entry. A template that is gone is skipped."""
+    chips = []
+    for slug in services.shortcuts(ctx.folder):
+        template = store.find_template(slug)
+        if template is not None:
+            chips.append(
+                ft.Container(
+                    ft.Row([W.template_badge(template.icon, T.color_or(template.color), 28), W.body(template.name, size=13)], spacing=8, tight=True),
+                    padding=ft.Padding.only(left=4, right=12, top=4, bottom=4),
+                    border=ft.Border.all(1, T.BORDER),
+                    border_radius=T.RADIUS_SMALL,
+                    on_click=lambda _, slug=slug: ctx.go(f"/scrivi/{slug}"),
+                    ink=True,
+                    tooltip=f"Nuova voce: {template.name}",
+                )
+            )
+    return ft.Row(chips, wrap=True, spacing=8, run_spacing=8) if chips else None
 
 
 def occasions_tile(ctx: AppContext, store: Any, today: date) -> Optional[ft.Control]:

@@ -2,7 +2,7 @@
 
 Every screen has a route, so the app can start on any of them (handy for
 tests and screenshots): `/oggi`, `/voci`, `/voci/<id>`, `/voci/<id>/modifica`,
-`/scrivi/<modello>`, `/scrivi/<modello>/<area>`, `/collezioni`, `/modelli`,
+`/scrivi/<modello>`, `/scrivi/<modello>/<area>`, `/collezioni`, `/collezioni/<modello>`, `/modelli`,
 `/modelli/nuovo`, `/modelli/<modello>`, `/scuole`, `/aree`, `/aree/<area>`,
 `/persone/<id>`, `/finanze`, `/finanze/<AAAA-MM>`, `/abitudini`, `/viste`, `/viste/<id>`, `/albero`, `/rete`, `/rete/<area>`, `/organon`, `/organon/<parte>`.
 """
@@ -137,6 +137,7 @@ def route_path(screen: str, arg: str = "", extra: str = "") -> str:
         "finanze": f"/finanze/{arg}" if arg else "/finanze",
         "abitudini": "/abitudini",
         "viste": "/viste",
+        "raccolta": f"/collezioni/{arg}",
         "vista": f"/viste/{arg}",
         "parte": f"/organon/{arg}",
         "consenso": "/benvenuto/consenso",
@@ -187,6 +188,8 @@ def parse_route(path: Optional[str]) -> Route:
         return Route("theoria", "oggi")
     if head == "finanze" and (not rest or (len(rest) == 1 and MONTH_ROUTE.match(rest[0]))):
         return Route("finanze", "oggi", rest[0] if rest else "")
+    if head == "collezioni" and len(rest) == 1:
+        return Route("raccolta", "collezioni", rest[0])
     if head == "viste" and not rest:
         return Route("viste", "voci")
     if head == "viste" and len(rest) == 1:

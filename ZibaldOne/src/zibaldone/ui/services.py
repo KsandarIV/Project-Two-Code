@@ -244,6 +244,20 @@ def save_ui_settings(folder: Path, **changes: Any) -> None:
     save_settings(folder, settings)
 
 
+def shortcuts(folder: Path) -> List[str]:
+    """The templates pinned on Oggi, in the order they were pinned."""
+    value = ui_settings(folder).get("shortcuts", [])
+    return [slug for slug in value if isinstance(slug, str)] if isinstance(value, list) else []
+
+
+def toggle_shortcut(folder: Path, slug: str) -> bool:
+    """Pin the template on Oggi, or unpin it; True when it is pinned now."""
+    current = shortcuts(folder)
+    pinned = slug not in current
+    save_ui_settings(folder, shortcuts=[*current, slug] if pinned else [item for item in current if item != slug])
+    return pinned
+
+
 def diario_suggestion_pending(folder: Path, installed_slugs: List[str]) -> bool:
     """Suggest the diary pack once, after consent, while its moments are missing."""
     if all(slug in installed_slugs for slug in ("mattina", "meta_giornata", "sera")):

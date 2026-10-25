@@ -25,6 +25,7 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     with ctx.store() as store:
         streak = services.streak_days(store, now.date())
         model = vm.build_today(store, now, reminder, streak, config)
+        shortcut_row = tiles_.shortcuts_row(ctx, store)
         layout = home_log.load_layout(ctx.folder)
         today = now.date()
         builders = {
@@ -51,6 +52,8 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     controls: List[ft.Control] = [
         W.screen_header(info.label, info.nickname, f"{model.greeting}, è {model.date_label}.", actions=actions),
     ]
+    if shortcut_row is not None:
+        controls.append(shortcut_row)
     # shortcut: the three moments sit before the first tile that is not the reminder or the quote; a layout cannot move them
     moments_done = False
     for key in layout:

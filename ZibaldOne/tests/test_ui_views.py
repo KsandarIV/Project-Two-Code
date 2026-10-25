@@ -229,7 +229,7 @@ def test_navigation_history_and_back(ready: Path) -> None:
     assert shell.current.path == "/oggi"
     shell.navigate("/organon/daimon")
     shell.on_nav(SimpleNamespace(control=SimpleNamespace(selected_index=3)))
-    assert shell.current.path == "/modelli" and shell.history == []
+    assert shell.current.path == "/modelli" and shell.history[-1] == "/organon/daimon"  # the section left is kept: back returns to it
     shell.navigate("/scuole")
     shell.on_key(SimpleNamespace(key="Escape"))
     assert shell.current.path == "/modelli"
@@ -237,21 +237,33 @@ def test_navigation_history_and_back(ready: Path) -> None:
     assert shell.current.path == "/collezioni"
 
 
-def test_android_back_leaves_only_from_a_top_section(ready: Path) -> None:
+def test_android_back_goes_to_the_previous_section_and_leaves_on_the_second_press(ready: Path) -> None:
     page = FakePage(width=412)
     shell = Shell(page, ready)
     shell.start("/oggi")
-    shell.navigate("/organon/info")
+    shell.on_nav(SimpleNamespace(control=SimpleNamespace(selected_index=1)))  # Voci
+    shell.on_nav(SimpleNamespace(control=SimpleNamespace(selected_index=3)))  # Modelli
     answers = []
+    now = [100.0]
+    shell.clock = lambda: now[0]
 
     async def confirm_pop(value: bool) -> None:
         answers.append(value)
 
     event = SimpleNamespace(control=SimpleNamespace(confirm_pop=confirm_pop))
     asyncio.run(shell.on_confirm_pop(event))
-    assert answers == [False] and shell.current.path == "/oggi"
+    assert answers == [False] and shell.current.path == "/voci"
     asyncio.run(shell.on_confirm_pop(event))
-    assert answers == [False, True]
+    assert answers == [False, False] and shell.current.path == "/oggi"
+    asyncio.run(shell.on_confirm_pop(event))  # nothing left: the first press only asks
+    assert answers == [False, False, False] and "Premi ancora indietro per uscire." in shell.ctx.toasts
+    now[0] += 1.0
+    asyncio.run(shell.on_confirm_pop(event))  # the second one, soon after, leaves
+    assert answers[-1] is True
+    answers.clear()
+    now[0] += 30.0
+    asyncio.run(shell.on_confirm_pop(event))  # too late: asks again
+    assert answers == [False]
 
 
 def test_resize_switches_rail_and_bar_keeping_the_screen(ready: Path) -> None:
@@ -811,3 +823,85 @@ def test_template_editor_shows_the_area_mascot(ready: Path) -> None:
     from zibaldone.core.brand import mascot_for
 
     assert any(isinstance(item, ft.Container) and (item.tooltip or "").startswith(mascot_for("salute").name) for item in walk(shell.body.content))
+
+
+def test_leaving_a_form_keeps_a_draft_that_can_be_resumed(ready: Path) -> None:
+    from zibaldone.ui import drafts
+
+    shell = Shell(FakePage(width=412), ready)
+    shell.start("/oggi")
+    shell.navigate("/scrivi/libro")
+    field = next(item for item in walk(shell.body.content) if isinstance(item, ft.TextField))  # the first field is the title
+    field.value = "Il nome della rosa"
+    field.on_change(SimpleNamespace(control=field))
+    shell.back()  # the phone's back button
+    assert shell.current.path == "/oggi" and "Bozza salvata: la ritrovi in Voci." in shell.ctx.toasts
+    assert list(drafts.load_all(ready)) == ["new:libro"]
+    with Store.open(ready) as store:
+        assert not [entry for entry in store.list_entries(template="libro") if entry.values.get("titolo") == "Il nome della rosa"]  # not an entry yet
+    shell.navigate("/voci")
+    assert "BOZZE" in texts(shell.body.content) and "Il nome della rosa" in texts(shell.body.content)
+    shell.navigate("/scrivi/libro")  # resumed
+    assert any(isinstance(item, ft.TextField) and item.value == "Il nome della rosa" for item in walk(shell.body.content))
+    click(button(shell.body.content, "Salva"))
+    assert drafts.load_all(ready) == {}  # saved: the draft is gone
+
+
+def test_an_untouched_form_leaves_no_draft_and_a_draft_can_be_dropped(ready: Path) -> None:
+    from zibaldone.ui import drafts
+
+    shell = Shell(FakePage(), ready)
+    shell.start("/oggi")
+    shell.navigate("/scrivi/libro")
+    shell.back()
+    assert drafts.load_all(ready) == {}
+    shell.navigate("/scrivi/libro")
+    field = next(item for item in walk(shell.body.content) if isinstance(item, ft.TextField))  # the first field is the title
+    field.value = "Bozza da buttare"
+    field.on_change(SimpleNamespace(control=field))
+    shell.back()
+    shell.navigate("/scrivi/libro")
+    click(button(shell.body.content, "Scarta la bozza"))
+    assert drafts.load_all(ready) == {} and "Bozza scartata." in shell.ctx.toasts
+
+
+def test_a_model_opens_a_new_entry_and_the_small_icons_edit_and_pin(ready: Path) -> None:
+    from zibaldone.ui import services
+
+    shell = Shell(FakePage(), ready)
+    shell.start("/modelli")
+    tile = next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and item.on_click and "Biblioteca di Babele" in texts(item))
+    click(tile)
+    assert shell.current.path == "/scrivi/libro"
+    shell.back()
+    edit = next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Modifica il modello")
+    click(edit)
+    assert shell.current.screen == "modello"
+    shell.back()
+    click(next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Metti in Oggi"))
+    assert services.shortcuts(ready)[:1] != [] and "Aggiunto alle scorciatoie di Oggi." in shell.ctx.toasts
+    shell.navigate("/oggi")
+    chip = next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and (item.tooltip or "").startswith("Nuova voce:"))
+    click(chip)
+    assert shell.current.screen == "scrivi"
+
+
+def test_each_collection_opens_its_own_page(ready: Path) -> None:
+    with Store.open(ready) as store:
+        store.add_entry("libro", {"titolo": "Dune"})
+    shell = Shell(FakePage(width=412), ready)
+    shell.start("/collezioni")
+    assert "Dune" not in texts(shell.body.content)  # the items live on the child page
+    card = next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and item.on_click and "Biblioteca di Babele" in texts(item))
+    click(card)
+    assert shell.current.path == "/collezioni/libro" and "Dune" in texts(shell.body.content) and shell.section_key == "collezioni"
+    shell.back()
+    assert shell.current.path == "/collezioni"
+    shell.start("/collezioni/nonesiste")
+    assert any("non esiste" in text for text in texts(shell.body.content))
+
+
+def test_pack_list_does_not_show_pack_version_numbers(ready: Path) -> None:
+    shell = Shell(FakePage(), ready)
+    shell.start("/scuole")
+    assert not any(text.startswith("versione ") for text in texts(shell.body.content))
