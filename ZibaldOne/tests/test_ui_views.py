@@ -189,7 +189,7 @@ def test_first_run_consent_then_diary_then_today(folder: Path) -> None:
     click(button(shell.body.content, "Più tardi"))
     assert services.backup_files_pending(folder) is False and services.backup_files_folder(folder) == ""
     assert shell.current.screen == "diario"
-    click(button(shell.body.content, "Inizia con i pacchetti di base"))
+    click(button(shell.body.content, "Installa i pacchetti scelti"))
     assert shell.current.screen == "oggi"
     with Store.open(folder) as store:
         assert store.find_template("sera") is not None
