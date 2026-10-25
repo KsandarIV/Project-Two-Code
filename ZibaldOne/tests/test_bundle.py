@@ -175,3 +175,34 @@ def test_a_tampered_snapshot_inside_the_file_is_caught_by_the_restore(folder, de
     with pytest.raises(BackupError):
         bundle.restore_bundle(device, bad, passphrase=PASSPHRASE)
     assert not (device / "zibaldone.db").exists()
+
+
+def test_a_new_installation_finds_the_newest_valid_backup_file_in_the_usual_folders(folder, device, tmp_path) -> None:
+    home = tmp_path / "home"
+    (home / "Downloads").mkdir(parents=True)
+    (home / "Documents").mkdir()
+    make_data(folder, "Dune")
+    older = bundle.export_bundle(folder, create_snapshot(folder, now=backups._utc() - backups.timedelta(days=2)).id, home / "Documents")
+    newer = bundle.export_bundle(folder, create_snapshot(folder).id, home / "Downloads")
+    (home / "Downloads" / "rotto.zbbackup").write_bytes(b"niente")
+    (home / "Downloads" / "appunti.txt").write_text("no")
+    assert bundle.default_search_dirs() == [home / "Downloads", home / "Documents"]
+    assert [item.path for item in bundle.find_backup_files()] == [newer, older]
+    assert bundle.first_run_candidate(device).path == newer
+    assert bundle.find_backup_files([tmp_path / "manca"]) == []
+
+
+def test_nothing_is_offered_when_the_device_has_data_or_a_backup_of_its_own(folder, device, tmp_path) -> None:
+    home = tmp_path / "home"
+    home.joinpath("Downloads").mkdir(parents=True)
+    make_data(folder, "Dune")
+    bundle.export_bundle(folder, create_snapshot(folder).id, home / "Downloads")
+    assert bundle.first_run_candidate(device) is not None
+    make_data(device, "Mio")
+    assert bundle.first_run_candidate(device) is None  # it has data
+    (device / "zibaldone.db").unlink()
+    assert bundle.first_run_candidate(device) is not None
+    own = device / "backups"
+    own.mkdir()
+    (own / "20261017T120000Z-aaaaaa.zbsnap").write_bytes(b"x")
+    assert bundle.first_run_candidate(device) is None  # it has a backup of its own

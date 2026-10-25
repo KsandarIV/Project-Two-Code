@@ -26,7 +26,7 @@ from zibaldone.core.blocks import MEDIA_FILE
 from zibaldone.core.crypto import CryptoError
 from zibaldone.storage import backups, keys
 from zibaldone.storage.backups import BackupError, KeyRequiredError, RestoreResult, SnapshotInfo
-from zibaldone.storage.database import MIGRATIONS
+from zibaldone.storage.database import MIGRATIONS, database_path
 from zibaldone.storage.keys import KeysError
 
 BUNDLE_SUFFIX = ".zbbackup"
@@ -162,6 +162,45 @@ def inspect_bundle(path: Path) -> BundleInfo:
     except (OSError, zipfile.BadZipFile, ValueError, KeyError, BackupError) as error:
         result.problems.append(NOT_A_BACKUP if isinstance(error, (zipfile.BadZipFile, ValueError, KeyError)) else str(error))
     return result
+
+
+# * — finding a backup file at first start (0.3.1) —
+
+SEARCH_FOLDERS = ("Downloads", "Download", "Documents", "Documenti", "Desktop", "Scrivania")
+MAX_FILES_LOOKED_AT = 200
+
+
+def default_search_dirs() -> List[Path]:
+    """Where people leave a file they exported: the usual folders of their home."""
+    home = Path.home()
+    return [home / name for name in SEARCH_FOLDERS if (home / name).is_dir()]
+
+
+def find_backup_files(directories: Optional[List[Path]] = None) -> List[BundleInfo]:
+    """The valid backup files in these folders (not their subfolders), the newest backup first. Never raises."""
+    found: List[BundleInfo] = []
+    for directory in default_search_dirs() if directories is None else directories:
+        try:
+            files = sorted(Path(directory).glob(f"*{BUNDLE_SUFFIX}"))[:MAX_FILES_LOOKED_AT]
+        except OSError:
+            continue
+        for path in files:
+            info = inspect_bundle(path)
+            if info.ok and path.is_file():
+                found.append(info)
+    return sorted(found, key=lambda info: (info.created_at, info.snapshot_id), reverse=True)
+
+
+def first_run_candidate(folder: Path, directories: Optional[List[Path]] = None) -> Optional[BundleInfo]:
+    """The backup file to offer on a new installation, or None.
+
+    Only when this device has no data and no snapshot of its own: with either of them there is nothing to bring back
+    (and what is there must not be replaced without being asked).
+    """
+    if database_path(folder).exists() or backups.has_local_backup(folder):
+        return None
+    files = find_backup_files(directories)
+    return files[0] if files else None
 
 
 # * — import and restore —

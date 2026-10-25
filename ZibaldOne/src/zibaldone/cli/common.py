@@ -9,7 +9,7 @@ import typer
 from zibaldone.cloud import account, sync
 from zibaldone.cloud.http import CloudError
 from zibaldone.core.privacy import NOTICE_VERSION, notice_text
-from zibaldone.storage import backups
+from zibaldone.storage import backups, bundle
 from zibaldone.storage.backups import BackupError
 from zibaldone.storage.database import Store, StoreError
 from zibaldone.storage.keys import KeysError
@@ -49,7 +49,39 @@ def ensure_consent() -> None:
         raise typer.Exit(code=1)
     record_consent(folder, accepted=True, notice_version=NOTICE_VERSION)
     typer.echo(f"Consenso salvato. La tua cartella dati è {folder}")
-    typer.echo("Per iniziare con dei modelli pronti: zbone pack install diario\n")
+    if not restore_first_backup(folder):
+        typer.echo("Per iniziare con dei modelli pronti: zbone pack install diario\n")
+
+
+def restore_first_backup(folder) -> bool:
+    """On a new installation with no backup of its own, bring back the newest backup file found in the usual folders.
+
+    Never stops the start: whatever goes wrong is said in one line and the app goes on empty, with the way to retry.
+    Returns True when the data was brought back.
+    """
+    try:
+        candidate = bundle.first_run_candidate(folder)
+    except OSError:
+        return False
+    if candidate is None:
+        return False
+    typer.echo(f"\nHo trovato un backup di ZibaldOne del {candidate.created_at.astimezone().strftime('%d/%m/%Y %H:%M')}: {candidate.path}")
+    passphrase = recovery = None
+    try:
+        if candidate.encrypted:
+            typer.echo("Lo riporto qui. Scrivi la passphrase dei backup, o lascia vuoto per usare il codice di recupero (se non vuoi, lascialo vuoto anche lui).")
+            passphrase = typer.prompt("Passphrase", default="", hide_input=True, show_default=False) or None
+            if not passphrase:
+                recovery = typer.prompt("Codice di recupero", default="", hide_input=True, show_default=False) or None
+                if not recovery:
+                    typer.echo(f"Va bene: parti da zero. Per riportarlo più tardi: zbone backup import \"{candidate.path}\"\n")
+                    return False
+        bundle.restore_bundle(folder, candidate.path, passphrase=passphrase, recovery_code=recovery)
+    except (BackupError, KeysError, OSError) as error:
+        warn(f"non sono riuscito a riportare il backup ({error}). Puoi riprovare con: zbone backup import \"{candidate.path}\"")
+        return False
+    typer.echo("Dati riportati dal backup.\n")
+    return True
 
 
 def fail(message: str, code: int = 1) -> None:

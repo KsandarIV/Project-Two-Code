@@ -362,6 +362,11 @@ def list_snapshots(folder: Path, private_key: Optional[X25519PrivateKey] = None)
     return sorted(infos, key=_sort_key, reverse=True)
 
 
+def has_local_backup(folder: Path) -> bool:
+    """True when this device already has a snapshot of its own."""
+    return bool(_snapshot_files(folder))
+
+
 def find_snapshot(folder: Path, reference: str) -> SnapshotInfo:
     """Find a snapshot by full id, by the start of the id or by its 6-character code."""
     wanted = reference.strip().lower().removesuffix(SNAPSHOT_SUFFIX)

@@ -8,6 +8,8 @@ def isolated_data_dir(tmp_path, monkeypatch):
     """Every test gets its own empty data folder, never the real one."""
     folder = tmp_path / "zibaldone-data"
     monkeypatch.setenv("ZIBALDONE_HOME", str(folder))
+    for name in ("HOME", "USERPROFILE"):  # the folders where a backup file is looked for at first start
+        monkeypatch.setenv(name, str(tmp_path / "home"))
     return folder
 
 

@@ -13,7 +13,9 @@ from zibaldone.cli.privacy_cmd import privacy_app
 from zibaldone.cli.template_cmd import template_app
 from zibaldone.core import crypto
 from zibaldone.core.crypto import ScryptParams
-from zibaldone.storage import backups, keys
+from zibaldone.core.templates import BlockSpec, Template
+from zibaldone.storage import backups, bundle, keys
+from zibaldone.storage.database import Store
 
 # The groups mounted the same way as in cli/app.py, so these tests do not
 # depend on when the root app registers `backup` and `export`.
@@ -308,3 +310,45 @@ def test_import_refuses_what_is_not_a_backup_file_and_export_with_nothing_says_s
     refused = invoke("backup", "import", str(fake), "--yes")
     assert refused.exit_code == 1 and "non è un backup di ZibaldOne" in refused.output
     no_traceback(refused)
+
+
+def leave_backup_in_downloads(tmp_path, encrypted: bool):
+    """A backup file in the home folder of this (test) user, made on 'another' device."""
+    old = tmp_path / "vecchio-telefono"
+    with Store.open(old) as store:
+        store.save_template(Template("libro", "Libro", [BlockSpec("titolo", "text", "Titolo", required=True)]))
+        store.add_entry("libro", {"titolo": "Dune"}, day="2026-10-01")
+    if encrypted:
+        keys.setup_keys(old, PASSPHRASE)
+    return bundle.export_bundle(old, backups.create_snapshot(old).id, tmp_path / "home" / "Downloads")
+
+
+def test_first_start_brings_back_a_plain_backup_found_in_downloads(isolated_data_dir, tmp_path) -> None:
+    leave_backup_in_downloads(tmp_path, encrypted=False)
+    first = invoke("entry", "list", input="sì\n")
+    assert first.exit_code == 0, first.output
+    assert "Ho trovato un backup di ZibaldOne" in first.output and "Dati riportati dal backup" in first.output
+    assert "Dune" in first.output or "Dune" in invoke("entry", "list").output
+    assert "zbone pack install diario" not in first.output
+
+
+def test_first_start_with_no_secret_goes_on_empty_and_says_how_to_import_later(isolated_data_dir, tmp_path) -> None:
+    leave_backup_in_downloads(tmp_path, encrypted=True)
+    skipped = invoke("entry", "list", input="sì\n\n\n")  # no passphrase, no recovery code
+    assert skipped.exit_code == 0 and "parti da zero" in skipped.output and "zbone backup import" in skipped.output
+    assert "Dune" not in invoke("entry", "list").output
+
+
+def test_first_start_with_a_wrong_passphrase_warns_and_never_blocks(isolated_data_dir, tmp_path) -> None:
+    leave_backup_in_downloads(tmp_path, encrypted=True)
+    wrong = invoke("entry", "list", input="sì\nsbagliata\n")
+    assert wrong.exit_code == 0 and "non sono riuscito a riportare il backup" in wrong.output
+    assert "Dune" not in invoke("entry", "list").output
+
+
+def test_first_start_with_the_right_passphrase_restores_and_a_second_start_offers_nothing(isolated_data_dir, tmp_path) -> None:
+    leave_backup_in_downloads(tmp_path, encrypted=True)
+    done = invoke("entry", "list", input=f"sì\n{PASSPHRASE}\n")
+    assert done.exit_code == 0 and "Dati riportati dal backup" in done.output
+    assert "Dune" in invoke("entry", "list").output
+    assert "Ho trovato un backup" not in invoke("entry", "list").output
