@@ -272,3 +272,38 @@ def test_writes_start_the_daily_snapshot_reads_do_not(isolated_data_dir) -> None
     assert [item.reason for item in backups.list_snapshots(isolated_data_dir)] == ["auto"]
     assert invoke("entry", "add", "libro", "--set", "titolo=Dune").exit_code == 0
     assert len(backups.list_snapshots(isolated_data_dir)) == 1
+
+
+# * — the backup file (0.3.1) —
+
+
+def test_export_then_import_brings_the_data_back_and_can_be_undone(isolated_data_dir, tmp_path) -> None:
+    start_with_books("Dune")
+    assert setup_encryption().exit_code == 0
+    made = created_id(invoke("backup", "create"))  # the daily one was taken before the first book
+    exported = invoke("backup", "export", made, "--to", str(tmp_path / "Download"))
+    assert exported.exit_code == 0, exported.output
+    assert "File di backup creato:" in exported.output and ".zbbackup" in exported.output and "codice di recupero" in exported.output
+    path = next((tmp_path / "Download").glob("*.zbbackup"))
+
+    invoke("entry", "add", "libro", "--set", "titolo=Emma")
+    declined = invoke("backup", "import", str(path), input="n\n")
+    assert declined.exit_code == 0 and "non ho cambiato nulla" in declined.output and "Emma" in invoke("entry", "list").output
+    wrong = invoke("backup", "import", str(path), "--yes", input="non è questa\n")
+    assert wrong.exit_code == 1 and "Traceback" not in wrong.output and "Emma" in invoke("entry", "list").output
+    done = invoke("backup", "import", str(path), "--yes", input=f"{PASSPHRASE}\n")
+    assert done.exit_code == 0, done.output
+    assert "Emma" not in invoke("entry", "list").output and "Dune" in invoke("entry", "list").output
+    assert "Per annullare: zbone backup restore" in done.output
+    again = invoke("backup", "import", str(path), "--yes", input=f"\n{RECOVERY_CODE}\n")
+    assert again.exit_code == 0, again.output
+
+
+def test_import_refuses_what_is_not_a_backup_file_and_export_with_nothing_says_so(isolated_data_dir, tmp_path) -> None:
+    assert invoke("privacy", "accept").exit_code == 0
+    assert invoke("backup", "export").exit_code == 1
+    fake = tmp_path / "x.zbbackup"
+    fake.write_bytes(b"niente")
+    refused = invoke("backup", "import", str(fake), "--yes")
+    assert refused.exit_code == 1 and "non è un backup di ZibaldOne" in refused.output
+    no_traceback(refused)

@@ -15,13 +15,13 @@ from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 
 from zibaldone.cli.common import ask_yes_no, ensure_consent, fail, run_auto_backup, sync_quietly  # noqa: F401 (re-exported)
 from zibaldone.core.crypto import RECOVERY_LOOKALIKES, CryptoError, RecoveryCodeError, recovery_code_last_group
-from zibaldone.storage import backups, keys
+from zibaldone.storage import backups, bundle, keys
 from zibaldone.storage.backups import BackupError, BackupSettings, SnapshotInfo
 from zibaldone.storage.keys import KeysError
 from zibaldone.storage.paths import data_dir, human_size
 from zibaldone.storage.settings import SettingsError
 
-backup_app = typer.Typer(help="Mnemosyne · Storia e backup: istantanee dei tuoi dati, ripristino, durata e cifratura.", no_args_is_help=True)
+backup_app = typer.Typer(help="Mnemosyne · Storia e backup: istantanee complete dei tuoi dati, file di backup da portare via, ripristino e cifratura.", no_args_is_help=True)
 
 KNOWN_ERRORS = (BackupError, KeysError, CryptoError, SettingsError)
 CONFIRM_ATTEMPTS = 3
@@ -167,6 +167,60 @@ def restore_backup(
     if result.undo:
         typer.echo(f"Per annullare: zbone backup restore {result.undo.id}")
     typer.echo("Impostazioni, consenso privacy e chiavi di questo dispositivo non sono cambiati.")
+
+
+@backup_app.command("export")
+def export_backup(
+    reference: Optional[str] = typer.Argument(None, metavar="ID", help="l'istantanea da esportare; di base la più recente"),
+    to: Optional[Path] = typer.Option(None, "--to", help="cartella o file .zbbackup di destinazione; di base la cartella Download"),
+) -> None:
+    """Crea un file di backup (.zbbackup) da conservare dove vuoi: chiavetta, Drive, un altro telefono."""
+    ensure_consent()
+    folder = data_dir()
+    with backup_errors():
+        snapshots = backups.list_snapshots(folder)
+        if not snapshots:
+            fail("non c'è nessuna istantanea da esportare: creane una con `zbone backup create`")
+        snapshot = backups.find_snapshot(folder, reference) if reference else snapshots[0]
+        path = bundle.export_bundle(folder, snapshot.id, to or Path.home() / "Downloads")
+    typer.echo(f"File di backup creato: {path}")
+    typer.echo(f"  {describe(snapshot)}")
+    if snapshot.encrypted:
+        typer.echo("  Si apre con la passphrase dei backup o con il codice di recupero. Senza, nessuno può aprirlo.")
+    else:
+        typer.echo("  ATTENZIONE: non è cifrato, chi lo trova legge tutto. Attiva la cifratura con `zbone backup setup`.")
+    typer.echo("Per riportare i dati, anche su un'installazione nuova: zbone backup import FILE")
+
+
+@backup_app.command("import")
+def import_backup(
+    file: Path = typer.Argument(..., metavar="FILE", help="un file .zbbackup"),
+    yes: bool = typer.Option(False, "--yes", "-y", help="non chiedere conferma"),
+) -> None:
+    """Riporta i dati da un file di backup (.zbbackup), anche su un'installazione nuova.
+
+    Lo stato attuale viene salvato prima, così si può annullare.
+    """
+    ensure_consent()
+    folder = data_dir()
+    with backup_errors():
+        info = bundle.inspect_bundle(file)
+        if not info.ok:
+            fail("; ".join(info.problems))
+        typer.echo(f"Backup del {local_time(info.created_at)} · {'cifrato' if info.encrypted else 'in chiaro'} · creato con ZibaldOne {info.app_version or 'sconosciuta'}")
+        if not yes and not ask_yes_no("Riportare modelli e voci a questo backup? Lo stato attuale sarà salvato prima"):
+            typer.echo("Va bene: non ho cambiato nulla.")
+            raise typer.Exit()
+        passphrase = recovery = None
+        if info.encrypted:
+            passphrase = typer.prompt("Passphrase dei backup (invio per usare il codice di recupero)", default="", hide_input=True, show_default=False) or None
+            if not passphrase:
+                recovery = typer.prompt("Codice di recupero", hide_input=True)
+        result = bundle.restore_bundle(folder, file, passphrase=passphrase, recovery_code=recovery)
+    typer.echo(f"Dati riportati al backup del {local_time(result.restored.created_at)}.")
+    if result.undo:
+        typer.echo(f"Per annullare: zbone backup restore {result.undo.id}")
+    typer.echo("Impostazioni e consenso privacy di questo dispositivo non sono cambiati.")
 
 
 @backup_app.command("verify")
