@@ -42,6 +42,19 @@ Le richieste della vecchia Journal App: [requisiti della fase 0.2](requisiti-v0.
 | v0.2.7 | **Abitudini**: rituali con serie di giorni o di settimane ([le abitudini](abitudini.md)); gli obiettivi con avanzamento slittano alla 0.2.8 | ✅ |
 | v0.2.8 | **Viste componibili**, home su misura, ricorrenze e obiettivi con avanzamento ([viste e home](viste-e-home.md)) | ✅ |
 
+## Fase 0.3: tester su Windows e Android
+Decisioni di Alex (2026-10-25): la home a griglia 5×6 va nella prima versione disponibile; Google resta «in test»; la firma di Windows non serve ora; il repository resta privato fino alla prima versione stabile; la capacità della 0.4.0 si sceglie arrivati alla 0.3.9. Le versioni dopo la 0.3.0 sono ancora una proposta.
+
+| Versione | Capacità | Stato |
+|---|---|---|
+| v0.3.0 | **Home a griglia 5×6** con riquadri ridimensionabili e spostabili; release unica (zip Windows, APK, wheel) | |
+| v0.3.1 | **Prova dei tester su Windows**: feedback e correzioni, barra delle 8 mascotte configurabile | |
+| v0.3.2 | **Android e Google provati davvero**: APK su telefono, Drive dal vivo, ripristino su dispositivo nuovo | |
+| v0.3.3 | **Promemoria veri dall'app** (Windows e Android) | |
+| v0.3.4 | **Aggiornamento in app** (scarica e installa la versione nuova) | |
+| v0.3.5–v0.3.9 | da decidere con Alex dal feedback dei tester; alla 0.3.9 si sceglie la capacità della 0.4.0 | |
+| v0.4.0 | **Una capacità nuova**: Documenti e carte (consigliata), Password con Bitwarden, sincronizzazione continua o Linux | |
+
 ## Verso la 1.0
 La **1.0** è l'app davvero usabile, non un traguardo di calendario. Arriva dopo la fase 0.2, quando tutte queste cose sono vere:
 - Alex e i tester la usano ogni giorno per almeno 4 settimane senza perdere dati e senza dover aprire il terminale.
