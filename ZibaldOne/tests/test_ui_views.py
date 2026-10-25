@@ -1029,3 +1029,12 @@ def test_an_area_page_shows_its_mascot_and_only_the_general_page_has_the_big_blo
     assert "Nuovo modello" not in area and "Esporta" not in area
     assert any(isinstance(item, ft.Image) and str(item.src).endswith(".svg") for item in walk(shell.body.content))
     assert any("Svago" in text for text in area)
+
+
+def test_every_field_explains_its_block_on_a_tap(ready: Path) -> None:
+    shell = Shell(FakePage(), ready)
+    shell.start("/scrivi/libro")
+    infos = [item for item in walk(shell.body.content) if isinstance(item, ft.Container) and (item.tooltip or "").count(":") and item.on_click and " · " in (item.tooltip or "")]
+    assert infos
+    click(infos[0])
+    assert shell.ctx.toasts[-1] == infos[0].tooltip

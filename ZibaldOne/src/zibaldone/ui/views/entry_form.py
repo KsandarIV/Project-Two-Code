@@ -664,7 +664,17 @@ class EntryForm:
         if mascot is not None:
             texts.append(W.caption(f"{mascot.name}, {mascot.animal} · {mascot.philosopher}"))
         label_items.append(ft.Column(texts, spacing=0, expand=True))
-        label_items.append(ft.Text(forms.type_caption(spec.type), size=11, color=T.TEXT_DIM, italic=True))
+        hint = forms.type_hint(spec.type)
+        label_items.append(
+            ft.Container(
+                ft.Row([ft.Text(forms.type_caption(spec.type), size=11, color=T.TEXT_DIM, italic=True), ft.Icon(ft.Icons.INFO_OUTLINE, size=14, color=T.TEXT_DIM)], spacing=4),
+                tooltip=hint,
+                on_click=lambda _, text=hint: self.ctx.toast(text),
+                ink=True,
+                border_radius=T.RADIUS_SMALL,
+                padding=ft.Padding.all(4),
+            )
+        )
         return W.panel(
             ft.Column(
                 [ft.Row(label_items, spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER), editor.build(), self.errors[spec.key]],

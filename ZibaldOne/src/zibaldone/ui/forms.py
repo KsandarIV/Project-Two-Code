@@ -59,6 +59,14 @@ def type_caption(type_name: str) -> str:
     return f"{block_type.nickname} · {block_type.label}"
 
 
+def type_hint(type_name: str) -> str:
+    """What the block does, for the hint on every atom: 'Aut-Aut · Scelta: una voce da un elenco, …'."""
+    block_type = BLOCK_TYPES.get(type_name)
+    if block_type is None or not block_type.description:
+        return type_caption(type_name)
+    return f"{type_caption(type_name)}: {block_type.description}"
+
+
 def field_label(spec: BlockSpec) -> str:
     return f"{spec.label} *" if spec.required else spec.label
 
