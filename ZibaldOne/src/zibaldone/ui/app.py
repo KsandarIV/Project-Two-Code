@@ -109,6 +109,8 @@ class Shell:
             return "/benvenuto/accesso"
         if services.destination_choice_pending(self.folder):
             return "/benvenuto/copie"
+        if services.backup_files_pending(self.folder):
+            return "/benvenuto/cartella"
         if not self.migration_checked:  # before the first Store.open may migrate the database
             self.migration_checked = True
             warning = services.pre_migration_backup(self.folder)

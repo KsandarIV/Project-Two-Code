@@ -204,6 +204,36 @@ def copies(ctx: AppContext, route: Route) -> ft.Control:
     )
 
 
+def files_folder(ctx: AppContext, route: Route) -> ft.Control:
+    """Once, at the start: the folder where the backup files go, so that they can be found again and imported."""
+
+    def chosen(path: str) -> None:
+        services.save_ui_settings(ctx.folder, backup_files_folder=path)
+        ctx.advance()
+
+    def later(_: Any) -> None:
+        services.save_ui_settings(ctx.folder, backup_files_folder="")
+        ctx.advance()
+
+    return W.screen(
+        [
+            _brand(),
+            W.title_with_nickname("Dove metto i file di backup?", "Mnemosyne", size=22),
+            W.panel(
+                ft.Column(
+                    [
+                        W.body("Ogni backup diventa un file .zbbackup nella cartella che scegli: la ritrovi con il gestore di file e puoi portare il file su un altro dispositivo."),
+                        W.body("Puoi cambiarla quando vuoi, da Impostazioni · Mnemosyne.", dim=True),
+                    ],
+                    spacing=8,
+                )
+            ),
+            ft.Row([W.secondary_button("Più tardi", later), W.primary_button("Scegli la cartella", lambda _: ctx.pick_folder(chosen), icon="FOLDER_OPEN")], alignment=ft.MainAxisAlignment.END, wrap=True, spacing=8),
+        ],
+        ctx.wide,
+    )
+
+
 def diario(ctx: AppContext, route: Route) -> ft.Control:
     names: List[ft.Control] = [W.pill(pack.name, T.ACCENT if index else T.ACCENT_2) for index, pack in enumerate(filter(None, (find_builtin_pack(name) for name in BASE_PACKS)))]
 

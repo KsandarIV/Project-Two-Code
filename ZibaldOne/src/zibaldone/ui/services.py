@@ -180,7 +180,7 @@ def auto_backup(folder: Path, now: Optional[datetime] = None) -> str:
         return f"backup automatico non riuscito: {error}"
     if snapshot is None:
         return ""
-    return sync_quietly(folder)
+    return export_to_files_folder(folder) or sync_quietly(folder)
 
 
 def sync_quietly(folder: Path) -> str:
@@ -263,6 +263,33 @@ def toggle_shortcut(folder: Path, slug: str) -> bool:
     pinned = slug not in current
     save_ui_settings(folder, shortcuts=[*current, slug] if pinned else [item for item in current if item != slug])
     return pinned
+
+
+def backup_files_folder(folder: Path) -> str:
+    """Where the backup files (.zbbackup) are written, chosen by the user; '' when none."""
+    return str(ui_settings(folder).get("backup_files_folder", "") or "")
+
+
+def backup_files_pending(folder: Path) -> bool:
+    """The first start asks once where the backup files go (or «later»)."""
+    return "backup_files_folder" not in ui_settings(folder)
+
+
+def export_to_files_folder(folder: Path) -> str:
+    """Write the newest snapshot as a backup file in the chosen folder; returns a warning or ''. Blocking."""
+    target = backup_files_folder(folder)
+    backups = backups_api()
+    if not target or backups is None:
+        return ""
+    try:
+        snapshots = [info for info in backups.list_snapshots(folder) if not info.problem]
+        if snapshots:
+            from zibaldone.storage import bundle
+
+            bundle.export_bundle(folder, snapshots[0].id, Path(target))
+    except Exception as error:
+        return f"file di backup non salvato in {target}: {error}"
+    return ""
 
 
 def diario_suggestion_pending(folder: Path, installed_slugs: List[str]) -> bool:

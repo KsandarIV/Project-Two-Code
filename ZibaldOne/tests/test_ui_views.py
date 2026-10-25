@@ -117,7 +117,7 @@ def folder(isolated_data_dir: Path) -> Path:
 def ready(folder: Path) -> Path:
     """Consent given, all the packs, a few entries."""
     record_consent(folder, True, NOTICE_VERSION)
-    services.save_ui_settings(folder, diario_suggested=True)
+    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="")
     with Store.open(folder) as store:
         for name in ("diario", "collezioni", "io", "persone"):
             apply_install(plan_install(find_builtin_pack(name), store), store)
@@ -185,6 +185,9 @@ def test_first_run_consent_then_diary_then_today(folder: Path) -> None:
     click(button(shell.body.content, "Non ora"))
     assert shell.current.screen == "consenso"  # nothing saved, the page stays
     click(button(shell.body.content, "Ho capito, iniziamo"))
+    assert shell.current.screen == "cartella"  # 0.3.2: where the backup files go, asked once
+    click(button(shell.body.content, "Più tardi"))
+    assert services.backup_files_pending(folder) is False and services.backup_files_folder(folder) == ""
     assert shell.current.screen == "diario"
     click(button(shell.body.content, "Inizia con i pacchetti di base"))
     assert shell.current.screen == "oggi"
@@ -357,7 +360,7 @@ def test_the_shell_toasts_due_reminders(ready: Path, monkeypatch) -> None:
 
 def test_installing_a_pack_from_scuole(folder: Path) -> None:
     record_consent(folder, True, NOTICE_VERSION)
-    services.save_ui_settings(folder, diario_suggested=True)
+    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="")
     page = FakePage()
     shell = Shell(page, folder)
     shell.start("/scuole")
@@ -1079,7 +1082,7 @@ def test_the_lente_model_sits_on_the_general_page(ready: Path) -> None:
 
 def test_installing_a_pack_redraws_only_that_pack(folder: Path) -> None:
     record_consent(folder, True, NOTICE_VERSION)
-    services.save_ui_settings(folder, diario_suggested=True)
+    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="")
     shell = Shell(FakePage(), folder)
     shell.start("/scuole")
     body = shell.body.content
@@ -1087,3 +1090,13 @@ def test_installing_a_pack_redraws_only_that_pack(folder: Path) -> None:
     click(button(body, "Installa"))
     assert shell.body.content is body  # no new screen: the scroll stays where it was
     assert any("installat" in toast for toast in shell.ctx.toasts)
+
+
+def test_a_backup_file_is_written_in_the_chosen_folder(ready: Path, tmp_path: Path) -> None:
+    from zibaldone.storage import backups
+
+    target = tmp_path / "miei-backup"
+    services.save_ui_settings(ready, backup_files_folder=str(target))
+    backups.create_snapshot(ready, reason="manual")
+    assert services.export_to_files_folder(ready) == ""
+    assert len(list(target.glob("*.zbbackup"))) == 1
