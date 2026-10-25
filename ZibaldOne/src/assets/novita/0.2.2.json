@@ -1,0 +1,35 @@
+{
+  "versione": "0.2.2",
+  "data": "2026-10-17",
+  "titolo": "Albero di famiglia e rete",
+  "voci": [
+    {
+      "tipo": "nuovo",
+      "testo": "Legami tra persone: Genitori, Fratelli e sorelle, Colleghi e Conosce nella Persona; ogni legame vale nei due sensi (i genitori di Luca hanno Luca tra i figli). Chi incontri nello stesso Simposio si lega da solo."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Albero di famiglia (/albero): generazione per generazione intorno a te, dai ruoli (madre, nonno, figlia …) e dai Genitori e Fratelli scritti nelle persone."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Rete (/rete, /rete/<area>): chi conosce chi, disegnato come il grafo e toccabile; per area, così Lavoro mostra chi lavora con chi."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Contatti in comune e forza del legame (0–10, da quanto spesso e quanto di recente vi sentite, e dall'umore degli incontri): nella pagina della persona, nella rete e in zbone persona show."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "zbone persona albero, zbone persona rete [NOME] [--area], zbone persona lega ANNA genitore LUCA."
+    },
+    {
+      "tipo": "migliorato",
+      "testo": "Agorà · Persone 1.3.0: L'Altro ha i quattro blocchi dei legami. Le voci di prima restano valide."
+    },
+    {
+      "tipo": "migliorato",
+      "testo": "\"Tutto di Marco\" non elenca più le altre persone tra le voci che lo collegano: sono nei suoi Legami."
+    }
+  ]
+}

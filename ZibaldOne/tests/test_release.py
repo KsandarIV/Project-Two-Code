@@ -54,6 +54,16 @@ def test_current_version_is_documented() -> None:
     assert (root / "docs" / "versioni" / f"v{__version__}.md").exists()
 
 
+def test_current_version_has_its_novita_file() -> None:
+    """The «Novità» button reads src/assets/novita/<versione>.json (written with the CHANGELOG)."""
+    import json
+
+    path = SCRIPT.parent.parent / "src" / "assets" / "novita" / f"{__version__}.json"
+    data = json.loads(path.read_text(encoding="utf-8"))
+    assert data["versione"] == __version__ and data["titolo"] and data["voci"]
+    assert all(item["tipo"] in ("nuovo", "migliorato", "corretto") and item["testo"] for item in data["voci"])
+
+
 def test_changelog_placeholder_for_automatic_commits() -> None:
     result = release.release_changelog("## [Unreleased]\n\n## [0.2.0]\n", "0.3.0", "2026-10-18", allow_empty=True)
     assert "## [0.3.0] — 2026-10-18\n" + release.EMPTY_NOTES in result
