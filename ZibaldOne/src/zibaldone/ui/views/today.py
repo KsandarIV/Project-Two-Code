@@ -203,7 +203,7 @@ def _moment_card(ctx: AppContext, card: vm.MomentCard) -> ft.Control:
 
 def _areas(ctx: AppContext, areas: vm.AreaCheckin) -> ft.Control:
     if not areas.done:
-        avatars = ft.Row([W.mascot_avatar(score.mascot, 30) for score in areas.scores], spacing=6, wrap=True, run_spacing=6)
+        avatars = ft.Row([W.mascot_avatar(score.mascot, 34) for score in areas.scores], spacing=6, wrap=True, run_spacing=6, alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
         return W.panel(
             ft.Column(
                 [
@@ -211,7 +211,7 @@ def _areas(ctx: AppContext, areas: vm.AreaCheckin) -> ft.Control:
                     W.body("Come vanno oggi le otto aree della tua vita? Un tocco per ciascuna, senza pensarci troppo."),
                     ft.Row(
                         [W.text_button("Le otto aree", lambda _: ctx.go("/aree"), icon="DONUT_LARGE"), W.primary_button("Fai il check-in", lambda _: ctx.go("/scrivi/aree"), icon="DONUT_LARGE")],
-                        alignment=ft.MainAxisAlignment.END,
+                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                         wrap=True,
                     ),
                 ],
@@ -251,7 +251,7 @@ def _areas(ctx: AppContext, areas: vm.AreaCheckin) -> ft.Control:
                 ft.ResponsiveRow(tiles, spacing=16, run_spacing=10),
                 ft.Row(
                     [W.text_button("Le otto aree", lambda _: ctx.go("/aree"), icon="DONUT_LARGE"), W.text_button("Modifica il check-in", lambda _: ctx.go(f"/voci/{areas.entry_id}/modifica"), icon="EDIT")],
-                    alignment=ft.MainAxisAlignment.END,
+                    alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
                     wrap=True,
                 ),
             ],
