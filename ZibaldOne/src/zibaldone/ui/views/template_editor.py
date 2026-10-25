@@ -4,11 +4,12 @@ from typing import Any, List, Optional
 
 import flet as ft
 
-from zibaldone.core.areas import area_label
+from zibaldone.core.areas import AREA_LIST
 from zibaldone.core.blocks import BLOCK_TYPES
-from zibaldone.core.brand import NOMENCLATURE, mascot_for
+from zibaldone.core.brand import NOMENCLATURE
 from zibaldone.core.templates import slugify
 from zibaldone.storage.database import StoreError
+from zibaldone.ui import carousel
 from zibaldone.ui import theme as T
 from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
@@ -29,7 +30,7 @@ class TemplateEditor:
         self.error = W.error_text()
         self.title_menu: Optional[ft.Dropdown] = None
         self.color_row = ft.Row(spacing=8, wrap=True, run_spacing=8)
-        self.area_badge = ft.Row(spacing=8, vertical_alignment=ft.CrossAxisAlignment.CENTER)
+        self.area_chips = ft.Row(spacing=4, wrap=True, run_spacing=4, alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
         self.dirty = False
 
     # — layout —
@@ -49,13 +50,6 @@ class TemplateEditor:
         name = W.text_input(state.name, label="Nome *", on_change=lambda e: self._set("name", e.control.value))
         description = W.text_input(state.description, label="Descrizione", multiline=True, min_lines=1, max_lines=3, on_change=lambda e: self._set("description", e.control.value))
         category = W.text_input(state.category, label="Categoria", hint_text="diario, collezioni, io, persone o una tua", on_change=lambda e: self._set("category", e.control.value))
-        area_menu = W.dropdown(
-            vm.area_options(),
-            state.area or vm.NO_AREA,
-            label="Area della vita delle sue voci",
-            on_select=self.pick_area,
-            expand=True,
-        )
         icons = list(vm.TEMPLATE_ICONS)
         if state.icon and state.icon not in icons:
             icons.insert(0, state.icon)
@@ -82,8 +76,8 @@ class TemplateEditor:
                         spacing=12,
                         run_spacing=12,
                     ),
-                    ft.Row([area_menu]),
-                    ft.Row([ft.Column([W.caption("Colore"), self.color_row], spacing=6, expand=True), self.area_badge], vertical_alignment=ft.CrossAxisAlignment.START),
+                    ft.Column([W.caption("Colore"), self.color_row], spacing=6),
+                    ft.Column([W.caption("Aree della vita delle sue voci (anche più di una; nessuna = Generale)"), self.area_chips], spacing=6),
                 ],
                 spacing=14,
             )
@@ -110,14 +104,18 @@ class TemplateEditor:
         self.dirty = True
 
     def _draw_area(self) -> None:
-        """The mascot and name of the template's area, next to the colour; nothing without an area."""
-        area = self.state.area
-        self.area_badge.controls = [W.mascot_avatar(mascot_for(area), 36), W.body(area_label(area), size=13)] if area else []
+        """One chip with the mascot of each area; the ones on are the template's areas."""
+        on = ([self.state.area] if self.state.area else []) + list(self.state.areas)
+        self.area_chips.controls = [
+            carousel.bar_item(W.mascot_avatar(area.mascot, 30), area.color, area.label, area.key in on, lambda key=area.key: self.toggle_area(key))
+            for area in AREA_LIST
+        ]
 
-    def pick_area(self, event: Any) -> None:
-        self._set("area", vm.area_from_option(event.control.value))
+    def toggle_area(self, key: str) -> None:
+        self.state.area, self.state.areas = vm.toggle_template_area(self.state.area, self.state.areas, key)
+        self.dirty = True
         self._draw_area()
-        self.ctx.update(self.area_badge)
+        self.ctx.update(self.area_chips)
 
     def _draw_colors(self) -> None:
         swatches = []

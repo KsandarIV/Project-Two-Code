@@ -52,7 +52,7 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
         controls.append(W.section_label("Le raccolte"))
         controls.append(ft.ResponsiveRow([_card(ctx, group) for group in groups], spacing=12, run_spacing=12))
     color = shown.color if shown is not None else T.ACCENT
-    return carousel.page_body(W.screen(controls, ctx.wide), bar, color, lambda delta: choose(carousel.next_page(pages, page, delta)))
+    return carousel.page_body(W.screen(controls, ctx.wide), bar, color, lambda delta: choose(carousel.next_page(pages, page, delta)), ctx)
 
 
 def _card(ctx: AppContext, group: vm.CollectionGroup) -> ft.Control:

@@ -164,6 +164,19 @@ class AppContext:
 
         self.page.run_task(task)
 
+    def pick_folder(self, on_picked: Callable[[str], Any]) -> None:
+        """The system folder picker; `on_picked` gets the path, or nothing happens when the user cancels."""
+        if self.page is None:
+            return
+
+        async def task() -> None:
+            path = await ft.FilePicker().get_directory_path()
+            if path:
+                on_picked(str(path))
+            self.update()
+
+        self.page.run_task(task)
+
     def open_file(self, path: Path) -> None:
         """Open an attached file with the system app; on a phone, through the share sheet."""
         self.opened.append(path)

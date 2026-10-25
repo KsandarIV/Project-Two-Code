@@ -1,0 +1,113 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#1e222d" />
+      <stop offset="100%" stop-color="#12151c" />
+    </radialGradient>
+    
+    <filter id="dropShadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="12" flood-color="#000000" flood-opacity="0.5" />
+    </filter>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+
+  <g transform="translate(256, 256)" filter="url(#dropShadow)">
+    <circle r="200" fill="#181b22" stroke="#2a2f3d" stroke-width="4" />
+
+    <!-- Spicchi colorati -->
+    <path d="M 0 0 L 76.537 -184.776 A 200 200 0 0 1 184.776 -76.537 Z" fill="#bcf5f4" /> <!-- Leopy -->
+    <path d="M 0 0 L 184.776 -76.537 A 200 200 0 0 1 184.776 76.537 Z" fill="#ffff00" /> <!-- Monty -->
+    <path d="M 0 0 L 184.776 76.537 A 200 200 0 0 1 76.537 184.776 Z" fill="#ff6600" /> <!-- Archy -->
+    <path d="M 0 0 L 76.537 184.776 A 200 200 0 0 1 -76.537 184.776 Z" fill="#8a2be2" /> <!-- Hegy -->
+    <path d="M 0 0 L -76.537 184.776 A 200 200 0 0 1 -184.776 76.537 Z" fill="#00e5ff" /> <!-- Hobbsy -->
+    <path d="M 0 0 L -184.776 76.537 A 200 200 0 0 1 -184.776 -76.537 Z" fill="#ff007f" /> <!-- Ary -->
+    <path d="M 0 0 L -184.776 -76.537 A 200 200 0 0 1 -76.537 -184.776 Z" fill="#ff0000" /> <!-- Mandy -->
+    <path d="M 0 0 L -76.537 -184.776 A 200 200 0 0 1 76.537 -184.776 Z" fill="#66ff00" /> <!-- Diggy -->
+
+    <!-- MASCOTTE -->
+    
+    <!-- 1. Leopy (Azzurro Chiaro) -->
+    <g transform="translate(55, -135) scale(1.3)">
+      <path d="M -12,8 C -22,-2 -15,-15 -2,-18 C 10,-20 20,-10 18,2 C 16,15 2,20 -12,8 Z" fill="#12151c" />
+      <path d="M 17,-15 L 24,-20" stroke="#12151c" stroke-width="2" stroke-linecap="round" />
+      <circle cx="2" cy="-8" r="2.5" fill="#bcf5f4" />
+      <path d="M -8,0 C -5,-5 -2,-5 0,-1" fill="none" stroke="#bcf5f4" stroke-width="2" stroke-linecap="round" />
+    </g>
+
+    <!-- 2. Monty (Giallo) -->
+    <g transform="translate(145, -20) scale(1.2)">
+      <path d="M -15,10 C -15,-5 10,-5 10,10 Z" fill="#12151c" />
+      <polygon points="-12,0 -16,-14 -2,-6" fill="#12151c" />
+      <polygon points="7,0 11,-14 -3,-6" fill="#12151c" />
+      <circle cx="-6" cy="2" r="3" fill="#ffff00" />
+      <circle cx="2" cy="2" r="3" fill="#ffff00" />
+      <polygon points="-2,7 0,9 -4,9" fill="#ffff00" />
+      <path d="M 10,8 L 18,8 C 22,8 24,0 20,-4 C 18,-6 14,-6 14,-2" fill="none" stroke="#12151c" stroke-width="3" stroke-linecap="round" />
+    </g>
+
+    <!-- 3. Archy (Arancione) -->
+    <g transform="translate(110, 85) scale(1.3)">
+      <path d="M -20,12 C -20,-10 10,-10 22,12 Z" fill="#12151c" />
+      <polygon points="-14,-4 -10,-16 -4,-6" fill="#12151c" />
+      <polygon points="-2,-8 2,-20 8,-8" fill="#12151c" />
+      <polygon points="8,-6 14,-16 16,-3" fill="#12151c" />
+      <circle cx="14" cy="5" r="2" fill="#ff6600" />
+    </g>
+
+    <!-- 4. Hegy (Viola) -->
+    <g transform="translate(0, 135) scale(1.1)">
+      <rect x="-16" y="-12" width="32" height="26" fill="#12151c" />
+      <polygon points="-16,-12 -16,-24 -4,-12" fill="#12151c" />
+      <polygon points="16,-12 16,-24 4,-12" fill="#12151c" />
+      <circle cx="-7" cy="0" r="4.5" fill="#8a2be2" />
+      <circle cx="7" cy="0" r="4.5" fill="#8a2be2" />
+      <polygon points="0,7 -3,11 3,11" fill="#8a2be2" />
+    </g>
+
+    <!-- 5. Hobbsy (Ciano) -->
+    <g transform="translate(-110, 85) scale(1.2)">
+      <path d="M -12,18 C -12,-5 5,-15 18,-30 L 22,-26 C 15,-15 15,10 18,18 Z" fill="#12151c" />
+      <polygon points="8,-14 10,-10 12,-15" fill="#00e5ff" />
+      <polygon points="-4,-12 -6,-22 2,-16" fill="#12151c" />
+      <polygon points="5,-17 3,-20 6,-18" fill="#12151c" />
+    </g>
+
+    <!-- 6. Ary (Fucsia) -->
+    <g transform="translate(-135, -10) scale(1.3)">
+      <path d="M -8,5 C -20,5 -20,-5 -5,-5 C 5,-5 5,5 -8,5 Z" fill="#12151c" stroke="#12151c" stroke-width="2" />
+      <path d="M -2,-5 C -2,-18 5,-22 5,-25" fill="none" stroke="#12151c" stroke-width="4" stroke-linecap="round" />
+      <circle cx="5" cy="-26" r="3.5" fill="#12151c" />
+      <circle cx="4" cy="-27" r="1" fill="#ff007f" />
+      <path d="M 8,-26 L 22,-25" stroke="#12151c" stroke-width="2" stroke-linecap="round" />
+      <rect x="-8" y="5" width="2.5" height="15" fill="#12151c" />
+      <rect x="-2" y="5" width="2.5" height="15" fill="#12151c" />
+      <path d="M -12,0 C -5,2 0,2 2,-1" fill="none" stroke="#ff007f" stroke-width="1.5" stroke-linecap="round" />
+    </g>
+
+    <!-- 7. Mandy (Rosso) -->
+    <g transform="translate(-105, -100) scale(1.3)">
+      <rect x="-14" y="-8" width="24" height="16" rx="8" fill="#12151c" />
+      <rect x="-6" y="-8" width="3" height="16" fill="#ff0000" />
+      <rect x="2" y="-8" width="3" height="16" fill="#ff0000" />
+      <path d="M -8,-6 C -18,-20 0,-18 -2,-6" fill="#12151c" />
+      <path d="M 2,-6 C 14,-20 -4,-18 0,-6" fill="#12151c" />
+      <polygon points="10,-2 16,0 10,2" fill="#12151c" />
+      <circle cx="-10" cy="-2" r="1.5" fill="#ff0000" />
+    </g>
+
+    <!-- 8. Diggy (Verde Lime) -->
+    <g transform="translate(-45, -145) scale(1.1)">
+      <path d="M -16,14 L -16,-6 C -16,-16 -6,-16 -4,-16 L 14,-16 C 18,-16 18,-6 14,-6 L -4,-6 L -4,14 Z" fill="#12151c" />
+      <path d="M -10,-4 L -4,-4 L -6,10 L -10,8 Z" fill="#12151c" />
+      <path d="M -16,6 C -24,6 -24,-2 -20,-2" fill="none" stroke="#12151c" stroke-width="3" stroke-linecap="round" />
+      <circle cx="2" cy="-12" r="2" fill="#66ff00" />
+      <circle cx="15" cy="-11" r="2.5" fill="#66ff00" />
+      <polygon points="-8,-2 -6,-2 -7,8 -9,6" fill="#66ff00" />
+    </g>
+
+    <!-- Centro e Logo -->
+    <circle r="60" fill="#12151c" stroke="#ffffff" stroke-width="6" />
+    <text x="0" y="16" font-family="&#39;Segoe UI&#39;, Arial, sans-serif" font-weight="800" font-size="44" fill="#ffffff" text-anchor="middle" letter-spacing="1">ZO</text>
+  </g>
+</svg>

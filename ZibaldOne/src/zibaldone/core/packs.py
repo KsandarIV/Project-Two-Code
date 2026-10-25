@@ -9,7 +9,7 @@ import re
 from dataclasses import dataclass, field
 from importlib import resources
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 from zibaldone.core.blocks import BLOCK_TYPES
 from zibaldone.core.templates import Template, _check_keys, _short_text
@@ -267,14 +267,14 @@ def build_pack(
 BASE_PACKS = ("diario", "aree", "persone", "collezioni", "io", "askesis", "theoria")  # not segreti or finanze: those stay on request
 
 
-def install_base_packs(store: Any) -> List[str]:
-    """Install the base packs and return the names of those it installed.
+def install_base_packs(store: Any, names: Sequence[str] = BASE_PACKS) -> List[str]:
+    """Install the packs in `names` (the base ones by default) and return the names of those it installed.
 
     A pack already there (its templates are in the store) is skipped, and so is one whose
     technical names are taken by something else: a first start never makes copies.
     """
     installed = []
-    for name in BASE_PACKS:
+    for name in names:
         pack = find_builtin_pack(name)
         if pack is None:
             continue

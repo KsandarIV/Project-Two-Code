@@ -74,3 +74,11 @@ def test_entry_title_and_text() -> None:
     assert entry.text_of(template) == {"Titolo": "Dune", "Voto": "★★★★☆"}
     untitled = Template("sera", "Sera", [BlockSpec("voto", "scale", "Voto")]).validate()
     assert Entry.new(untitled, {"voto": 7}, day="2026-10-17").title(untitled) == "Sera del 2026-10-17"
+
+
+def test_a_template_in_several_areas() -> None:
+    from zibaldone.core.templates import Template
+
+    template = Template.from_dict({"slug": "x", "name": "X", "blocks": [{"key": "t", "type": "text", "label": "T"}], "area": "salute", "areas": ["svago", "salute", "svago"]})
+    assert template.all_areas() == ["salute", "svago"]
+    assert Template.from_dict(template.to_dict()).areas == ["svago"]

@@ -117,7 +117,7 @@ def folder(isolated_data_dir: Path) -> Path:
 def ready(folder: Path) -> Path:
     """Consent given, all the packs, a few entries."""
     record_consent(folder, True, NOTICE_VERSION)
-    services.save_ui_settings(folder, diario_suggested=True)
+    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="")
     with Store.open(folder) as store:
         for name in ("diario", "collezioni", "io", "persone"):
             apply_install(plan_install(find_builtin_pack(name), store), store)
@@ -185,8 +185,11 @@ def test_first_run_consent_then_diary_then_today(folder: Path) -> None:
     click(button(shell.body.content, "Non ora"))
     assert shell.current.screen == "consenso"  # nothing saved, the page stays
     click(button(shell.body.content, "Ho capito, iniziamo"))
+    assert shell.current.screen == "cartella"  # 0.3.2: where the backup files go, asked once
+    click(button(shell.body.content, "Più tardi"))
+    assert services.backup_files_pending(folder) is False and services.backup_files_folder(folder) == ""
     assert shell.current.screen == "diario"
-    click(button(shell.body.content, "Inizia con i pacchetti di base"))
+    click(button(shell.body.content, "Installa i pacchetti scelti"))
     assert shell.current.screen == "oggi"
     with Store.open(folder) as store:
         assert store.find_template("sera") is not None
@@ -357,7 +360,7 @@ def test_the_shell_toasts_due_reminders(ready: Path, monkeypatch) -> None:
 
 def test_installing_a_pack_from_scuole(folder: Path) -> None:
     record_consent(folder, True, NOTICE_VERSION)
-    services.save_ui_settings(folder, diario_suggested=True)
+    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="")
     page = FakePage()
     shell = Shell(page, folder)
     shell.start("/scuole")
@@ -577,9 +580,11 @@ def test_an_area_page_offers_the_missing_pack(ready: Path) -> None:
 
 def test_entries_by_area_and_the_area_of_a_template(ready: Path) -> None:
     known = ids(ready)
+    with Store.open(ready) as store:
+        assert store.get_template("libro").area == "svago"  # the pack says so; nothing is guessed from the category
     shell = Shell(FakePage(), ready)
     shell.start(f"/voci/{known['libro']}")
-    assert "Svago" in texts(shell.body.content)  # Libro belongs to svago
+    assert "Svago" in texts(shell.body.content)
     shell.navigate("/voci")
     menu = find(shell.body.content, ft.Dropdown, label="Area")
     menu.value = "svago"
@@ -587,8 +592,8 @@ def test_entries_by_area_and_the_area_of_a_template(ready: Path) -> None:
     shown = texts(shell.body.content)
     assert "Ficciones" in shown and "Cena" not in shown and "1 voce" in shown
     shell.navigate("/modelli/libro")
-    editor_menu = find(shell.body.content, ft.Dropdown, label="Area della vita delle sue voci")
-    assert editor_menu.value == "svago"
+    chip = next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and item.tooltip == "Svago")
+    assert chip.bgcolor is not None  # on
 
 
 # * — 0.2.1: people —
@@ -842,17 +847,19 @@ def test_backup_button_does_not_use_a_camera(ready: Path) -> None:
     assert create.icon == ft.Icons.BACKUP_OUTLINED
 
 
-def test_template_editor_shows_the_area_mascot(ready: Path) -> None:
+def test_template_editor_areas_are_mascot_chips_and_there_can_be_several(ready: Path) -> None:
     shell = Shell(FakePage(), ready)
     shell.start("/modelli/nuovo")
-    assert "Salute" not in texts(shell.body.content)  # no area yet, no badge
-    menu = next(item for item in walk(shell.body.content) if isinstance(item, ft.Dropdown) and item.label == "Area della vita delle sue voci")
-    menu.value = "salute"
-    menu.on_select(SimpleNamespace(control=menu))
-    assert "Salute" in texts(shell.body.content)
-    from zibaldone.core.brand import mascot_for
 
-    assert any(isinstance(item, ft.Container) and (item.tooltip or "").startswith(mascot_for("salute").name) for item in walk(shell.body.content))
+    def chip(label: str) -> Any:
+        return next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and item.tooltip == label)
+
+    assert chip("Salute").bgcolor is None and chip("Svago").bgcolor is None
+    chip("Salute").on_click(SimpleNamespace(control=chip("Salute")))
+    chip("Svago").on_click(SimpleNamespace(control=chip("Svago")))
+    assert chip("Salute").bgcolor is not None and chip("Svago").bgcolor is not None
+    assert vm.toggle_template_area("salute", ["svago"], "salute") == ("svago", [])
+    assert vm.toggle_template_area("", [], "lavoro") == ("lavoro", [])
 
 
 def test_leaving_a_form_keeps_a_draft_that_can_be_resumed(ready: Path) -> None:
@@ -939,9 +946,10 @@ def test_pack_list_does_not_show_pack_version_numbers(ready: Path) -> None:
 
 
 def swipe(detector: ft.GestureDetector, dx: float) -> None:
-    """A long press, then a drag of `dx` pixels, as the device reports it (positions at the start and at the end)."""
-    detector.on_long_press_start(SimpleNamespace(global_position=SimpleNamespace(x=200.0)))
-    detector.on_long_press_end(SimpleNamespace(global_position=SimpleNamespace(x=200.0 + dx)))
+    """A sideways drag of `dx` pixels, as the device reports it: some updates, then the end."""
+    for _ in range(4):
+        detector.on_horizontal_drag_update(SimpleNamespace(primary_delta=dx / 4))
+    detector.on_horizontal_drag_end(SimpleNamespace())
 
 
 def test_models_sit_in_area_pages_and_back_goes_to_the_general_one_first(ready: Path) -> None:
@@ -956,7 +964,7 @@ def test_models_sit_in_area_pages_and_back_goes_to_the_general_one_first(ready: 
     assert shell.ctx.back_hook is None
 
 
-def test_a_long_press_and_drag_changes_the_area_page_in_a_loop(ready: Path) -> None:
+def test_a_sideways_drag_changes_the_area_page_in_a_loop(ready: Path) -> None:
     shell = Shell(FakePage(), ready)
     shell.start("/modelli")
     detector = next(item for item in walk(shell.body.content) if isinstance(item, ft.GestureDetector))
@@ -1071,3 +1079,25 @@ def test_the_lente_model_sits_on_the_general_page(ready: Path) -> None:
     with Store.open(ready) as store:
         apply_install(plan_install(find_builtin_pack("theoria") or find_builtin_pack("lente"), store), store)
         assert vm.area_of(store.get_template("vista")) == ""
+
+
+def test_installing_a_pack_redraws_only_that_pack(folder: Path) -> None:
+    record_consent(folder, True, NOTICE_VERSION)
+    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="")
+    shell = Shell(FakePage(), folder)
+    shell.start("/scuole")
+    body = shell.body.content
+    click(button(body, "Vedi cosa cambia"))
+    click(button(body, "Installa"))
+    assert shell.body.content is body  # no new screen: the scroll stays where it was
+    assert any("installat" in toast for toast in shell.ctx.toasts)
+
+
+def test_a_backup_file_is_written_in_the_chosen_folder(ready: Path, tmp_path: Path) -> None:
+    from zibaldone.storage import backups
+
+    target = tmp_path / "miei-backup"
+    services.save_ui_settings(ready, backup_files_folder=str(target))
+    backups.create_snapshot(ready, reason="manual")
+    assert services.export_to_files_folder(ready) == ""
+    assert len(list(target.glob("*.zbbackup"))) == 1

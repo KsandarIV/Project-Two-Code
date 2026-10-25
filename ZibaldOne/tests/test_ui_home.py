@@ -50,7 +50,7 @@ def test_oggi_follows_the_layout(base: Path) -> None:  # noqa: F811
     shown = texts(shell.body.content)
     assert "RICORRENZE" in shown and "Giulia" in shown and "compleanno · tra 3 giorni · 36 anni" in shown
     assert "OBIETTIVI" in shown and any(text.startswith("Salute · tra 20 giorni") or "tra 20 giorni · 40%" in text for text in shown)
-    home_log.save_layout(base, ["obiettivi", "ricorrenze"])
+    home_log.save_layout(base, ["stoa", "obiettivi", "ricorrenze"])
     shell.start("/oggi")
     shown = texts(shell.body.content)
     assert shown.index("I TRE MOMENTI") < shown.index("OBIETTIVI") < shown.index("RICORRENZE")
@@ -88,17 +88,22 @@ def test_view_tile_and_screens(base: Path) -> None:  # noqa: F811
     assert "VISTA: PERSONE MARCO" not in texts(shell.body.content)
 
 
+def drop(root, moving: str, target: str) -> None:
+    """Drag the handle of `moving` onto the block of `target`, as the device reports it."""
+    zone = next(item for item in walk(root) if isinstance(item, ft.DragTarget) and item.data == target)
+    zone.on_accept(SimpleNamespace(src=SimpleNamespace(data=moving)))
+
+
 def test_home_settings_drag_to_reorder_hide_show_reset(base: Path) -> None:  # noqa: F811
     shell = Shell(FakePage(), base)
     shell.start("/organon/home")
     assert home_log.load_layout(base) == list(home.TILES)
-    order = next(item for item in walk(shell.body.content) if isinstance(item, ft.ReorderableListView))
-    assert not any(isinstance(item, ft.IconButton) and item.tooltip in ("Sposta su", "Sposta giù") for item in walk(shell.body.content))
-    order.on_reorder(SimpleNamespace(old_index=1, new_index=0))  # «citazione» goes above «promemoria»
+    assert "Anteprima" in [text.capitalize() for text in texts(shell.body.content)] or "ANTEPRIMA" in texts(shell.body.content)
+    drop(shell.body.content, "citazione", "promemoria")  # «citazione» goes above «promemoria»
     assert home_log.load_layout(base)[:2] == ["citazione", "promemoria"]
     switches = [item for item in walk(shell.body.content) if isinstance(item, ft.Switch)]
-    switches[0].value = False
-    switches[0].on_change(SimpleNamespace(control=switches[0]))
+    switches[1].value = False  # the switches follow the order of the tiles: promemoria, citazione, ...
+    switches[1].on_change(SimpleNamespace(control=switches[1]))
     assert "citazione" not in home_log.load_layout(base)
     switches = [item for item in walk(shell.body.content) if isinstance(item, ft.Switch) and not item.value]
     switches[0].value = True
@@ -130,10 +135,21 @@ def test_bilancio_tile_is_closed_without_the_pin(base: Path, monkeypatch) -> Non
 def test_oggi_can_be_reordered_by_dragging_right_there(base: Path) -> None:  # noqa: F811
     shell = Shell(FakePage(width=412), base)
     shell.start("/oggi")
-    click(button(shell.body.content, "Riordina i riquadri"))
-    order = next(item for item in walk(shell.body.content) if isinstance(item, ft.ReorderableListView))
-    order.on_reorder(SimpleNamespace(old_index=2, new_index=0))  # «aree» goes first
+    seed(base, shell.ctx.now().date())
+    shell.start("/oggi")
+    assert not any(isinstance(item, ft.Draggable) for item in walk(shell.body.content))  # locked by default
+    lock = next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Sblocca per spostare i riquadri")
+    click(lock)
+    drop(shell.body.content, "aree", "promemoria")  # «aree» goes first
     assert home_log.load_layout(base)[0] == "aree"
-    assert any(isinstance(item, ft.ReorderableListView) for item in walk(shell.body.content))  # still arranging
-    click(button(shell.body.content, "Fine"))
-    assert not any(isinstance(item, ft.ReorderableListView) for item in walk(shell.body.content))
+    assert any(isinstance(item, ft.Draggable) for item in walk(shell.body.content))  # still unlocked
+    remove = next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Togli da Oggi")
+    before = home_log.load_layout(base)
+    click(remove)  # the first block that can be taken away
+    after = home_log.load_layout(base)
+    assert len(after) == len(before) - 1 and all(key in after for key in home.FIXED)
+    click(button(shell.body.content, "Aggiungi un riquadro"))
+    click(button(shell.ctx.page.dialogs[-1], "Abitudini di oggi"))
+    assert "abitudini" in home_log.load_layout(base)
+    click(next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Blocca i riquadri"))
+    assert not any(isinstance(item, ft.Draggable) for item in walk(shell.body.content))

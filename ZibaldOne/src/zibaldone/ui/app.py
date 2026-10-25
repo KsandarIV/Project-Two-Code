@@ -92,6 +92,7 @@ class Shell:
             pass
         try:
             root = page.views[0]
+            root.can_pop = False  # with can_pop True Flet leaves the app without asking on_confirm_pop
             root.on_confirm_pop = self.on_confirm_pop
         except Exception:
             logger.debug("no root view for the back gesture", exc_info=True)
@@ -108,6 +109,8 @@ class Shell:
             return "/benvenuto/accesso"
         if services.destination_choice_pending(self.folder):
             return "/benvenuto/copie"
+        if services.backup_files_pending(self.folder):
+            return "/benvenuto/cartella"
         if not self.migration_checked:  # before the first Store.open may migrate the database
             self.migration_checked = True
             warning = services.pre_migration_backup(self.folder)

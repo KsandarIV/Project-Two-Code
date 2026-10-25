@@ -102,8 +102,8 @@ def _delete(ctx: AppContext, view: V.View) -> Callable[[Any], None]:
     return lambda _: ctx.confirm("Togliere la vista?", f"«{view.name}» sparisce dall'elenco e da Oggi; le voci restano dove sono.", "Togli", remove)
 
 
-def _intro(ctx: AppContext) -> ft.Control:
-    """How Lente works, in three lines, with the way to try it on nine example entries (and to take them away)."""
+def examples_button(ctx: AppContext) -> ft.Control:
+    """The way to try Lente on nine example entries, or to take them away again."""
     present = bool(lente_examples.added(ctx.folder))
 
     def try_it(_: Any) -> None:
@@ -124,11 +124,16 @@ def _intro(ctx: AppContext) -> ft.Control:
         ctx.toast("Esempi tolti.")
         ctx.refresh()
 
-    button = (
+    return (
         W.secondary_button("Togli gli esempi", lambda _: ctx.confirm("Togliere gli esempi?", "Spariscono i 9 esempi e le loro 3 viste; le tue voci restano dove sono.", "Togli", take_away), icon="DELETE_OUTLINE")
         if present
         else W.primary_button("Provala con degli esempi", try_it, icon="AUTO_AWESOME")
     )
+
+
+def _intro(ctx: AppContext) -> ft.Control:
+    """How Lente works, in three lines, with the button for the examples."""
+    button = examples_button(ctx)
     return W.panel(
         ft.Column(
             [

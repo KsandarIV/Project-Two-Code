@@ -6,6 +6,7 @@ import flet as ft
 
 from zibaldone.core.areas import AREA_BY_KEY, AREA_LIST, Area
 from zibaldone.core.brand import NOMENCLATURE
+from zibaldone.core import views as lente
 from zibaldone.core.packs import apply_install, builtin_packs, plan_install
 from zibaldone.storage.database import StoreError
 from zibaldone.ui import carousel, services
@@ -14,7 +15,7 @@ from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route, section
-from zibaldone.ui.views import personalize
+from zibaldone.ui.views import personalize, saved_views
 
 
 GENERAL = ""  # the ninth page: templates with no area
@@ -153,11 +154,13 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
         controls.append(W.caption("Nessun modello in questa pagina, per ora."))
     for label, rows in groups:
         controls.append(W.section_label(label))
+        if any(row.slug == lente.TEMPLATE for row in rows):
+            controls.append(ft.Row([saved_views.examples_button(ctx)]))
         if compact:
             controls.append(ft.Row([_icon_tile(ctx, row) for row in rows], wrap=True, spacing=6, run_spacing=6))
         else:
             controls.append(ft.ResponsiveRow([_template_tile(ctx, row, pinned, pin) for row in rows], spacing=10, run_spacing=10))
-    return carousel.page_body(W.screen(controls, ctx.wide), _page_bar(page, choose), _page_color(page), step)
+    return carousel.page_body(W.screen(controls, ctx.wide), _page_bar(page, choose), _page_color(page), step, ctx)
 
 
 # * — export —
@@ -236,6 +239,7 @@ class PacksScreen:
     def __init__(self, ctx: AppContext) -> None:
         self.ctx = ctx
         self.plan_holders: Dict[str, ft.Column] = {}
+        self.panels: Dict[str, ft.Container] = {}
 
     def build(self) -> ft.Control:
         packs = builtin_packs()
@@ -250,7 +254,9 @@ class PacksScreen:
             )
         ]
         for pack in packs:
-            controls.append(self._pack_panel(vm.pack_card(pack, installed)))
+            panel = self._pack_panel(vm.pack_card(pack, installed))
+            self.panels[pack.id] = panel
+            controls.append(panel)
         return W.screen(controls, self.ctx.wide)
 
     def _pack_panel(self, card: vm.PackCard) -> ft.Control:
@@ -321,7 +327,11 @@ class PacksScreen:
         count = len(installed)
         self.ctx.data_changed()
         self.ctx.toast(f"{pack.name}: {'1 modello installato' if count == 1 else f'{count} modelli installati'}.")
-        self.ctx.refresh()
+        with self.ctx.store() as store:  # redraw this pack only: the page keeps its scroll
+            card = vm.pack_card(pack, [template.slug for template in store.list_templates()])
+        panel = self.panels[pack_id]
+        panel.content = self._pack_panel(card).content
+        self.ctx.update(panel)
 
 
 def build_packs(ctx: AppContext, route: Route) -> ft.Control:

@@ -302,6 +302,7 @@ class MnemosyneScreen:
             from zibaldone.ui.views.vault import secrets_panel
 
             controls.append(secrets_panel(self.ctx))
+        controls.append(self.files_folder_panel())
         importer = W.secondary_button("Importa da un file", lambda _: backup_file.import_file(self.ctx), icon="FILE_DOWNLOAD_OUTLINED")
         if self.ctx.wide:
             maker = ft.Row([self.note, self.button, importer], spacing=10, vertical_alignment=ft.CrossAxisAlignment.CENTER)
@@ -411,6 +412,26 @@ class MnemosyneScreen:
             padding=ft.Padding.symmetric(horizontal=14, vertical=10),
         )
 
+    def files_folder_panel(self) -> ft.Control:
+        current = services.backup_files_folder(self.ctx.folder)
+
+        def chosen(path: str) -> None:
+            services.save_ui_settings(self.ctx.folder, backup_files_folder=path)
+            self.ctx.toast("Cartella dei file di backup scelta.")
+            self.ctx.refresh()
+
+        return W.panel(
+            ft.Column(
+                [
+                    W.body("Cartella dei file di backup", weight=ft.FontWeight.W_600),
+                    W.body(current or "Nessuna: i file non vengono salvati fuori dall'app.", size=13, selectable=bool(current)),
+                    ft.Row([W.secondary_button("Scegli la cartella" if not current else "Cambia cartella", lambda _: self.ctx.pick_folder(chosen), icon="FOLDER_OPEN")], alignment=ft.MainAxisAlignment.END),
+                ],
+                spacing=8,
+            ),
+            padding=14,
+        )
+
     def create(self, _: Any = None) -> None:
         folder, note = self.ctx.folder, (self.note.value or "").strip()
         self.button.disabled = True
@@ -418,7 +439,7 @@ class MnemosyneScreen:
 
         def work() -> Any:
             self.api.create_snapshot(folder, reason="manual", note=note)
-            return services.sync_quietly(folder)
+            return services.export_to_files_folder(folder) or services.sync_quietly(folder)
 
         def done(warning: Any) -> None:
             self.button.disabled = False
