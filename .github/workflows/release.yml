@@ -1,10 +1,17 @@
 # ZibaldOne: una release sola per ogni versione, con terminale (wheel), Windows (zip) e Android (APK).
-# Parte da un tag `zibaldone-vX.Y.Z` o a mano dalla scheda Actions. Senza tag costruisce tutto ma non pubblica.
+# Parte in tre modi:
+#  - merge su main: se la versione nel codice non ha ancora il tag, costruisce tutto e, se tutto passa,
+#    crea il tag `zibaldone-vX.Y.Z` e la release (è il merge della PR `release/X.Y.Z`, sì di Alex al tag).
+#    Se il tag esiste già non fa nulla. Il tag lo crea questo stesso flusso: un tag spinto con GITHUB_TOKEN
+#    non fa partire altri flussi, per questo i lavori non stanno in un flusso a parte;
+#  - push a mano di un tag `zibaldone-vX.Y.Z` (strada manuale, resta valida);
+#  - a mano dalla scheda Actions. Senza tag costruisce tutto ma non pubblica.
 # Sostituisce zibaldone-apk.yml e zibaldone-windows.yml. Piano: ZibaldOne/team/piano-ci-cd.md
 name: ZibaldOne Release
 
 on:
   push:
+    branches: [main]
     tags: ["zibaldone-v*"]
   workflow_dispatch:
     inputs:
@@ -26,8 +33,40 @@ env:
   PYTHONIOENCODING: utf-8
 
 jobs:
+  plan:
+    name: C'è una versione nuova?
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      skip: ${{ steps.plan.outputs.skip }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.sha }}
+          persist-credentials: false
+      # Su main costruisce solo se la versione nel codice non ha ancora il suo tag.
+      - id: plan
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          SKIP=false
+          if [ "$GITHUB_EVENT_NAME" = "push" ] && [ "$GITHUB_REF_TYPE" = "branch" ]; then
+            VERSION=$(sed -n 's/^__version__ = "\(.*\)"$/\1/p' ZibaldOne/src/zibaldone/__init__.py)
+            if [ -z "$VERSION" ]; then echo "::error::non trovo __version__"; exit 1; fi
+            if gh api "repos/$GH_REPO/git/ref/tags/zibaldone-v$VERSION" > /dev/null 2>&1; then
+              echo "Il tag zibaldone-v$VERSION esiste già: niente da costruire."
+              SKIP=true
+            else
+              echo "Versione nuova $VERSION senza tag: costruisco e pubblico."
+            fi
+          fi
+          echo "skip=$SKIP" >> "$GITHUB_OUTPUT"
+
   check:
     name: Test e versione
+    needs: plan
+    if: needs.plan.outputs.skip != 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 30
     outputs:
@@ -40,7 +79,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag || github.ref }}
+          ref: ${{ inputs.tag || github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -59,6 +98,8 @@ jobs:
           BUILD_NUMBER=$(python -c "from zibaldone.cloud.updates import version_code; print(version_code('$VERSION'))")
           TAG="$INPUT_TAG"
           if [ -z "$TAG" ] && [ "$GITHUB_REF_TYPE" = "tag" ]; then TAG="$GITHUB_REF_NAME"; fi
+          # Merge su main: il tag di questa versione, creato alla fine se tutto passa.
+          if [ -z "$TAG" ] && [ "$GITHUB_EVENT_NAME" = "push" ]; then TAG="zibaldone-v$VERSION"; fi
           if [ -n "$TAG" ] && [ "$TAG" != "zibaldone-v$VERSION" ]; then
             echo "::error::il tag $TAG non corrisponde alla versione nel codice ($VERSION)"
             exit 1
@@ -83,7 +124,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag || github.ref }}
+          ref: ${{ inputs.tag || github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -115,7 +156,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag || github.ref }}
+          ref: ${{ inputs.tag || github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -165,7 +206,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag || github.ref }}
+          ref: ${{ inputs.tag || github.sha }}
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
@@ -239,7 +280,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.tag || github.ref }}
+          ref: ${{ inputs.tag || github.sha }}
           persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
@@ -262,6 +303,7 @@ jobs:
           if gh release view "$TAG" > /dev/null 2>&1; then
             gh release upload "$TAG" files/* --clobber
           else
-            gh release create "$TAG" files/* --verify-tag --prerelease \
+            # --target: se il tag non esiste (merge su main) lo crea qui, sul commit costruito.
+            gh release create "$TAG" files/* --target "$GITHUB_SHA" --prerelease \
               --title "ZibaldOne $VERSION" --notes-file "ZibaldOne/docs/versioni/v$VERSION.md"
           fi
