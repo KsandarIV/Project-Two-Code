@@ -12,7 +12,7 @@ Alex le vuole tenere tutte e quattro. L'icona predefinita è la **C · monogramm
 ## Come si sceglie
 Oggi, a mano: copiare i due PNG di `scelta/<lettera>/` in `src/assets` e rifare la build.
 
-**Da fare, non ancora implementato.** La scelta andrà nelle Impostazioni, nella parte **Informazioni · ZibaldOne** (`ui/views/settings.py`, `about`), accanto alle mascotte: una riga «Icona» con le quattro anteprime. Limiti da tenere presenti:
+**Fatto in 0.3.3 (solo la scelta e l'icona della finestra)**: la scelta si fa al primo avvio e in Impostazioni → Personalize (Kosmesis), `ui/views/app_icon.py`; il collegamento e l'icona installata restano da fare. Limiti da tenere presenti:
 - l'icona installata (exe di Windows, icona del lancio su Android) è fissa dentro la build: l'app non può cambiarla mentre gira. Su Android servirebbe una build con quattro «alias» del lancio, su Windows un collegamento con l'icona scelta;
 - cambia a runtime solo l'icona nella finestra e il logo mostrato nell'app.
 Su Windows Alex ha approvato due strade (2026-10-25):

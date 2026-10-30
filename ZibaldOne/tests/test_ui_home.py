@@ -169,3 +169,14 @@ def test_kosmesis_switches_blocks_off_and_on_by_dragging(base: Path) -> None:  #
     assert home_log.load_layout(base)[:2] == ["citazione", "promemoria"]
     drop(shell.body.content, "citazione", "__end__")  # to the end of the list
     assert home_log.load_layout(base)[-1] == "citazione"
+
+
+def test_kosmesis_changes_the_icon(base: Path) -> None:  # noqa: F811
+    from zibaldone.ui import services
+
+    shell = Shell(FakePage(), base)
+    shell.start("/organon/personalizza")
+    tiles = [item for item in walk(shell.body.content) if isinstance(item, ft.Container) and isinstance(item.content, ft.Image) and item.content.src.startswith("icons/")]
+    assert len(tiles) == 4 and services.app_icon(base) == "C"
+    tiles[3].on_click(SimpleNamespace(control=tiles[3]))  # D
+    assert services.app_icon(base) == "D"

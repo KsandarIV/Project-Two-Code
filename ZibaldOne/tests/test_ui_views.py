@@ -117,7 +117,7 @@ def folder(isolated_data_dir: Path) -> Path:
 def ready(folder: Path) -> Path:
     """Consent given, all the packs, a few entries."""
     record_consent(folder, True, NOTICE_VERSION)
-    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="")
+    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="", app_icon="C")
     with Store.open(folder) as store:
         for name in ("diario", "collezioni", "io", "persone"):
             apply_install(plan_install(find_builtin_pack(name), store), store)
@@ -192,7 +192,10 @@ def test_first_run_consent_then_diary_then_today(folder: Path) -> None:
     assert services.backup_files_pending(folder) is False and services.backup_files_folder(folder) == ""
     assert shell.current.screen == "diario"
     click(button(shell.body.content, "Installa i pacchetti scelti"))
-    assert shell.current.screen == "oggi"
+    assert shell.current.screen == "icona"  # 0.3.3: the icon, asked once
+    assert services.app_icon(folder) == "C"  # the default until the user picks
+    click(button(shell.body.content, "Continua"))
+    assert services.app_icon_pending(folder) is False and shell.current.screen == "oggi"
     with Store.open(folder) as store:
         assert store.find_template("sera") is not None
         assert store.find_template("checkin_area") is not None  # 0.2.0: the areas pack comes along
@@ -362,7 +365,7 @@ def test_the_shell_toasts_due_reminders(ready: Path, monkeypatch) -> None:
 
 def test_installing_a_pack_from_scuole(folder: Path) -> None:
     record_consent(folder, True, NOTICE_VERSION)
-    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="")
+    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="", app_icon="C")
     page = FakePage()
     shell = Shell(page, folder)
     shell.start("/scuole")
@@ -1085,7 +1088,7 @@ def test_the_lente_model_sits_on_the_general_page(ready: Path) -> None:
 
 def test_installing_a_pack_redraws_only_that_pack(folder: Path) -> None:
     record_consent(folder, True, NOTICE_VERSION)
-    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="")
+    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="", app_icon="C")
     shell = Shell(FakePage(), folder)
     shell.start("/scuole")
     body = shell.body.content

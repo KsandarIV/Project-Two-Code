@@ -146,6 +146,7 @@ def route_path(screen: str, arg: str = "", extra: str = "") -> str:
         "copie": "/benvenuto/copie",
         "diario": "/benvenuto/diario",
         "cartella": "/benvenuto/cartella",
+        "icona": "/benvenuto/icona",
     }
     return paths.get(screen, "/oggi")
 
@@ -202,6 +203,6 @@ def parse_route(path: Optional[str]) -> Route:
         return Route("novita", "oggi")
     if head == "organon" and len(rest) == 1 and rest[0] in SETTINGS_KEYS:
         return Route("parte", "organon", rest[0])
-    if head == "benvenuto" and len(rest) == 1 and rest[0] in ("consenso", "accesso", "copie", "cartella", "diario"):
+    if head == "benvenuto" and len(rest) == 1 and rest[0] in ("consenso", "accesso", "copie", "cartella", "diario", "icona"):
         return Route(rest[0], "")
     return HOME

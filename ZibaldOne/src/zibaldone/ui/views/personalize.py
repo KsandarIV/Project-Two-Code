@@ -8,7 +8,7 @@ from zibaldone.ui import services
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import settings_part
-from zibaldone.ui.views import home_layout
+from zibaldone.ui.views import app_icon, home_layout
 
 VIEW_MODES = (("completa", "Completa: nome, descrizione e conteggio"), ("icone", "Solo icone"))
 DEFAULT_VIEW = "completa"
@@ -38,6 +38,8 @@ def build(ctx: AppContext) -> ft.Control:
         W.screen_header(part.nickname, part.label, part.description, on_back=ctx.back),
         W.section_label("Modelli"),
         W.panel(ft.Column([W.body("La vista con cui si aprono le pagine dei modelli. Si cambia anche dal pulsante in alto nella schermata Modelli.", dim=True), W.wide(picker)], spacing=10)),
+        W.section_label("Icona"),
+        W.panel(ft.Column([W.body("L'icona dell'app. Cambia subito quella della finestra; l'icona del collegamento o dell'app installata cambia con la guida «Cambiare l'icona».", dim=True), app_icon.picker(ctx, lambda letter: app_icon.choose(ctx, letter))], spacing=10)),
         W.section_label("La home", "Oikos"),
         *home_layout.build(ctx),
     ]

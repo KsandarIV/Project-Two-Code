@@ -16,7 +16,7 @@ from zibaldone.ui import theme as T
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route
-from zibaldone.ui.views import backup_file
+from zibaldone.ui.views import app_icon, backup_file
 
 
 def _brand() -> ft.Control:
@@ -317,6 +317,24 @@ def diario(ctx: AppContext, route: Route) -> ft.Control:
             ),
             ft.Row([W.secondary_button("Più tardi", later), W.primary_button("Installa i pacchetti scelti", install, icon="DOWNLOAD")], alignment=ft.MainAxisAlignment.END, wrap=True, spacing=8),
             W.body(APP_MOTTO, dim=True, italic=True, text_align=ft.TextAlign.CENTER),
+        ],
+        ctx.wide,
+    )
+
+
+def app_icon_step(ctx: AppContext, route: Route) -> ft.Control:
+    """The first start: which icon the app wears. The default, C, is kept when the user just goes on."""
+
+    def go_on(_: Any) -> None:
+        services.set_app_icon(ctx.folder, services.app_icon(ctx.folder))  # writes the default too, so the question is not asked again
+        ctx.advance()
+
+    return W.screen(
+        [
+            _brand(),
+            W.title_with_nickname("Che icona preferisci?", "Kosmesis", size=22),
+            W.panel(ft.Column([W.body("Scegli l'icona di ZibaldOne. Puoi cambiarla quando vuoi, da Impostazioni → Personalizza."), app_icon.picker(ctx, lambda letter: app_icon.choose(ctx, letter))], spacing=12)),
+            ft.Row([W.primary_button("Continua", go_on, icon="CHECK")], alignment=ft.MainAxisAlignment.END),
         ],
         ctx.wide,
     )

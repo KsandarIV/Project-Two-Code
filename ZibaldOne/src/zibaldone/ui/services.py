@@ -456,3 +456,25 @@ def reminder_overview(folder: Path, now: datetime) -> Tuple[Any, str]:
             return overview(store, folder, now), ""
     except Exception as error:
         return None, str(error)
+
+
+# * — the app icon (A014) —
+
+APP_ICONS = ("A", "B", "C", "D")
+DEFAULT_APP_ICON = "C"
+
+
+def app_icon(folder: Path) -> str:
+    value = ui_settings(folder).get("app_icon")
+    return value if value in APP_ICONS else DEFAULT_APP_ICON
+
+
+def app_icon_pending(folder: Path) -> bool:
+    """The first start asks once which icon the user wants."""
+    return "app_icon" not in ui_settings(folder)
+
+
+def set_app_icon(folder: Path, letter: str) -> None:
+    if letter not in APP_ICONS:
+        raise ValueError(f"Icona sconosciuta: {letter}")
+    save_ui_settings(folder, app_icon=letter)
