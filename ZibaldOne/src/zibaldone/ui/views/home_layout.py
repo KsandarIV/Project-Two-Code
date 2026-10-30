@@ -1,5 +1,6 @@
 """Kosmesis · Oikos (0.2.8, moved here in 0.3.3): which tiles Oggi shows, and in what order."""
 
+import asyncio
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import flet as ft
@@ -32,48 +33,139 @@ def label_of(key: str, view_names: Dict[str, str]) -> str:
 GROUP = "home"
 
 
-def arrange(entries: List[Tuple[str, ft.Control]], view_names: Dict[str, str], save: Callable[[List[str]], None], remove: Optional[Callable[[str], None]] = None) -> ft.Control:
-    """The blocks as they look, each under a handle: drag it onto another block to put it there.
+HOLD_SECONDS = 0.8  # holding a dragged block this long brings out the crescent on the right
+DRAG_TIMEOUT = 8  # Flet does not tell a cancelled drag: after this the dimmed block and the crescent are put back
+CRESCENT = "crescent"  # key in ctx.memory of the crescent shown on the page overlay
 
-    The block fades while its handle is dragged; only the handle moves, so the page still scrolls on a phone.
+
+def _drop_crescent(ctx: AppContext) -> None:
+    crescent = ctx.memory.pop(CRESCENT, None)
+    if crescent is not None and ctx.page is not None and crescent in ctx.page.overlay:
+        ctx.page.overlay.remove(crescent)
+        ctx.update()
+
+
+def arrange(
+    ctx: AppContext,
+    entries: List[Tuple[str, ft.Control]],
+    view_names: Dict[str, str],
+    save: Callable[[List[str]], None],
+    remove: Optional[Callable[[str], None]] = None,
+    off: Optional[List[str]] = None,
+) -> ft.Control:
+    """The blocks as they look: drag a whole block onto another to put it there.
 
     `entries` are (key, block) in order; `save` gets the new order of keys; `remove` (when given) adds a «take away» button to every block that is not fixed.
+    With `off` (the keys switched off) a zone «Spenti» shows them faded: drag a block in to switch it off, out to switch it on. Holding a dragged block for a moment
+    brings out a crescent on the right, so a far zone can be reached without scrolling; dropping on it switches the block off.
     """
     keys = [key for key, _ in entries]
     blocks = dict(entries)
+    _drop_crescent(ctx)  # a redraw: the old crescent is stale
+    dragging = {"id": 0, "boxes": {}}
+
+    def settle() -> None:
+        dragging["id"] += 1  # the timers of the drag that just ended stop here
+        _drop_crescent(ctx)
+        for box in dragging["boxes"].values():
+            box.opacity = 1
+            ctx.update(box)
+
+    def place(moving: str, order: List[str]) -> None:
+        settle()
+        save(order)
 
     def dropped(target: str) -> Callable[[Any], None]:
         def accept(event: Any) -> None:
             moving = getattr(event.src, "data", None)
-            if moving not in keys or moving == target:
+            if moving is None or moving == target or moving not in keys + (off or []):
                 return
             order = [key for key in keys if key != moving]
-            order.insert(order.index(target), moving)
-            save(order)
+            order.insert(order.index(target) if target in order else len(order), moving)
+            place(moving, order)
 
         return accept
 
-    def handle(key: str) -> ft.Control:
+    def switched_off(event: Any) -> None:
+        moving = getattr(event.src, "data", None)
+        if moving in keys and len(keys) > 1:  # Oggi never stays empty
+            place(moving, [key for key in keys if key != moving])
+        else:
+            settle()
+
+    def show_crescent() -> None:
+        height = float(getattr(ctx.page, "height", None) or 600)
+        crescent = ft.Container(
+            ft.DragTarget(
+                group=GROUP,
+                on_accept=switched_off,
+                content=ft.Container(
+                    ft.Icon(W.icon_of("VISIBILITY_OFF_OUTLINED"), size=26, color=T.TEXT),
+                    width=64,
+                    height=160,
+                    bgcolor=W.fade(T.ACCENT, 0.45),
+                    border_radius=ft.BorderRadius.only(top_left=80, bottom_left=80),
+                    alignment=ft.Alignment.CENTER,
+                    tooltip="Lascialo qui per spegnerlo",
+                ),
+            ),
+            right=0,
+            top=max(height / 2 - 80, 0),
+        )
+        ctx.memory[CRESCENT] = crescent
+        ctx.page.overlay.append(crescent)
+        ctx.update()
+
+    def lifted(box: ft.Control) -> Callable[[Any], None]:
+        def start(_: Any) -> None:
+            box.opacity = 0.3  # the block turns see-through while it moves
+            ctx.update(box)
+            if off is None or ctx.page is None or not hasattr(ctx.page, "run_task"):
+                return
+            dragging["id"] += 1
+            mine = dragging["id"]
+
+            async def hold() -> None:
+                await asyncio.sleep(HOLD_SECONDS)
+                if dragging["id"] == mine:
+                    show_crescent()
+                await asyncio.sleep(DRAG_TIMEOUT)
+                if dragging["id"] == mine:
+                    settle()
+
+            ctx.page.run_task(hold)
+
+        return start
+
+    def card(key: str, faded: bool) -> ft.Control:
         label = ft.Row(
             [ft.Icon(W.icon_of("DRAG_INDICATOR"), size=20, color=T.TEXT_DIM), W.body(label_of(key, view_names), size=13, expand=True)]
-            + ([W.icon_button("CLOSE", lambda _, key=key: remove(key), "Togli da Oggi", color=T.TEXT_DIM)] if remove is not None and key not in home.FIXED else []),
+            + ([W.icon_button("CLOSE", lambda _, key=key: remove(key), "Togli da Oggi", color=T.TEXT_DIM)] if remove is not None and key not in home.FIXED and not faded else []),
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
         )
         grip = ft.Container(label, padding=ft.Padding.symmetric(horizontal=10, vertical=2), bgcolor=T.PANEL, border_radius=T.RADIUS_SMALL)
-        box = ft.Container(blocks[key], animate_opacity=150)
-
-        def lifted(_: Any) -> None:  # the block turns see-through while its handle moves
-            box.opacity = 0.3
-            box.update()
-
+        box = ft.Container(blocks[key], animate_opacity=150) if not faded else ft.Container(opacity=0.45)
+        dragging["boxes"][key] = box
+        whole = ft.Column([grip] + ([box] if not faded else []), spacing=6)
         feedback = ft.Container(W.body(label_of(key, view_names), size=13), padding=10, bgcolor=T.PANEL, border_radius=T.RADIUS_SMALL, opacity=0.6)
-        drag = ft.Draggable(group=GROUP, data=key, content=grip, content_feedback=feedback, content_when_dragging=ft.Container(height=34), on_drag_start=lifted)
-        return ft.Column([drag, box], spacing=6)
+        return ft.Draggable(group=GROUP, data=key, content=whole, content_feedback=feedback, on_drag_start=lifted(box) if not faded else None)
 
-    return ft.Column(
-        [ft.DragTarget(group=GROUP, on_accept=dropped(key), content=handle(key), data=key) for key in keys],
+    active = ft.Column(
+        [ft.DragTarget(group=GROUP, on_accept=dropped(key), content=card(key, False), data=key) for key in keys]
+        + [ft.DragTarget(group=GROUP, on_accept=dropped("__end__"), content=ft.Container(height=24), data="__end__")],  # the end of the list
         spacing=14,
     )
+    if off is None:
+        return active
+    zone = ft.DragTarget(
+        group=GROUP,
+        on_accept=switched_off,
+        content=W.panel(
+            ft.Column([card(key, True) for key in off] or [W.caption("Trascina qui un blocco per spegnerlo; da qui lo riporti nella home.")], spacing=8),
+            border_color=W.fade(T.TEXT_DIM, 0.5),
+        ),
+    )
+    return ft.Column([active, W.section_label("Spenti"), zone], spacing=14)
 
 
 def build(ctx: AppContext) -> List[ft.Control]:
@@ -102,8 +194,8 @@ def build(ctx: AppContext) -> List[ft.Control]:
 
     entries, _ = today.preview_entries(ctx)
     controls: List[ft.Control] = [
-        W.caption("Così è la tua home, con i riquadri veri. Trascina la maniglia di un riquadro su un altro per spostarlo. «Le voci di oggi» restano sempre in fondo."),
-        arrange(entries, view_names, save),
+        W.caption("Così è la tua home, con i riquadri veri. Trascina un riquadro su un altro per spostarlo; in fondo, nei «Spenti», quelli che non vuoi vedere. «Le voci di oggi» restano sempre in fondo."),
+        arrange(ctx, entries, view_names, save, off=[key for key in offered if key not in shown]),
         W.section_label("Accendi e spegni"),
         W.panel(ft.Column([ft.Row([W.body(label_of(key, view_names), dim=key not in shown, expand=True), switch(key, key in shown)]) for key in offered], spacing=2)),
     ]

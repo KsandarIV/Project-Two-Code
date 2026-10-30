@@ -98,7 +98,7 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     if unlocked:
         controls.append(ft.Row([W.caption("Sbloccata: trascina la maniglia di un riquadro per spostarlo."), lock], alignment=ft.MainAxisAlignment.SPACE_BETWEEN))
         entries = [(key, block) for key in shown for block in [_tile(ctx, key, model, tiles)] if block is not None]
-        controls.append(home_layout.arrange(entries, view_names, save, remove=lambda key: save([item for item in shown if item != key])))
+        controls.append(home_layout.arrange(ctx, entries, view_names, save, remove=lambda key: save([item for item in shown if item != key])))
         offered = [key for key in [*home.TILES, *[f"vista:{view_id}" for view_id in view_names]] if key not in shown]
         if offered:
             controls.append(W.secondary_button("Aggiungi un riquadro", lambda _: _add_dialog(ctx, offered, view_names, lambda key: save([*shown, key])), icon="ADD"))

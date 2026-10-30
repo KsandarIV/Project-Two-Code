@@ -153,3 +153,19 @@ def test_oggi_can_be_reordered_by_dragging_right_there(base: Path) -> None:  # n
     assert "abitudini" in home_log.load_layout(base)
     click(next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Blocca i riquadri"))
     assert not any(isinstance(item, ft.Draggable) for item in walk(shell.body.content))
+
+
+def test_kosmesis_switches_blocks_off_and_on_by_dragging(base: Path) -> None:  # noqa: F811
+    shell = Shell(FakePage(), base)
+    shell.start("/organon/personalizza")
+
+    def zone():
+        return next(item for item in walk(shell.body.content) if isinstance(item, ft.DragTarget) and item.on_accept.__name__ == "switched_off")
+
+    zone().on_accept(SimpleNamespace(src=SimpleNamespace(data="citazione")))  # into «Spenti»
+    assert "citazione" not in home_log.load_layout(base)
+    assert "SPENTI" in texts(shell.body.content)
+    drop(shell.body.content, "citazione", "promemoria")  # out again, above «promemoria»
+    assert home_log.load_layout(base)[:2] == ["citazione", "promemoria"]
+    drop(shell.body.content, "citazione", "__end__")  # to the end of the list
+    assert home_log.load_layout(base)[-1] == "citazione"
