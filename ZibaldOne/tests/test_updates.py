@@ -33,10 +33,30 @@ class FakeGitHub:
 
 
 def test_version_code_always_grows():
-    codes = [updates.version_code(v) for v in ("0.0.9", "0.1.0", "0.1.5", "0.2.0", "1.0.0", "1.0.1")]
-    assert codes == sorted(codes) and codes[1] == 1000
+    versions = ("0.0.9", "0.1.0", "0.1.5", "0.2.0", "0.3.2", "0.3.2.1", "0.3.2.12", "0.3.3", "0.10.0", "1.0.0", "1.0.1", "1.0.1.1", "1.1.0")
+    codes = [updates.version_code(v) for v in versions]
+    assert codes == sorted(set(codes))
+    assert updates.version_code("0.3.2") == 300200 and updates.version_code("0.3.2.1") == 300201
+    assert updates.version_code("0.3.2") > 3002  # the old code of 0.3.2: installed apps must still see an update
     with pytest.raises(ValueError):
         updates.version_code("1.0")
+
+
+@pytest.mark.parametrize("text", ["1.0", "0.3.2.0", "0.3.2.100", "0.3.2.1.1", "0.100.0", "0.3.x", "v0.3.2", ""])
+def test_invalid_versions_are_refused(text):
+    with pytest.raises(ValueError):
+        updates.parse_version(text)
+
+
+def test_mini_patch_sorts_between_releases():
+    assert updates.parse_version("0.3.2") < updates.parse_version("0.3.2.1") < updates.parse_version("0.3.2.2") < updates.parse_version("0.3.3")
+    assert updates.parse_version(" 0.3.2.1 ") == (0, 3, 2, 1)
+
+
+def test_update_check_sees_mini_patches():
+    found = updates.releases_from([release("zibaldone-v0.3.2"), release("zibaldone-v0.3.2.1"), release("zibaldone-v0.3.1")])
+    assert [item.version for item in found] == ["0.3.2.1", "0.3.2", "0.3.1"]
+    assert updates.is_newer(found[0], "0.3.2") and not updates.is_newer(found[1], "0.3.2.1")
 
 
 def test_only_zibaldone_releases_newest_first():

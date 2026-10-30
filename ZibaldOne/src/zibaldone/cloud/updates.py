@@ -22,7 +22,8 @@ RELEASES_PAGE = f"https://github.com/{REPOSITORY}/releases"
 TAG_PREFIX = "zibaldone-v"
 SETTINGS_KEY = "updates"
 CHECK_INTERVAL = timedelta(hours=24)
-VERSION = re.compile(r"^(\d{1,3})\.(\d{1,3})\.(\d{1,3})$")
+# X.Y.Z, or X.Y.Z.N for a mini patch (N from 1; `0.3.2.0` is never written, it is `0.3.2`).
+VERSION = re.compile(r"^(\d{1,3})\.(\d{1,2})\.(\d{1,3})(?:\.([1-9]\d?))?$")
 
 
 @dataclass
@@ -35,19 +36,24 @@ class Release:
     notes: str = ""
 
 
-def parse_version(text: str) -> Tuple[int, int, int]:
+def parse_version(text: str) -> Tuple[int, int, int, int]:
+    """(major, minor, patch, fix); `fix` is 0 for a normal release, so tuples sort in release order."""
     match = VERSION.match(text.strip())
     if not match:
         raise ValueError(f"versione non valida: {text!r}")
-    return int(match.group(1)), int(match.group(2)), int(match.group(3))
+    major, minor, patch, fix = match.groups()
+    return int(major), int(minor), int(patch), int(fix or 0)
 
 
 def version_code(text: str) -> int:
-    """Android `versionCode`: always growing, 0.1.0 -> 1000, 0.1.5 -> 1005, 1.2.3 -> 1002003."""
-    major, minor, patch = parse_version(text)
-    if minor > 999 or patch > 999:
+    """Android `versionCode`: always growing. 0.3.2 -> 300200, 0.3.2.1 -> 300201, 1.2.3 -> 10200300.
+
+    Larger than every code of the old three-number formula (0.3.2 was 3002), so installed apps still update.
+    """
+    major, minor, patch, fix = parse_version(text)
+    if major > 209:
         raise ValueError(f"versione troppo grande per Android: {text}")
-    return major * 1_000_000 + minor * 1000 + patch
+    return major * 10_000_000 + minor * 100_000 + patch * 100 + fix
 
 
 def releases_from(data: Any) -> List[Release]:
