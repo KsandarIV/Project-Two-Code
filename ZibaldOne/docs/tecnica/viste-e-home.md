@@ -10,7 +10,7 @@ Il pacchetto **Lente · Viste** (id `theoria`, invariato) ha il modello `vista` 
 
 ## La home (Oggi)
 Oggi è fatto di **riquadri fissi in lista**: `promemoria`, `citazione`, `aree`, `abitudini`, `ricorrenze`, `obiettivi`, `bilancio` e `vista:<id>` per ogni vista che vuoi vedere (prime 5 voci e «Vedi tutti»). Il layout è un piccolo `home.json` nella cartella dei dati (`storage/home_log.py`); chiavi sconosciute o viste cancellate si ignorano, un file rovinato dà il layout di base e non blocca l'apertura.
-- App: in Oggi i riquadri si riordinano **trascinandoli**, senza pulsanti con le frecce. Impostazioni → **La tua home**: riordina, nascondi/mostra, «Ripristina».
+- App: in Oggi i riquadri si riordinano **trascinandoli**, senza pulsanti con le frecce. Impostazioni → Kosmesis → **Oikos** (la home): riordina, nascondi/mostra, «Ripristina».
 - Terminale: `zbone home`, `home aggiungi|togli|sposta CHIAVE [POSIZIONE]|ripristina`.
 - Un `home.json` della 0.3.0 (griglia, versione 2) si legge ancora: i riquadri passano in lista nell'ordine di lettura (riga, poi colonna).
 

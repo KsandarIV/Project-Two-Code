@@ -8,6 +8,7 @@ from zibaldone.ui import services
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import settings_part
+from zibaldone.ui.views import home_layout
 
 VIEW_MODES = (("completa", "Completa: nome, descrizione e conteggio"), ("icone", "Solo icone"))
 DEFAULT_VIEW = "completa"
@@ -37,7 +38,7 @@ def build(ctx: AppContext) -> ft.Control:
         W.screen_header(part.nickname, part.label, part.description, on_back=ctx.back),
         W.section_label("Modelli"),
         W.panel(ft.Column([W.body("La vista con cui si aprono le pagine dei modelli. Si cambia anche dal pulsante in alto nella schermata Modelli.", dim=True), W.wide(picker)], spacing=10)),
-        W.section_label("Oggi"),
-        W.panel(ft.Row([ft.Column([W.body("La tua home"), W.caption("quali riquadri mostra Oggi e in che ordine")], spacing=2, expand=True), W.secondary_button("Apri", lambda _: ctx.go("/organon/home"), icon="HOME_OUTLINED")])),
+        W.section_label("La home", "Oikos"),
+        *home_layout.build(ctx),
     ]
     return W.screen(controls, ctx.wide)
