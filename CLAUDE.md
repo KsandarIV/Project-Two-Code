@@ -1,12 +1,10 @@
 # ZibaldOne: rules for Claude
 
-ZibaldOne is a local-first personal app: Python 3.12, Flet UI, SQLite, Windows + Android. Free and open source: never propose paid or premium features.
+ZibaldOne is a local-first personal app: Python 3.12, Flet UI, SQLite, Windows + Android. Free and open source.
 Code is in `ZibaldOne/src/zibaldone/` (core, storage, cli, cloud, notify, packs, ui). Tests in `ZibaldOne/tests/`.
 
 ## Before you start
-1. Read the card you are working on (Trello, link given by the coordinator).
-2. Read `ZibaldOne/docs/tecnica/mappa-codice.md` if it exists, then only the modules you need.
-3. Use the `zb-card` skill to write the plan and the branch name.
+Read `ZibaldOne/docs/tecnica/mappa-codice.md` if it exists, then only the modules you need.
 
 ## Commands (run from `ZibaldOne/`)
 - Install: `pip install -e ".[dev,ui]"`
@@ -16,21 +14,17 @@ Code is in `ZibaldOne/src/zibaldone/` (core, storage, cli, cloud, notify, packs,
 ## Code rules
 - `core` never imports `ui`, `cli` or `storage`.
 - Code, names, comments, docstrings: English. App text, user docs, Novità, commit subjects: Italian.
-- Smallest complete change. No features the card does not ask for.
-- Secrets never in the repo, chat or Trello.
+- Smallest complete change. No features nobody asked for.
+- Secrets never in the repo.
 
 ## Git rules
-- One card = one branch `<type>/<card#>-<slug>` = one PR. Types: feat, fix, docs, ci, chore, refactor, test, release.
+- Branch `<type>/<number>-<slug>` (types: feat, fix, docs, ci, chore, refactor, test, release), one PR per branch.
 - Conventional Commits, Italian subject: `fix(ui): il tasto indietro torna alla pagina precedente`.
-- PR body starts with `Trello: <card URL>`; fill `.github/pull_request_template.md`. Use the `zb-pr` skill.
-- Never push to `main`, never merge, never tag, never delete branches or files. Alex merges every PR (squash).
-- Never run git on Alex's PC.
+- Fill `.github/pull_request_template.md`.
+- Never push to `main`, never tag, never delete branches or files.
 
 ## Public repo: what may be committed
 Only technical, explanatory, testing and usage docs (README, CHANGELOG, guides, version notes, ADRs, dev guides). Never work plans, team files, requirements, research, AI context or personal data.
 
 ## Skills
-Repo skills in `.claude/skills/`: `zb-card`, `zb-pr`, `zb-release`, `zb-feedback`. Skills installed globally on Alex's PC are not visible to cloud threads.
-
-## Talking to Alex
-English, short, plain (Italian is fine if he writes it). One message when the PR is green or when you are blocked. End with what you skipped or did not check, and the risks.
+Repo skills in `.claude/skills/`: `zb-card`, `zb-pr`, `zb-release`, `zb-feedback`.
