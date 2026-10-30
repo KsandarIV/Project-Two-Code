@@ -235,5 +235,6 @@ ZibaldOne/team/
 ZibaldOne/docs/docs della versione precedente/
 .mailmap
 
-# Skill locali: il repo è pubblico, non vanno committate
-.claude/skills/
+# Strumenti per gli agenti: il repo è pubblico, non vanno committati
+.claude/
+.agents/
