@@ -11,8 +11,8 @@ from datetime import date, timedelta
 from decimal import Decimal, InvalidOperation
 from typing import Any, Dict, List, Mapping, Optional, Sequence, Set
 
+from zibaldone.core.errors import StoreError
 from zibaldone.core.stats import streaks
-from zibaldone.storage.database import StoreError
 
 HABIT, PRACTICE = "rituale", "pratica"
 PACK_NAME = "askesis"

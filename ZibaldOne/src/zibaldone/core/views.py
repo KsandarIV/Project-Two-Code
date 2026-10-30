@@ -10,8 +10,9 @@ from typing import Any, Dict, List, Sequence
 
 from zibaldone.core.areas import parse_area
 from zibaldone.core.blocks import PROGRESS_STATUSES
+from zibaldone.core.errors import StoreError
 from zibaldone.core.packs import builtin_packs
-from zibaldone.storage.database import MAX_SEARCH_LIMIT, StoreError
+from zibaldone.core.search import MAX_SEARCH_LIMIT
 
 TEMPLATE = "vista"
 PACK_NAME = "theoria"

@@ -21,6 +21,7 @@ from zibaldone.core.templates import Entry, Template
 
 TOKEN = re.compile(r"[^\W_]+")
 CHUNK = re.compile(r'(-*)"([^"]*)"?|(\S+)')
+MAX_SEARCH_LIMIT = 500
 MAX_TERMS = 32
 MAX_WORDS_PER_TERM = 12
 SNIPPET_WORDS = 24
