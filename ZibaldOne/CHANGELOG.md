@@ -3,6 +3,13 @@
 Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), versioni [SemVer](https://semver.org/lang/it/).
 
 ## [Unreleased]
+### Aggiunto
+- **Cartella dei backup in chiaro**: al primo avvio si propone `ZibaldOne/Data` (sul telefono nella memoria principale, sul PC in Documenti) con il pulsante «Crea la cartella per me» (su Android chiede il permesso di accedere ai file) e «Continua senza backup» con conferma.
+- **Chi gestisce i backup**: «Gestisce l'app», «Gestisco io», «Misto», cambiabili quando vuoi senza perdere nulla. L'app tiene nella cartella `backup/` le sottocartelle giornalieri (7), settimanali (4), mensili (3), annuali (3), manuali, più `importati`. Passando alla gestione dell'app i file non suoi vanno in `Gestione manuale`; «Storico» (spento di base) tiene i backup che la rotazione toglierebbe.
+- Cambiando cartella l'app chiede se spostare i file suoi; l'elenco delle cartelle usate prima (solo quelle che esistono ancora) è nel pulsante info.
+- Striscia «Stai usando l'app senza backup» in basso a destra, con le scelte per sistemare o spegnere l'avviso.
+### Cambiato
+- L'informativa di Parresia dice dove stanno i backup e chi li gestisce, e non scrive più il percorso interno dei dati.
 
 ## [0.3.2] — 2026-10-25
 Aree multiple, icona dell'app e correzioni dopo la prova su Android.

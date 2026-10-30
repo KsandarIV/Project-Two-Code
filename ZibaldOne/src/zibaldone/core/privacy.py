@@ -33,11 +33,10 @@ RISKS: List[str] = [
 
 
 def notice_text(folder: Path) -> str:
-    """Return the full notice for the given data folder."""
+    """Return the full notice. `folder` is kept for the callers: the path is no longer written in the text (0.3.3)."""
     risks = "\n".join(f"  - {risk}" for risk in RISKS)
     return (
-        "ZibaldOne salva ciò che scrivi solo su questo dispositivo, nella cartella:\n"
-        f"  {folder}\n\n"
+        "ZibaldOne salva ciò che scrivi solo su questo dispositivo.\n\n"
         "Nessuno, nemmeno chi ha creato l'app, riceve i tuoi dati. "
         "L'app non invia statistiche né segnalazioni automatiche.\n\n"
         "Se scegli di accedere con il tuo account Google (non è obbligatorio), ZibaldOne riceve solo email e nome, "

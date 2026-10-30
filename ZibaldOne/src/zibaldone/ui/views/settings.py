@@ -2,6 +2,7 @@
 account and cloud (Le Nuvole) and the about page."""
 
 from datetime import timedelta
+from pathlib import Path
 from typing import Any, List, Optional
 
 import flet as ft
@@ -10,6 +11,7 @@ from zibaldone import __version__
 from zibaldone.core.brand import APP_MOTTO, APP_NAME, APP_TAGLINE, MASCOTS, NOMENCLATURE
 from zibaldone.core.privacy import notice_text
 from zibaldone.core.reminders import MOMENT_LABELS, ReminderConfig, keep_frequency, thin_out
+from zibaldone.storage import backup_folder as bf
 from zibaldone.storage.paths import folder_usage, human_size
 from zibaldone.storage.settings import SettingsError, consent_status
 from zibaldone.ui import cloud_model as cm
@@ -69,6 +71,38 @@ def _header(ctx: AppContext, key: str, subtitle: str = "") -> ft.Control:
     return W.screen_header(part.nickname, part.label, subtitle or part.description, on_back=ctx.back)
 
 
+MODE_TEXT = {
+    bf.MODE_APP: "Ogni giorno, dopo l'1:00 e con l'app aperta, l'app fa la copia e tiene le cartelle in ordine: 7 giornaliere, 4 settimanali, 3 mensili, 3 annuali (le più vecchie vengono tolte). I file che non ha fatto l'app stanno in «Gestione manuale».",
+    bf.MODE_USER: "Non nasce nessuna copia da sola: le fai tu con «Crea ora» e le tieni dove vuoi. Se non ne fai, in caso di guaio non c'è niente da riportare.",
+    bf.MODE_MIXED: "Le copie automatiche vanno nelle cartelle dell'app, ma i tuoi file e le tue cartelle restano dove sono: compaiono in «Altri» e l'app non li sposta né li toglie.",
+}
+
+
+def change_mode(ctx: AppContext, mode: str, on_cancel: Any = None) -> None:
+    """Ask, then switch who manages the backups. The switch to the app asks twice and says what it will do."""
+
+    def apply() -> None:
+        try:
+            moved = services.set_backup_mode(ctx.folder, mode)
+        except Exception as problem:
+            ctx.toast(f"Non riesco a salvare la scelta: {cm.error_text(problem)}", error=True)
+        else:
+            ctx.toast(f"{bf.MODE_LABELS[mode]}." + (f" {len(moved)} file messi in «Gestione manuale»." if moved else ""))
+        ctx.refresh()
+
+    if mode == bf.MODE_APP:
+        ctx.confirm(
+            "Passo alla gestione dell'app?",
+            "I file di backup che non ha fatto l'app, anche quelli nelle tue sottocartelle, vengono spostati così come sono in «Gestione manuale». Nessun file viene cancellato o cambiato. Da quel momento l'app segue il suo schema e tiene in ordine le sue cartelle.",
+            "Continua",
+            lambda: ctx.confirm("Sei sicuro?", "Le tue cartelle e i tuoi file di backup cambiano posto. Puoi sempre tornare a «Gestisco io» o a «Misto».", f"Sì, passa a «{bf.MODE_LABELS[mode]}»", apply, danger=False),
+            danger=False,
+            on_cancel=on_cancel,
+        )
+    else:
+        ctx.confirm(f"Passo a «{bf.MODE_LABELS[mode]}»?", MODE_TEXT[mode], "Continua", apply, danger=False, on_cancel=on_cancel)
+
+
 # * — Parresia —
 
 
@@ -84,18 +118,38 @@ def parresia(ctx: AppContext) -> ft.Control:
             W.panel(
                 ft.Column(
                     [
-                        W.info_row("Cartella dei dati", str(ctx.folder), selectable=True),
                         W.info_row("Contenuto", f"{files} file, {human_size(size)}"),
                         W.info_row("Consenso", consent),
                     ],
                     spacing=12,
                 )
             ),
+            W.section_label("I tuoi backup"),
+            _backup_notice(ctx),
             W.section_label("L'informativa"),
             W.panel(W.body(cm.app_hint(notice_text(ctx.folder)), selectable=True)),
         ],
         ctx.wide,
     )
+
+
+def _backup_notice(ctx: AppContext) -> ft.Control:
+    """Where the backups are and who manages them, in words that follow the user's choice; with the way to let the app do it."""
+    target, mode = services.backup_files_folder(ctx.folder), services.backup_mode(ctx.folder)
+    if not target:
+        lines = [W.body("Hai deciso di non fare backup: se perdi il telefono, i dati vanno persi."), W.body("Puoi scegliere una cartella e far fare i backup all'app in qualsiasi momento.")]
+        action = W.primary_button("Scegli la cartella", lambda _: ctx.go("/organon/mnemosyne"), icon="FOLDER_OPEN")
+    else:
+        who = {
+            bf.MODE_APP: "L'app li fa e li tiene in ordine da sola.",
+            bf.MODE_USER: "Hai deciso di gestire da solo i backup: li fai tu con «Crea ora» e li trovi con il gestore di file.",
+            bf.MODE_MIXED: "L'app fa i suoi backup nelle sue cartelle, e i tuoi file restano dove sono.",
+        }[mode]
+        lines = [W.body("I backup stanno nella cartella:"), W.body(target, selectable=True, size=13), W.body(who)]
+        if mode != bf.MODE_APP:
+            lines.append(W.body("Puoi passare alla gestione automatica dell'app in qualsiasi momento."))
+        action = W.secondary_button("Gestione dei backup", lambda _: ctx.go("/organon/mnemosyne"), icon="SETTINGS_BACKUP_RESTORE") if mode == bf.MODE_APP else W.primary_button("Passa alla gestione dell'app", lambda _: change_mode(ctx, bf.MODE_APP), icon="AUTO_MODE")
+    return W.panel(ft.Column([*lines, ft.Row([action], alignment=ft.MainAxisAlignment.END)], spacing=8))
 
 
 # * — Daimon —
@@ -315,33 +369,21 @@ class MnemosyneScreen:
         return W.screen(controls, self.ctx.wide)
 
     def mode_panel(self) -> ft.Control:
-        """Automatic or by hand: what each one does, said plainly."""
-        settings = self.api.load_backup_settings(self.ctx.folder)
-        explain = ft.Column(spacing=4)
-
-        def text(auto: bool) -> List[ft.Control]:
-            if auto:
-                return [
-                    W.body("Automatico: ogni giorno, dopo l'1:00 e con l'app aperta, la copia di oggi prende il posto di quella di ieri."),
-                    W.caption("In più restano 4 copie della settimana, 3 del mese e 3 dell'anno. Quelle che fai a mano non si toccano."),
-                ]
-            return [W.body("Manuale: non nasce nessuna copia da sola. Le fai e le cancelli tu, con «Crea ora»."), W.caption("Se non fai nessuna copia, in caso di guaio non c'è niente da riportare.")]
-
-        explain.controls = text(settings.auto)
+        """Who manages the backups: the app, the user, or both. Changing it never loses a backup."""
+        current = services.backup_mode(self.ctx.folder)
+        explain = MODE_TEXT
+        text = ft.Column([W.body(explain[current]), W.caption("Puoi cambiare idea quando vuoi: i backup che hai già non si perdono.")], spacing=4)
 
         def changed(event: Any) -> None:
-            try:
-                updated = self.api.load_backup_settings(self.ctx.folder)
-                updated.auto = bool(event.control.value)
-                self.api.save_backup_settings(self.ctx.folder, updated)
-            except Exception as problem:
-                self.ctx.toast(f"Non riesco a salvare la scelta: {cm.error_text(problem)}", error=True)
-                return
-            explain.controls = text(updated.auto)
-            self.ctx.update(explain)
+            if event.control.value != current:
+                change_mode(self.ctx, event.control.value, on_cancel=self.ctx.refresh)
 
-        switch = ft.Switch(label="Copie automatiche", value=settings.auto, on_change=changed, active_color=T.ACCENT)
-        return W.panel(ft.Column([switch, explain], spacing=8), padding=14)
+        group = ft.RadioGroup(
+            content=ft.Column([ft.Radio(value=mode, label=bf.MODE_LABELS[mode], active_color=T.ACCENT) for mode in bf.MODES], spacing=0),
+            value=current,
+            on_change=changed,
+        )
+        return W.panel(ft.Column([W.body("Chi gestisce i backup", weight=ft.FontWeight.W_600), group, text], spacing=8), padding=14)
 
     def encryption_panel(self) -> ft.Control:
         keys = services.keys_api()
@@ -416,21 +458,64 @@ class MnemosyneScreen:
         current = services.backup_files_folder(self.ctx.folder)
 
         def chosen(path: str) -> None:
-            services.save_ui_settings(self.ctx.folder, backup_files_folder=path)
-            self.ctx.toast("Cartella dei file di backup scelta.")
+            def done(move: bool) -> None:
+                try:
+                    moved = services.set_backup_folder(self.ctx.folder, path, move_old=move)
+                except OSError as problem:
+                    self.ctx.toast(f"Non riesco a usare questa cartella: {problem}", error=True)
+                else:
+                    self.ctx.toast("Cartella dei backup scelta." + (f" Spostati {len(moved)} file." if moved else ""))
+                self.ctx.refresh()
+
+            if current and current != path and Path(current).is_dir():
+                self.ctx.confirm(
+                    "Sposto i vecchi backup?",
+                    "Nella nuova cartella vanno i file fatti dall'app, tenendo il loro ordine. Se non li sposti restano dove sono, e da ora l'app lavora solo sulla nuova cartella.",
+                    "Sposta i file dell'app",
+                    lambda: done(True),
+                    danger=False,
+                    cancel_label="Lasciali dove sono",
+                    on_cancel=lambda: done(False),
+                )
+            else:
+                done(False)
+
+        def history(_: Any) -> None:
+            used = services.folder_history(self.ctx.folder)
+            body = [W.body(item, size=13, selectable=True) for item in used] or [W.body("Nessuna cartella usata prima esiste ancora.", dim=True)]
+            self.ctx.show_dialog(ft.AlertDialog(title="Cartelle usate prima", content=ft.Column(body, tight=True, spacing=6), actions=[W.text_button("Chiudi", self.ctx.close_dialog)]))
+
+        def history_changed(event: Any) -> None:
+            services.save_ui_settings(self.ctx.folder, backup_keep_history=bool(event.control.value))
+
+        rows: List[ft.Control] = [W.body("Cartella dei backup", weight=ft.FontWeight.W_600), W.body(current or "Nessuna: i file non vengono salvati fuori dall'app.", size=13, selectable=bool(current))]
+        if current:
+            files = bf.list_files(Path(current))
+            counts = {kind: sum(1 for item in files if item.kind == kind) for kind in {item.kind for item in files}}
+            others = counts.get("altri", 0)
+            rows.append(W.caption(f"{len(files)} file di backup trovati" + (f", di cui {others} in «Altri» (non fatti dall'app: li gestisci tu)." if others else ".")))
+            rows.append(ft.Switch(label="Tieni in «Storico» i backup che la rotazione toglierebbe", value=services.keep_history(self.ctx.folder), on_change=history_changed, active_color=T.ACCENT))
+        buttons = [W.secondary_button("Scegli la cartella" if not current else "Cambia cartella", lambda _: self.ctx.pick_folder(chosen), icon="FOLDER_OPEN"), W.icon_button("INFO_OUTLINE", history, "Cartelle usate prima")]
+        if not current:
+            buttons.insert(0, W.primary_button("Crea la cartella per me", self.create_folder, icon="CREATE_NEW_FOLDER"))
+            rows.append(W.caption(f"Ti consiglio {bf.SUGGESTED}: {services.suggested_folder()}"))
+        rows.append(ft.Row(buttons, alignment=ft.MainAxisAlignment.END, wrap=True, spacing=8))
+        return W.panel(ft.Column(rows, spacing=8), padding=14)
+
+    def create_folder(self, _: Any = None) -> None:
+        def answered(granted: bool) -> None:
+            if not granted:
+                self.ctx.toast("Senza il permesso non posso creare la cartella: puoi darlo dalle impostazioni del telefono o sceglierne una a mano.", error=True)
+                return
+            try:
+                path = services.create_suggested_folder(self.ctx.folder)
+            except OSError as problem:
+                self.ctx.toast(f"Non sono riuscito a creare la cartella: {problem}", error=True)
+                return
+            self.ctx.toast(f"Cartella creata: {path}")
             self.ctx.refresh()
 
-        return W.panel(
-            ft.Column(
-                [
-                    W.body("Cartella dei file di backup", weight=ft.FontWeight.W_600),
-                    W.body(current or "Nessuna: i file non vengono salvati fuori dall'app.", size=13, selectable=bool(current)),
-                    ft.Row([W.secondary_button("Scegli la cartella" if not current else "Cambia cartella", lambda _: self.ctx.pick_folder(chosen), icon="FOLDER_OPEN")], alignment=ft.MainAxisAlignment.END),
-                ],
-                spacing=8,
-            ),
-            padding=14,
-        )
+        self.ctx.ask_files_permission(answered)
 
     def create(self, _: Any = None) -> None:
         folder, note = self.ctx.folder, (self.note.value or "").strip()
