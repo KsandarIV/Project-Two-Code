@@ -33,6 +33,7 @@ class AppContext:
         self._navigate: Callable[[str, bool], None] = lambda path, replace: None
         self._back: Callable[[], None] = lambda: None
         self._refresh: Callable[[], None] = lambda: None
+        self._retheme: Callable[[], None] = lambda: None
         self._advance: Callable[[], None] = lambda: None
         self._data_changed: Callable[[], None] = lambda: None
         self.back_hook: Optional[Callable[[], bool]] = None  # a screen with its own pages takes the back press first; True = used it
@@ -58,6 +59,10 @@ class AppContext:
 
     def refresh(self, *_: Any) -> None:
         self._refresh()
+
+    def retheme(self) -> None:
+        """The palette changed: redraw the window with it."""
+        self._retheme()
 
     def advance(self, *_: Any) -> None:
         """Go to the next step of the first-run flow (consent, sign-in, diary, Oggi)."""

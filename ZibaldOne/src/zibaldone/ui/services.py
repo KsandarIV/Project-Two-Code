@@ -21,6 +21,7 @@ from zibaldone.storage import backup_folder as bf
 from zibaldone.storage.database import Store
 from zibaldone.storage.paths import ENV_DATA_DIR, data_dir
 from zibaldone.storage.settings import SettingsError, load_settings, save_settings
+from zibaldone.ui import theme as T
 
 UI_SETTINGS_KEY = "ui"
 COMING_SOON = "in arrivo"
@@ -250,6 +251,16 @@ def save_ui_settings(folder: Path, **changes: Any) -> None:
     section.update(changes)
     settings[UI_SETTINGS_KEY] = section
     save_settings(folder, settings)
+
+
+def theme_choice(folder: Path) -> Tuple[str, str]:
+    """(accent, background) chosen in Kosmesis; the defaults when nothing was chosen."""
+    saved = ui_settings(folder)
+    return str(saved.get("accent", T.DEFAULT_ACCENT)), str(saved.get("background", T.DEFAULT_BG))
+
+
+def set_theme_choice(folder: Path, accent: str, background: str) -> None:
+    save_ui_settings(folder, accent=accent, background=background)
 
 
 def shortcuts(folder: Path) -> List[str]:

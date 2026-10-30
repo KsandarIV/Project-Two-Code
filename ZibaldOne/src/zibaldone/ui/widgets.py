@@ -30,7 +30,7 @@ def build_theme() -> ft.Theme:
     scheme = ft.ColorScheme(
         primary=T.ACCENT,
         on_primary=T.BG,
-        primary_container="#003A42",
+        primary_container=T.blend(T.ACCENT, T.BG, 0.75),
         on_primary_container=T.TEXT,
         secondary=T.ACCENT_2,
         on_secondary=T.BG,

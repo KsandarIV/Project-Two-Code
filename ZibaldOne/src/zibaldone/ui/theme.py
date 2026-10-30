@@ -27,6 +27,12 @@ SUCCESS = "#74EE15"
 CATEGORICAL: Tuple[str, ...] = ("#B3F3F6", "#FF5500", "#FFFF00", "#FF0000", "#74EE15", "#FF007F", "#8A2BE2")
 YELLOW = "#FFFF00"
 
+# What Kosmesis offers (A034): dark backgrounds only, so the light text stays readable on them; every accent has contrast 4.5+ on every background.
+ACCENT_CHOICES: Tuple[Tuple[str, str], ...] = (("Ciano", "#00E5FF"), ("Verde", "#74EE15"), ("Rosa", "#FF007F"), ("Arancio", "#FF5500"), ("Viola", "#B388FF"), ("Giallo", "#FFFF00"))
+BACKGROUND_CHOICES: Tuple[Tuple[str, str], ...] = (("Notte", "#0D0E15"), ("Grafite", "#121212"), ("Blu profondo", "#0A1020"), ("Bosco", "#0C1511"), ("Prugna", "#150D18"))
+DEFAULT_ACCENT = ACCENT
+DEFAULT_BG = BG
+
 RADIUS = 12
 RADIUS_SMALL = 10
 PAD = 16
@@ -43,6 +49,23 @@ def _channels(color: str) -> Tuple[int, int, int]:
     if len(text) != 6:
         raise ValueError(f"colore non valido: '{color}' (usa #RRGGBB)")
     return int(text[0:2], 16), int(text[2:4], 16), int(text[4:6], 16)
+
+
+def blend(color: str, other: str, share: float) -> str:
+    """`color` with `share` (0..1) of `other` mixed in, as #RRGGBB."""
+    mixed = (round(a + (b - a) * share) for a, b in zip(_channels(color), _channels(other)))
+    return "#" + "".join(f"{channel:02X}" for channel in mixed)
+
+
+def apply(accent: str = DEFAULT_ACCENT, background: str = DEFAULT_BG) -> None:
+    """Switch the palette to a choice of Kosmesis; anything not offered falls back to the default. Widgets read these names when they are built."""
+    global ACCENT, BG, PANEL, PANEL_HIGH, BORDER
+    ACCENT = accent if accent in dict(ACCENT_CHOICES).values() else DEFAULT_ACCENT
+    BG = background if background in dict(BACKGROUND_CHOICES).values() else DEFAULT_BG
+    if BG == DEFAULT_BG:
+        PANEL, PANEL_HIGH, BORDER = "#141521", "#1A1C2B", "#1E2035"
+    else:
+        PANEL, PANEL_HIGH, BORDER = (blend(BG, "#FFFFFF", share) for share in (0.03, 0.06, 0.09))
 
 
 def relative_luminance(color: str) -> float:
