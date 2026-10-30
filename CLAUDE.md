@@ -16,7 +16,7 @@ Code is in `ZibaldOne/src/zibaldone/` (core, storage, cli, cloud, notify, packs,
 ## Code rules
 - `core` never imports `ui`, `cli` or `storage`.
 - Code, names, comments, docstrings: English. App text, user docs, Novità, commit subjects: Italian.
-- Smallest complete change (ponytail). No features the card does not ask for.
+- Smallest complete change. No features the card does not ask for.
 - Secrets never in the repo, chat or Trello.
 
 ## Git rules
@@ -30,7 +30,7 @@ Code is in `ZibaldOne/src/zibaldone/` (core, storage, cli, cloud, notify, packs,
 Only technical, explanatory, testing and usage docs (README, CHANGELOG, guides, version notes, ADRs, dev guides). Never work plans, team files, requirements, research, AI context or personal data.
 
 ## Skills
-Repo skills in `.claude/skills/`: `zb-card`, `zb-pr`, `zb-release`, `zb-feedback`. The others Alex uses (agent-skills, context7, 21mcp, later strix) are global on his PC; cloud threads do not see them.
+Repo skills in `.claude/skills/`: `zb-card`, `zb-pr`, `zb-release`, `zb-feedback`. Skills installed globally on Alex's PC are not visible to cloud threads.
 
 ## Talking to Alex
 English, short, plain (Italian is fine if he writes it). One message when the PR is green or when you are blocked. End with what you skipped or did not check, and the risks.
