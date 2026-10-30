@@ -13,5 +13,9 @@
   - Rilascio: `py scripts/release.py patch` per la capacità successiva, `minor` per la fase successiva ([versionamento](../sviluppo/versionamento.md)).
 - **Conseguenze**:
   - Le versioni già fatte sono state rinumerate prima di pubblicarle su GitHub: commit, tag (`zibaldone-v0.0.2` … `zibaldone-v0.0.5`), CHANGELOG e note in `docs/versioni/`. Nessuna versione con i vecchi numeri era stata pubblicata.
-  - Il codice Android (`versionCode`) si calcola dalla versione: `Y*1000 + Z` prima della 1.0, sempre crescente.
+  - Il codice Android (`versionCode`) si calcola dalla versione ed è sempre crescente (formula aggiornata dalla 0.3.3, vedi sotto).
+- **Aggiornamento (0.3.3, 2026-10-30): mini patch a quattro numeri**
+  - Una correzione urgente che non può aspettare esce come `X.Y.Z.N` (per esempio `0.3.2.1`), con tag `zibaldone-v0.3.2.1`. `N` va da 1 a 99; `0.3.2.0` non si scrive mai, è la `0.3.2`.
+  - `versionCode = major*10.000.000 + minor*100.000 + patch*100 + N`: la `0.3.2` vale 300200, la `0.3.2.1` vale 300201. Resta sempre maggiore dei vecchi codici (la `0.3.2` valeva 3002), quindi i telefoni già installati si aggiornano. Limiti: minor fino a 99, patch fino a 999, major fino a 209.
+  - Il controllo degli aggiornamenti e la build leggono le versioni con `cloud/updates.py` (`parse_version`, `version_code`). `scripts/release.py` conosce ancora solo `X.Y.Z` (compito di DevOps & Release).
 - **Alternative scartate**: tenere i vecchi numeri (1.0 troppo presto); usare `0.X` a due cifre (non è SemVer valido e confonde gli strumenti).
