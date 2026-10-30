@@ -34,7 +34,7 @@ def seed(folder: Path, today) -> None:
 def test_routes_and_screens() -> None:
     assert parse_route("/viste").screen == "viste" and parse_route("/viste/abc").arg == "abc" and parse_route("/viste/abc").screen == "vista"
     assert parse_route("/viste/a/b").screen == "oggi"
-    assert {"viste", "vista"} <= set(SCREENS) and "home" in SETTINGS_KEYS
+    assert {"viste", "vista"} <= set(SCREENS) and "home" not in SETTINGS_KEYS
 
 
 def test_in_days_label() -> None:
@@ -96,9 +96,9 @@ def drop(root, moving: str, target: str) -> None:
 
 def test_home_settings_drag_to_reorder_hide_show_reset(base: Path) -> None:  # noqa: F811
     shell = Shell(FakePage(), base)
-    shell.start("/organon/home")
+    shell.start("/organon/personalizza")
     assert home_log.load_layout(base) == list(home.TILES)
-    assert "Anteprima" in [text.capitalize() for text in texts(shell.body.content)] or "ANTEPRIMA" in texts(shell.body.content)
+    assert "LA HOME" in texts(shell.body.content) and "I TRE MOMENTI" in texts(shell.body.content)  # Oikos lives in Kosmesis, with the real blocks
     drop(shell.body.content, "citazione", "promemoria")  # «citazione» goes above «promemoria»
     assert home_log.load_layout(base)[:2] == ["citazione", "promemoria"]
     switches = [item for item in walk(shell.body.content) if isinstance(item, ft.Switch)]
@@ -143,7 +143,7 @@ def test_oggi_can_be_reordered_by_dragging_right_there(base: Path) -> None:  # n
     drop(shell.body.content, "aree", "promemoria")  # «aree» goes first
     assert home_log.load_layout(base)[0] == "aree"
     assert any(isinstance(item, ft.Draggable) for item in walk(shell.body.content))  # still unlocked
-    remove = next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Togli da Oggi")
+    remove = next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Togli da Oikos home")
     before = home_log.load_layout(base)
     click(remove)  # the first block that can be taken away
     after = home_log.load_layout(base)
@@ -173,3 +173,30 @@ def test_kosmesis_changes_accent_and_background(base: Path) -> None:  # noqa: F8
         assert all(T.contrast_ratio(accent, bg) >= 4.5 for _, accent in T.ACCENT_CHOICES for _, bg in T.BACKGROUND_CHOICES)
     finally:
         T.apply()
+        
+        
+def test_kosmesis_switches_blocks_off_and_on_by_dragging(base: Path) -> None:  # noqa: F811
+    shell = Shell(FakePage(), base)
+    shell.start("/organon/personalizza")
+
+    def zone():
+        return next(item for item in walk(shell.body.content) if isinstance(item, ft.DragTarget) and item.on_accept.__name__ == "switched_off")
+
+    zone().on_accept(SimpleNamespace(src=SimpleNamespace(data="citazione")))  # into «Spenti»
+    assert "citazione" not in home_log.load_layout(base)
+    assert "SPENTI" in texts(shell.body.content)
+    drop(shell.body.content, "citazione", "promemoria")  # out again, above «promemoria»
+    assert home_log.load_layout(base)[:2] == ["citazione", "promemoria"]
+    drop(shell.body.content, "citazione", "__end__")  # to the end of the list
+    assert home_log.load_layout(base)[-1] == "citazione"
+
+
+def test_kosmesis_changes_the_icon(base: Path) -> None:  # noqa: F811
+    from zibaldone.ui import services
+
+    shell = Shell(FakePage(), base)
+    shell.start("/organon/personalizza")
+    tiles = [item for item in walk(shell.body.content) if isinstance(item, ft.Container) and isinstance(item.content, ft.Image) and item.content.src.startswith("icons/")]
+    assert len(tiles) == 4 and services.app_icon(base) == "C"
+    tiles[3].on_click(SimpleNamespace(control=tiles[3]))  # D
+    assert services.app_icon(base) == "D"

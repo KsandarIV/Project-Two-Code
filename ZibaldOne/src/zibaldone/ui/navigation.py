@@ -32,7 +32,7 @@ class Section:
 
 
 SECTIONS: Tuple[Section, ...] = (
-    Section("oggi", "/oggi", "Oggi", NOMENCLATURE["today"].name, "TODAY_OUTLINED", "TODAY", NOMENCLATURE["today"].source),
+    Section("oggi", "/oggi", "Oikos home", NOMENCLATURE["today"].name, "TODAY_OUTLINED", "TODAY", NOMENCLATURE["today"].source),
     Section("voci", "/voci", "Voci", NOMENCLATURE["entry"].name, "EDIT_NOTE_OUTLINED", "EDIT_NOTE", NOMENCLATURE["entry"].source),
     Section(
         "collezioni", "/collezioni", "Collezioni", "Museion", "COLLECTIONS_BOOKMARK_OUTLINED", "COLLECTIONS_BOOKMARK",
@@ -66,8 +66,7 @@ SETTINGS_PARTS: Tuple[SettingsPart, ...] = (
     SettingsPart("mnemosyne", "Backup", NOMENCLATURE["history"].name, "le istantanee dei tuoi dati", "HISTORY"),
     SettingsPart("nuvole", "Account e cloud", NOMENCLATURE["cloud"].name, "l'account e dove vanno le copie", "CLOUD_OUTLINED"),
     SettingsPart("velo", "Anonimizzatore", NOMENCLATURE["anonymizer"].name, "togliere i dati personali da un testo, prima di un'IA", "VISIBILITY_OFF_OUTLINED"),
-    SettingsPart("personalizza", "Personalizza", "Kosmesis", "come si vedono i modelli e la home", "TUNE"),
-    SettingsPart("home", "La tua home", "Oikos", "quali riquadri mostra Oggi e in che ordine", "HOME_OUTLINED"),
+    SettingsPart("personalizza", "Personalizza", "Kosmesis", "come si vedono i modelli e Oikos, la home", "TUNE"),
     SettingsPart("info", "Informazioni", "ZibaldOne", "il nome, le mascotte e i nomi filosofici", "INFO_OUTLINE"),
 )
 SETTINGS_KEYS: Tuple[str, ...] = tuple(part.key for part in SETTINGS_PARTS)
@@ -147,6 +146,7 @@ def route_path(screen: str, arg: str = "", extra: str = "") -> str:
         "copie": "/benvenuto/copie",
         "diario": "/benvenuto/diario",
         "cartella": "/benvenuto/cartella",
+        "icona": "/benvenuto/icona",
     }
     return paths.get(screen, "/oggi")
 
@@ -203,6 +203,6 @@ def parse_route(path: Optional[str]) -> Route:
         return Route("novita", "oggi")
     if head == "organon" and len(rest) == 1 and rest[0] in SETTINGS_KEYS:
         return Route("parte", "organon", rest[0])
-    if head == "benvenuto" and len(rest) == 1 and rest[0] in ("consenso", "accesso", "copie", "cartella", "diario"):
+    if head == "benvenuto" and len(rest) == 1 and rest[0] in ("consenso", "accesso", "copie", "cartella", "diario", "icona"):
         return Route(rest[0], "")
     return HOME

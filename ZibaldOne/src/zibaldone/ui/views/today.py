@@ -31,7 +31,8 @@ def _news_button(ctx: AppContext) -> Optional[ft.Control]:
     return button
 
 
-def build(ctx: AppContext, route: Route) -> ft.Control:
+def _gather(ctx: AppContext) -> Any:
+    """What Oggi and the Kosmesis preview both show: the day's model, the shortcut row, the layout and the built tiles."""
     now = ctx.now()
     reminder = services.in_app_reminder(ctx.folder, now)
     config, _ = services.reminder_config(ctx.folder)
@@ -54,6 +55,20 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
                 tiles[key] = tiles_.view_tile(ctx, store, key.split(":", 1)[1], today)
             elif key in builders:
                 tiles[key] = builders[key]()
+    return model, shortcut_row, layout, tiles, view_names
+
+
+def preview_entries(ctx: AppContext) -> Any:
+    """(key, real block) of the home as Oggi shows it, for the Kosmesis preview; the blocks are not clickable there."""
+    model, _, layout, tiles, view_names = _gather(ctx)
+    shown = [key for key in layout if not key.startswith("vista:") or key.split(":", 1)[1] in view_names]
+    empty = W.panel(W.caption("Per ora qui non c'è niente da mostrare: il riquadro compare quando c'è qualcosa."), padding=12)  # a shown tile with nothing in it keeps its place, so a reorder does not lose it
+    entries = [(key, ft.Container(_tile(ctx, key, model, tiles) or empty, disabled=True)) for key in shown]
+    return entries, view_names
+
+
+def build(ctx: AppContext, route: Route) -> ft.Control:
+    model, shortcut_row, layout, tiles, view_names = _gather(ctx)
 
     info = section("oggi")
     actions: List[ft.Control] = [
@@ -83,7 +98,7 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     if unlocked:
         controls.append(ft.Row([W.caption("Sbloccata: trascina la maniglia di un riquadro per spostarlo."), lock], alignment=ft.MainAxisAlignment.SPACE_BETWEEN))
         entries = [(key, block) for key in shown for block in [_tile(ctx, key, model, tiles)] if block is not None]
-        controls.append(home_layout.arrange(entries, view_names, save, remove=lambda key: save([item for item in shown if item != key])))
+        controls.append(home_layout.arrange(ctx, entries, view_names, save, remove=lambda key: save([item for item in shown if item != key])))
         offered = [key for key in [*home.TILES, *[f"vista:{view_id}" for view_id in view_names]] if key not in shown]
         if offered:
             controls.append(W.secondary_button("Aggiungi un riquadro", lambda _: _add_dialog(ctx, offered, view_names, lambda key: save([*shown, key])), icon="ADD"))

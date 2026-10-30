@@ -9,6 +9,7 @@ from zibaldone.ui import theme as T
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import settings_part
+from zibaldone.ui.views import app_icon, home_layout
 
 VIEW_MODES = (("completa", "Completa: nome, descrizione e conteggio"), ("icone", "Solo icone"))
 DEFAULT_VIEW = "completa"
@@ -70,7 +71,9 @@ def build(ctx: AppContext) -> ft.Control:
                 spacing=10,
             )
         ),
-        W.section_label("Oggi"),
-        W.panel(ft.Row([ft.Column([W.body("La tua home"), W.caption("quali riquadri mostra Oggi e in che ordine")], spacing=2, expand=True), W.secondary_button("Apri", lambda _: ctx.go("/organon/home"), icon="HOME_OUTLINED")])),
+        W.section_label("Icona"),
+        W.panel(ft.Column([W.body("L'icona dell'app. Cambia subito quella della finestra; l'icona del collegamento o dell'app installata cambia con la guida «Cambiare l'icona».", dim=True), app_icon.picker(ctx, lambda letter: app_icon.choose(ctx, letter))], spacing=10)),
+        W.section_label("La home", "Oikos"),
+        *home_layout.build(ctx),
     ]
     return W.screen(controls, ctx.wide)

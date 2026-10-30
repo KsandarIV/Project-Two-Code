@@ -90,7 +90,7 @@ def error_screen(ctx: AppContext, message: str) -> ft.Control:
                     [
                         W.body("Questa pagina non si è potuta aprire. I tuoi dati non sono stati toccati."),
                         W.body(message, dim=True, selectable=True),
-                        W.secondary_button("Torna a Oggi", lambda _: ctx.go("/oggi"), icon="TODAY"),
+                        W.secondary_button("Torna a Oikos home", lambda _: ctx.go("/oggi"), icon="TODAY"),
                     ],
                     spacing=10,
                 ),

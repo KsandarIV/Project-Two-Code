@@ -47,7 +47,7 @@ def _template_tile(ctx: AppContext, row: vm.TemplateRow, pinned: Any, pin: Calla
                     spacing=2,
                     expand=True,
                 ),
-                W.icon_button("PUSH_PIN" if row.slug in pinned else "PUSH_PIN_OUTLINED", pin(row.slug), "Togli da Oggi" if row.slug in pinned else "Metti in Oggi", color=T.ACCENT if row.slug in pinned else T.TEXT_DIM),
+                W.icon_button("PUSH_PIN" if row.slug in pinned else "PUSH_PIN_OUTLINED", pin(row.slug), "Togli da Oikos home" if row.slug in pinned else "Metti in Oikos home", color=T.ACCENT if row.slug in pinned else T.TEXT_DIM),
                 W.icon_button("TUNE", lambda _, slug=row.slug: ctx.go(f"/modelli/{slug}"), "Modifica il modello", color=T.TEXT_DIM),
             ],
             spacing=12,
@@ -106,7 +106,7 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
 
     def pin(slug: str) -> Callable[[Any], None]:
         def toggle(_: Any) -> None:
-            ctx.toast("Aggiunto alle scorciatoie di Oggi." if services.toggle_shortcut(ctx.folder, slug) else "Tolto dalle scorciatoie di Oggi.")
+            ctx.toast("Aggiunto alle scorciatoie di Oikos home." if services.toggle_shortcut(ctx.folder, slug) else "Tolto dalle scorciatoie di Oikos home.")
             ctx.refresh()
 
         return toggle

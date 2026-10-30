@@ -29,7 +29,7 @@ from zibaldone.ui import theme as T
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import HOME, SECTIONS, START_ROUTE_ENV, Route, layout_for, parse_route, section, section_index
-from zibaldone.ui.views import ONBOARDING_SCREENS, SCREENS
+from zibaldone.ui.views import ONBOARDING_SCREENS, SCREENS, app_icon
 from zibaldone.ui.views.common import error_screen
 
 logger = logging.getLogger("zibaldone.ui")
@@ -96,6 +96,7 @@ class Shell:
             root.on_confirm_pop = self.on_confirm_pop
         except Exception:
             logger.debug("no root view for the back gesture", exc_info=True)
+        app_icon.apply_window_icon(self.ctx)
         self.start_path = start_path if start_path and start_path != "/" else "/oggi"
         self.advance()
         page.run_task(self.reminder_loop)
@@ -132,6 +133,8 @@ class Shell:
             installed = [template.slug for template in store.list_templates()]
         if services.diario_suggestion_pending(self.folder, installed):
             return "/benvenuto/diario"
+        if services.app_icon_pending(self.folder):
+            return "/benvenuto/icona"
         return None
 
     def advance(self) -> None:

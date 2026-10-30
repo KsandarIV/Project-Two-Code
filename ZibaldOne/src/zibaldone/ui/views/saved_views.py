@@ -99,7 +99,7 @@ def _delete(ctx: AppContext, view: V.View) -> Callable[[Any], None]:
         ctx.toast("Vista tolta.")
         ctx.refresh()
 
-    return lambda _: ctx.confirm("Togliere la vista?", f"«{view.name}» sparisce dall'elenco e da Oggi; le voci restano dove sono.", "Togli", remove)
+    return lambda _: ctx.confirm("Togliere la vista?", f"«{view.name}» sparisce dall'elenco e da Oikos home; le voci restano dove sono.", "Togli", remove)
 
 
 def examples_button(ctx: AppContext) -> ft.Control:
@@ -140,7 +140,7 @@ def _intro(ctx: AppContext) -> ft.Control:
                 W.body("Come funziona Lente", weight=ft.FontWeight.W_600),
                 W.body("1. Scegli che cosa cercare: un modello (libri, film…), un'area, una parola, un blocco come «stato = In corso».", size=13),
                 W.body("2. Dagli un nome e salvala: da quel momento è una vista, sempre aggiornata.", size=13),
-                W.body("3. Aprila quando vuoi o mettila in Oggi: le voci nuove ci entrano da sole.", size=13),
+                W.body("3. Aprila quando vuoi o mettila in Oikos home: le voci nuove ci entrano da sole.", size=13),
                 ft.Row([button], alignment=ft.MainAxisAlignment.END),
             ],
             spacing=6,
@@ -154,7 +154,7 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
         ready = installed(store)
         views = V.load_views(store) if ready else []
         templates = store.list_templates() if ready else []
-    header = W.screen_header("Viste", "Lente", "filtri salvati sulle tue voci, da aprire o da tenere in Oggi", on_back=ctx.back)
+    header = W.screen_header("Viste", "Lente", "filtri salvati sulle tue voci, da aprire o da tenere in Oikos home", on_back=ctx.back)
     if not ready:
         return W.screen(
             [
@@ -163,7 +163,7 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
                 W.panel(
                     ft.Column(
                         [
-                            W.body("Salva un filtro (modello, area, testo, un blocco) e riaprilo quando vuoi, o mettilo in Oggi. Arriva con la Scuola «Lente · Viste»."),
+                            W.body("Salva un filtro (modello, area, testo, un blocco) e riaprilo quando vuoi, o mettilo in Oikos home. Arriva con la Scuola «Lente · Viste»."),
                             ft.Row([W.primary_button("Installa «Lente · Viste»", _install(ctx), icon="DOWNLOAD")], alignment=ft.MainAxisAlignment.END),
                         ],
                         spacing=10,

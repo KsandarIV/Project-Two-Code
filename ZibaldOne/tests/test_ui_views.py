@@ -117,7 +117,7 @@ def folder(isolated_data_dir: Path) -> Path:
 def ready(folder: Path) -> Path:
     """Consent given, all the packs, a few entries."""
     record_consent(folder, True, NOTICE_VERSION)
-    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="")
+    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="", app_icon="C")
     with Store.open(folder) as store:
         for name in ("diario", "collezioni", "io", "persone"):
             apply_install(plan_install(find_builtin_pack(name), store), store)
@@ -152,7 +152,7 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
         "/albero", "/rete", "/rete/famiglia", "/finanze", "/finanze/2026-09", "/abitudini", "/viste", "/viste/nonesiste",
     ]
     paths += [f"/scrivi/{slug}" for slug in ("sera", "aree", "mattina", "libro", "serie", "incontro", "persona", "desiderio")]
-    paths += [f"/organon/{part}" for part in ("parresia", "daimon", "mnemosyne", "nuvole", "velo", "home", "info")]
+    paths += [f"/organon/{part}" for part in ("parresia", "daimon", "mnemosyne", "nuvole", "velo", "personalizza", "info")]
     for path in paths:
         ctx = AppContext(ready)
         ctx.wide = wide
@@ -192,7 +192,10 @@ def test_first_run_consent_then_diary_then_today(folder: Path) -> None:
     assert services.backup_files_pending(folder) is False and services.backup_files_folder(folder) == ""
     assert shell.current.screen == "diario"
     click(button(shell.body.content, "Installa i pacchetti scelti"))
-    assert shell.current.screen == "oggi"
+    assert shell.current.screen == "icona"  # 0.3.3: the icon, asked once
+    assert services.app_icon(folder) == "C"  # the default until the user picks
+    click(button(shell.body.content, "Continua"))
+    assert services.app_icon_pending(folder) is False and shell.current.screen == "oggi"
     with Store.open(folder) as store:
         assert store.find_template("sera") is not None
         assert store.find_template("checkin_area") is not None  # 0.2.0: the areas pack comes along
@@ -362,7 +365,7 @@ def test_the_shell_toasts_due_reminders(ready: Path, monkeypatch) -> None:
 
 def test_installing_a_pack_from_scuole(folder: Path) -> None:
     record_consent(folder, True, NOTICE_VERSION)
-    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="")
+    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="", app_icon="C")
     page = FakePage()
     shell = Shell(page, folder)
     shell.start("/scuole")
@@ -918,8 +921,8 @@ def test_a_model_opens_a_new_entry_and_the_small_icons_edit_and_pin(ready: Path)
     click(edit)
     assert shell.current.screen == "modello"
     shell.back()
-    click(next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Metti in Oggi"))
-    assert services.shortcuts(ready)[:1] != [] and "Aggiunto alle scorciatoie di Oggi." in shell.ctx.toasts
+    click(next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Metti in Oikos home"))
+    assert services.shortcuts(ready)[:1] != [] and "Aggiunto alle scorciatoie di Oikos home." in shell.ctx.toasts
     shell.navigate("/oggi")
     chip = next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and (item.tooltip or "").startswith("Nuova voce:"))
     click(chip)
@@ -1085,7 +1088,7 @@ def test_the_lente_model_sits_on_the_general_page(ready: Path) -> None:
 
 def test_installing_a_pack_redraws_only_that_pack(folder: Path) -> None:
     record_consent(folder, True, NOTICE_VERSION)
-    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="")
+    services.save_ui_settings(folder, diario_suggested=True, backup_files_folder="", app_icon="C")
     shell = Shell(FakePage(), folder)
     shell.start("/scuole")
     body = shell.body.content
