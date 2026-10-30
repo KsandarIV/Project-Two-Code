@@ -234,3 +234,6 @@ AI_Context/
 ZibaldOne/team/
 ZibaldOne/docs/docs della versione precedente/
 .mailmap
+
+# Skill locali: il repo è pubblico, non vanno committate
+.claude/skills/

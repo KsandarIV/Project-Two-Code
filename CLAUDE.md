@@ -25,6 +25,3 @@ Read `ZibaldOne/docs/tecnica/mappa-codice.md` if it exists, then only the module
 
 ## Public repo: what may be committed
 Only technical, explanatory, testing and usage docs (README, CHANGELOG, guides, version notes, ADRs, dev guides). Never work plans, team files, requirements, research, AI context or personal data.
-
-## Skills
-Repo skills in `.claude/skills/`: `zb-card`, `zb-pr`, `zb-release`, `zb-feedback`.
