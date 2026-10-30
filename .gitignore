@@ -234,3 +234,8 @@ AI_Context/
 ZibaldOne/team/
 ZibaldOne/docs/docs della versione precedente/
 .mailmap
+
+# Strumenti per gli agenti: il repo è pubblico, non vanno committati
+.claude/
+.agents/
+CLAUDE.md
