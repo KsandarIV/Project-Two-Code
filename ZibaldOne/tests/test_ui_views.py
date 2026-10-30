@@ -152,7 +152,7 @@ def test_every_screen_builds_headless(ready: Path, wide: bool) -> None:
         "/albero", "/rete", "/rete/famiglia", "/finanze", "/finanze/2026-09", "/abitudini", "/viste", "/viste/nonesiste",
     ]
     paths += [f"/scrivi/{slug}" for slug in ("sera", "aree", "mattina", "libro", "serie", "incontro", "persona", "desiderio")]
-    paths += [f"/organon/{part}" for part in ("parresia", "daimon", "mnemosyne", "nuvole", "velo", "home", "info")]
+    paths += [f"/organon/{part}" for part in ("parresia", "daimon", "mnemosyne", "nuvole", "velo", "personalizza", "info")]
     for path in paths:
         ctx = AppContext(ready)
         ctx.wide = wide
