@@ -918,8 +918,8 @@ def test_a_model_opens_a_new_entry_and_the_small_icons_edit_and_pin(ready: Path)
     click(edit)
     assert shell.current.screen == "modello"
     shell.back()
-    click(next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Metti in Oggi"))
-    assert services.shortcuts(ready)[:1] != [] and "Aggiunto alle scorciatoie di Oggi." in shell.ctx.toasts
+    click(next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Metti in Oikos home"))
+    assert services.shortcuts(ready)[:1] != [] and "Aggiunto alle scorciatoie di Oikos home." in shell.ctx.toasts
     shell.navigate("/oggi")
     chip = next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and (item.tooltip or "").startswith("Nuova voce:"))
     click(chip)

@@ -32,7 +32,7 @@ class Section:
 
 
 SECTIONS: Tuple[Section, ...] = (
-    Section("oggi", "/oggi", "Oggi", NOMENCLATURE["today"].name, "TODAY_OUTLINED", "TODAY", NOMENCLATURE["today"].source),
+    Section("oggi", "/oggi", "Oikos home", NOMENCLATURE["today"].name, "TODAY_OUTLINED", "TODAY", NOMENCLATURE["today"].source),
     Section("voci", "/voci", "Voci", NOMENCLATURE["entry"].name, "EDIT_NOTE_OUTLINED", "EDIT_NOTE", NOMENCLATURE["entry"].source),
     Section(
         "collezioni", "/collezioni", "Collezioni", "Museion", "COLLECTIONS_BOOKMARK_OUTLINED", "COLLECTIONS_BOOKMARK",

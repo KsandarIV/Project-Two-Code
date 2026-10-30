@@ -70,7 +70,7 @@ def test_colour_helpers() -> None:
 
 
 def test_sections_have_a_plain_and_a_philosophical_name() -> None:
-    assert [item.label for item in SECTIONS] == ["Oggi", "Voci", "Collezioni", "Modelli", "Impostazioni"]
+    assert [item.label for item in SECTIONS] == ["Oikos home", "Voci", "Collezioni", "Modelli", "Impostazioni"]
     assert section("oggi").nickname == "Hic et nunc"
     assert section("voci").nickname == "Pensieri"
     assert section("modelli").nickname == "Forme"

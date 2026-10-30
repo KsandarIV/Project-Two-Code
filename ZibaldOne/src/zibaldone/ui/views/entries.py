@@ -144,7 +144,7 @@ class EntryList:
                 for row in rows
             ]
         else:
-            empty = "Nessuna voce con questi filtri." if (self.query.template or self.query.area or self.query.text or self.query.day_from or self.query.day_to) else "Non hai ancora scritto nulla. Comincia da Oggi, o con «Nuova voce»."
+            empty = "Nessuna voce con questi filtri." if (self.query.template or self.query.area or self.query.text or self.query.day_from or self.query.day_to) else "Non hai ancora scritto nulla. Comincia da Oikos home, o con «Nuova voce»."
             self.list_column.controls = [W.empty_state(empty, "EDIT_NOTE")]
         if update:
             self.ctx.update()
