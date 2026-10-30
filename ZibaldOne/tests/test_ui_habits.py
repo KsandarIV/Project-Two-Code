@@ -25,7 +25,7 @@ from zibaldone.ui.views.habits import streak_label  # noqa: E402
 def base(isolated_data_dir: Path) -> Path:
     isolated_data_dir.mkdir(parents=True, exist_ok=True)
     record_consent(isolated_data_dir, True, NOTICE_VERSION)
-    services.save_ui_settings(isolated_data_dir, diario_suggested=True, backup_files_folder="")
+    services.save_ui_settings(isolated_data_dir, diario_suggested=True, backup_files_folder="", app_icon="C")
     with Store.open(isolated_data_dir) as store:
         for name in ("diario", "io", "persone"):
             apply_install(plan_install(find_builtin_pack(name), store), store)
