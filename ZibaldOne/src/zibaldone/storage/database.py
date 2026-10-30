@@ -38,10 +38,12 @@ from zibaldone.core.links import (
     outgoing_links,
     plain_text,
 )
+from zibaldone.core.errors import StoreError
 from zibaldone.core.search import (
     ENGINE_FTS,
     ENGINE_LIKE,
     FIELD_WEIGHTS,
+    MAX_SEARCH_LIMIT,
     Document,
     Query,
     SearchHit,
@@ -58,7 +60,6 @@ from zibaldone.core.search import (
 DATABASE_FILE = "zibaldone.db"
 FTS_TABLE = "search_fts"
 NO_FTS_ENV = "ZIBALDONE_NO_FTS"
-MAX_SEARCH_LIMIT = 500
 
 # * — migrations: append only —
 MIGRATIONS: Sequence[str] = (
@@ -163,10 +164,6 @@ _BEST_NAME = """
         (SELECT n.entry_id FROM entry_names n WHERE n.name = links.target_name AND n.entry_id = links.source)
     )
 """
-
-
-class StoreError(Exception):
-    """A storage operation was refused (missing item, conflict, …)."""
 
 
 def database_path(folder: Path) -> Path:
