@@ -10,6 +10,7 @@ import flet as ft
 
 from zibaldone.storage import bundle
 from zibaldone.ui import cloud_model as cm
+from zibaldone.ui import services
 from zibaldone.ui import theme as T
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
@@ -95,12 +96,17 @@ def _offer(ctx: AppContext, path: Path, info: Any, on_done: Optional[Callable[[]
         error.visible = True
         ctx.update(error)
 
+    def imported(action: Callable[[], Any]) -> Any:
+        result = action()
+        services.keep_imported_copy(ctx.folder, path)
+        return result
+
     def add(_: Any) -> None:
-        ctx.run_blocking(lambda: bundle.import_bundle(ctx.folder, path), lambda _result: finish("Aggiunto alle istantanee. Da lì puoi riportare i dati a quel momento."), fail)
+        ctx.run_blocking(lambda: imported(lambda: bundle.import_bundle(ctx.folder, path)), lambda _result: finish("Aggiunto alle istantanee. Da lì puoi riportare i dati a quel momento."), fail)
 
     def restore(_: Any) -> None:
         pass_value, code = (passphrase.value or "").strip() or None, (recovery.value or "").strip() or None
-        ctx.run_blocking(lambda: bundle.restore_bundle(ctx.folder, path, passphrase=pass_value, recovery_code=code), lambda _result: finish("Dati riportati al backup. Prima ne ho salvata un'istantanea per tornare indietro."), fail)
+        ctx.run_blocking(lambda: imported(lambda: bundle.restore_bundle(ctx.folder, path, passphrase=pass_value, recovery_code=code)), lambda _result: finish("Dati riportati al backup. Prima ne ho salvata un'istantanea per tornare indietro."), fail)
 
     lines = [
         W.body(f"Backup del {when}" + (f", fatto con ZibaldOne {info.app_version}" if info.app_version else "") + (", cifrato." if info.encrypted else ".")),

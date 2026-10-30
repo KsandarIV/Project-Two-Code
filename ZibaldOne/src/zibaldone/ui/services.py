@@ -348,6 +348,17 @@ def create_suggested_folder(folder: Path) -> Path:
     return path
 
 
+def keep_imported_copy(folder: Path, source: Path) -> None:
+    """A backup file brought in from outside is copied to «importati» of the backup folder (not when the user manages it alone). Never raises."""
+    target = backup_files_folder(folder)
+    if not target or backup_mode(folder) == bf.MODE_USER:
+        return
+    try:
+        bf.keep_imported_copy(Path(target), source)
+    except OSError:
+        pass
+
+
 def export_to_files_folder(folder: Path) -> str:
     """Write the new backup files in the chosen folder, by the chosen mode, and rotate; returns a warning or ''. Blocking."""
     target = backup_files_folder(folder)

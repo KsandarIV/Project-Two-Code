@@ -162,3 +162,20 @@ def test_changing_folder_remembers_the_old_one_and_can_bring_the_files_along(rea
 
     shutil.rmtree(old, ignore_errors=True)
     assert services.folder_history(ready) == [str(new)]
+
+
+def test_a_file_imported_from_outside_is_copied_to_importati(ready: Path, tmp_path: Path) -> None:
+    snapshot = backups.create_snapshot(ready, "manual")
+    outside = bundle.export_bundle(ready, snapshot.id, tmp_path / "fuori" / "altro.zbbackup")
+    target = tmp_path / "miei"
+    services.set_backup_folder(ready, str(target))
+    shell = Shell(FakePage(), ready)
+    shell.ctx.pick_files = lambda on_picked, multiple=True: on_picked([SimpleNamespace(path=str(outside))])
+    shell.start("/organon/mnemosyne")
+    click(button(shell.body.content, "Importa da un file"))
+    click(button(shell.ctx.page.dialogs[-1], "Aggiungi alle istantanee"))
+    assert outside.exists() and (target / "importati" / "altro.zbbackup").is_file()
+    services.set_backup_mode(ready, "utente")
+    click(button(shell.body.content, "Importa da un file"))
+    click(button(shell.ctx.page.dialogs[-1], "Aggiungi alle istantanee"))
+    assert len(list((target / "importati").glob("*.zbbackup"))) == 1  # «Gestisco io»: nothing is added to the app's folders
