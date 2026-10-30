@@ -62,6 +62,8 @@ class Shell:
         self.ctx.wide = self.layout == "wide"
         self.mounted: Optional[tuple] = None  # (layout, with_nav) currently on screen
         self.body = ft.Container(expand=True, bgcolor=T.BG)
+        self.strip = ft.Container(visible=False, right=10, bottom=8)  # «stai usando l'app senza backup», over the page, bottom right
+        self.stage = ft.Stack([self.body, self.strip], expand=True)
         self.rail: Optional[ft.NavigationRail] = None
         self.bar: Optional[ft.NavigationBar] = None
         self.notifier = services.InAppNotifier()
@@ -187,6 +189,7 @@ class Shell:
             control = error_screen(self.ctx, f"{type(problem).__name__}: {problem}")
         self.body.content = control
         with_nav = route.screen not in ONBOARDING_SCREENS
+        self.refresh_strip(with_nav)
         if self.mounted != (self.layout, with_nav):
             self.mount(with_nav)
         else:
@@ -239,7 +242,7 @@ class Shell:
             )
             page.controls = [
                 ft.SafeArea(
-                    ft.Row([self.rail, ft.VerticalDivider(width=1, thickness=1, color=T.BORDER), self.body], expand=True, spacing=0),
+                    ft.Row([self.rail, ft.VerticalDivider(width=1, thickness=1, color=T.BORDER), self.stage], expand=True, spacing=0),
                     expand=True,
                 )
             ]
@@ -254,9 +257,56 @@ class Shell:
                 border=ft.Border.only(top=ft.BorderSide(1, T.BORDER)),
             )
             page.navigation_bar = self.bar
-            page.controls = [ft.SafeArea(self.body, expand=True)]
+            page.controls = [ft.SafeArea(self.stage, expand=True)]
         self.mounted = (self.layout, with_nav)
         page.update()
+
+    def refresh_strip(self, with_nav: bool) -> None:
+        """The reminder that there is no backup: small, scrolling, never in the way; a tap says what can be done."""
+        show = with_nav and services.without_backup(self.folder)
+        self.strip.visible = show
+        if not show:
+            return
+        width = max(170.0, (self.page.width or 400) * 0.4) if self.layout != "wide" else 260.0  # as wide as «Modelli» and «Impostazioni» together
+        self.strip.content = ft.Container(
+            ft.Row([ft.Icon(ft.Icons.WARNING_AMBER_ROUNDED, size=16, color=T.ERROR), ft.Text("Stai usando l'app senza backup", size=12, color=T.TEXT, no_wrap=True)], spacing=6, scroll=ft.ScrollMode.AUTO),
+            width=width,
+            padding=ft.Padding.symmetric(horizontal=10, vertical=6),
+            bgcolor=T.PANEL_HIGH,
+            border=ft.Border.all(1, W.fade(T.ERROR, 0.6)),
+            border_radius=T.RADIUS_SMALL,
+            on_click=self.no_backup_options,
+        )
+
+    def no_backup_options(self, _: Any = None) -> None:
+        def automatic(_: Any) -> None:
+            self.ctx.close_dialog()
+            self.navigate("/organon/mnemosyne")
+
+        def manual(_: Any) -> None:
+            self.ctx.close_dialog()
+            services.set_backup_mode(self.folder, "utente")
+            self.navigate("/organon/mnemosyne")
+
+        def silence(_: Any) -> None:
+            self.ctx.close_dialog()
+            services.save_ui_settings(self.folder, no_backup_notice_off=True)
+            self.refresh_strip(True)
+            self.ctx.toast("Avviso spento. Puoi cambiare idea quando vuoi da Impostazioni · Mnemosyne.")
+            self.page.update()
+
+        self.ctx.show_dialog(
+            ft.AlertDialog(
+                title="Stai usando l'app senza backup",
+                content=ft.Text("Se perdi il telefono, lo rompi o disinstalli l'app, i tuoi dati si perdono. Cosa vuoi fare?", color=T.TEXT, size=14),
+                actions=[
+                    W.primary_button("Backup automatici", automatic, icon="AUTO_MODE"),
+                    W.secondary_button("Li faccio io a mano", manual),
+                    W.text_button("Spegni l'avviso", silence, color=T.TEXT_DIM),
+                ],
+                actions_alignment=ft.MainAxisAlignment.END,
+            )
+        )
 
     def sync_selection(self) -> None:
         index = section_index(self.section_key)

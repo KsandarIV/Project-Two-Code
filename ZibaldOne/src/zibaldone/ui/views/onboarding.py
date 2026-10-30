@@ -7,6 +7,7 @@ import flet as ft
 from zibaldone.core.brand import APP_MOTTO, APP_NAME, APP_TAGLINE, NOMENCLATURE, mascot_for
 from zibaldone.core.packs import BASE_PACKS, builtin_packs, install_base_packs
 from zibaldone.core.privacy import NOTICE_VERSION, notice_text
+from zibaldone.storage import backup_folder as bf
 from zibaldone.storage.database import StoreError
 from zibaldone.storage.settings import SettingsError, consent_status, record_consent
 from zibaldone.ui import services
@@ -206,29 +207,70 @@ def copies(ctx: AppContext, route: Route) -> ft.Control:
 
 def files_folder(ctx: AppContext, route: Route) -> ft.Control:
     """Once, at the start: the folder where the backup files go, so that they can be found again and imported."""
+    suggestion = services.suggested_folder()
+    error = W.error_text()
 
     def chosen(path: str) -> None:
-        services.save_ui_settings(ctx.folder, backup_files_folder=path)
+        try:
+            services.set_backup_folder(ctx.folder, path)
+        except OSError as problem:
+            error.value = f"Non riesco a usare questa cartella: {problem}"
+            ctx.update(error)
+            return
         ctx.advance()
 
-    def later(_: Any) -> None:
-        services.save_ui_settings(ctx.folder, backup_files_folder="")
-        ctx.advance()
+    def create(_: Any) -> None:
+        def answered(granted: bool) -> None:
+            if not granted:
+                error.value = "Senza il permesso non posso creare la cartella. Puoi darlo dalle impostazioni del telefono, oppure scegliere tu una cartella con il pulsante «Scelgo io la cartella»."
+                ctx.update(error)
+                return
+            try:
+                services.create_suggested_folder(ctx.folder)
+            except OSError as problem:
+                error.value = f"Non sono riuscito a creare la cartella: {problem}. Scegline una tu."
+                ctx.update(error)
+                return
+            ctx.toast(f"Cartella creata: {suggestion}")
+            ctx.advance()
+
+        ctx.ask_files_permission(answered)
+
+    def without(_: Any) -> None:
+        def confirmed() -> None:
+            services.save_ui_settings(ctx.folder, backup_files_folder="")
+            ctx.advance()
+
+        ctx.confirm(
+            "Continuare senza backup?",
+            "Senza una cartella non faccio nessun backup. Se perdi il telefono, lo rompi o disinstalli l'app, i tuoi dati si perdono per sempre. Potrai scegliere la cartella quando vuoi da Impostazioni · Mnemosyne, e finché non lo fai ti ricordo che sei senza backup.",
+            "Continuo senza backup",
+            confirmed,
+            cancel_label="Torno indietro",
+        )
 
     return W.screen(
         [
             _brand(),
-            W.title_with_nickname("Dove metto i file di backup?", "Mnemosyne", size=22),
+            W.title_with_nickname("Dove salvo i tuoi backup?", "Mnemosyne", size=22),
             W.panel(
                 ft.Column(
                     [
-                        W.body("Ogni backup diventa un file .zbbackup nella cartella che scegli: la ritrovi con il gestore di file e puoi portare il file su un altro dispositivo."),
-                        W.body("Puoi cambiarla quando vuoi, da Impostazioni · Mnemosyne.", dim=True),
+                        W.body("I backup li metto in una cartella che vedi e controlli tu, così se cambi telefono o disinstalli l'app non perdi niente. Senza questa cartella i backup automatici non possono partire."),
+                        W.body(f"Ti consiglio {bf.SUGGESTED} nella memoria principale del telefono, perché è facile da ritrovare con il gestore di file: {suggestion}", dim=True, selectable=True),
+                        W.caption("Per crearla ti chiederò il permesso di accedere ai file. Se non lo dai, puoi scegliere tu una cartella."),
                     ],
                     spacing=8,
                 )
             ),
-            ft.Row([W.secondary_button("Più tardi", later), W.primary_button("Scegli la cartella", lambda _: ctx.pick_folder(chosen), icon="FOLDER_OPEN")], alignment=ft.MainAxisAlignment.END, wrap=True, spacing=8),
+            error,
+            ft.Row(
+                [W.primary_button("Crea la cartella per me", create, icon="CREATE_NEW_FOLDER"), W.secondary_button("Scelgo io la cartella", lambda _: ctx.pick_folder(chosen), icon="FOLDER_OPEN")],
+                alignment=ft.MainAxisAlignment.END,
+                wrap=True,
+                spacing=8,
+            ),
+            ft.Row([W.danger_button("Continua senza backup", without)], alignment=ft.MainAxisAlignment.END),
         ],
         ctx.wide,
     )

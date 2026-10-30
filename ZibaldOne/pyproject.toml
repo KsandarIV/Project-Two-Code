@@ -62,10 +62,14 @@ path = "src"
 module = "main"
 
 [tool.flet.android]
-dependencies = ["flet==1.0.4"]
+dependencies = ["flet==1.0.4", "flet-permission-handler==1.0.4"]
 
 [tool.flet.android.permission]
 "android.permission.INTERNET" = true
+# 0.3.3: to make ZibaldOne/Data in the main storage and write the backup files there (asked at runtime, from a button)
+"android.permission.MANAGE_EXTERNAL_STORAGE" = true
+"android.permission.READ_EXTERNAL_STORAGE" = true
+"android.permission.WRITE_EXTERNAL_STORAGE" = true
 
 [tool.flet.windows]
 dependencies = ["flet==1.0.4"]

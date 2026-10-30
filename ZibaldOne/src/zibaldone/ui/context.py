@@ -114,17 +114,23 @@ class AppContext:
         on_confirm: Callable[[], Any],
         danger: bool = True,
         cancel_label: str = "Annulla",
+        on_cancel: Optional[Callable[[], Any]] = None,
     ) -> None:
         def accept(_: Any) -> None:
             self.close_dialog()
             on_confirm()
+
+        def decline(_: Any) -> None:
+            self.close_dialog()
+            if on_cancel is not None:
+                on_cancel()
 
         button = W.danger_button(confirm_label, accept) if danger else W.primary_button(confirm_label, accept)
         dialog = ft.AlertDialog(
             modal=True,
             title=title,
             content=ft.Text(message, color=T.TEXT, size=14),
-            actions=[W.text_button(cancel_label, self.close_dialog, color=T.TEXT), button],
+            actions=[W.text_button(cancel_label, decline, color=T.TEXT), button],
             actions_alignment=ft.MainAxisAlignment.END,
         )
         self.show_dialog(dialog)
@@ -173,6 +179,30 @@ class AppContext:
             path = await ft.FilePicker().get_directory_path()
             if path:
                 on_picked(str(path))
+            self.update()
+
+        self.page.run_task(task)
+
+    def ask_files_permission(self, on_result: Callable[[bool], Any]) -> None:
+        """Ask Android for access to the phone's files (needed to make `ZibaldOne/Data` in the main storage); elsewhere there is nothing to ask. `on_result(granted)`."""
+        if self.page is None or not services.running_on_android():
+            on_result(True)
+            return
+
+        async def task() -> None:
+            granted = False
+            try:
+                import flet_permission_handler as ph
+
+                handler = self.memory.get("permission_handler")
+                if handler is None:
+                    handler = self.memory["permission_handler"] = ph.PermissionHandler()
+                    self.page.services.append(handler)
+                status = await handler.request(ph.Permission.MANAGE_EXTERNAL_STORAGE)
+                granted = status == ph.PermissionStatus.GRANTED
+            except Exception:  # library missing, or the system refused to ask
+                logger.info("files permission failed", exc_info=True)
+            on_result(granted)
             self.update()
 
         self.page.run_task(task)

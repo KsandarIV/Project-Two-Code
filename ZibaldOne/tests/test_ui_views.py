@@ -186,7 +186,9 @@ def test_first_run_consent_then_diary_then_today(folder: Path) -> None:
     assert shell.current.screen == "consenso"  # nothing saved, the page stays
     click(button(shell.body.content, "Ho capito, iniziamo"))
     assert shell.current.screen == "cartella"  # 0.3.2: where the backup files go, asked once
-    click(button(shell.body.content, "Più tardi"))
+    click(button(shell.body.content, "Continua senza backup"))
+    assert services.backup_files_pending(folder) is True  # asks to confirm first
+    click(button(page.dialogs[-1], "Continuo senza backup"))
     assert services.backup_files_pending(folder) is False and services.backup_files_folder(folder) == ""
     assert shell.current.screen == "diario"
     click(button(shell.body.content, "Installa i pacchetti scelti"))
@@ -1100,4 +1102,7 @@ def test_a_backup_file_is_written_in_the_chosen_folder(ready: Path, tmp_path: Pa
     services.save_ui_settings(ready, backup_files_folder=str(target))
     backups.create_snapshot(ready, reason="manual")
     assert services.export_to_files_folder(ready) == ""
-    assert len(list(target.glob("*.zbbackup"))) == 1
+    assert len(list((target / "backup" / "manuali").glob("*.zbbackup"))) == 1  # a folder chosen before 0.3.3 is «misto»
+    services.set_backup_mode(ready, "utente")
+    backups.create_snapshot(ready, reason="manual")
+    assert services.export_to_files_folder(ready) == "" and len(list(target.glob("*.zbbackup"))) == 1

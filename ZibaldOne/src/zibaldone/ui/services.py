@@ -17,6 +17,7 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 
+from zibaldone.storage import backup_folder as bf
 from zibaldone.storage.database import Store
 from zibaldone.storage.paths import ENV_DATA_DIR, data_dir
 from zibaldone.storage.settings import SettingsError, load_settings, save_settings
@@ -271,22 +272,102 @@ def backup_files_folder(folder: Path) -> str:
 
 
 def backup_files_pending(folder: Path) -> bool:
-    """The first start asks once where the backup files go (or «later»)."""
+    """The first start asks once where the backup files go (or «continue without»)."""
     return "backup_files_folder" not in ui_settings(folder)
 
 
-def export_to_files_folder(folder: Path) -> str:
-    """Write the newest snapshot as a backup file in the chosen folder; returns a warning or ''. Blocking."""
+def backup_mode(folder: Path) -> str:
+    """Who manages the backup files: the app, the user, or both. A folder chosen before 0.3.3 stays «misto»: its files are not touched."""
+    value = ui_settings(folder).get("backup_mode")
+    if value in bf.MODES:
+        return str(value)
+    return bf.MODE_MIXED if backup_files_folder(folder) else bf.MODE_APP
+
+
+def without_backup(folder: Path) -> bool:
+    """The user went on without a backup folder: the strip «stai usando l'app senza backup» shows, unless switched off."""
+    return not backup_files_folder(folder) and not ui_settings(folder).get("no_backup_notice_off", False)
+
+
+def folder_history(folder: Path) -> List[str]:
+    """The folders used before, only those that still exist."""
+    value = ui_settings(folder).get("backup_folder_history", [])
+    return bf.existing(value if isinstance(value, list) else [])
+
+
+def keep_history(folder: Path) -> bool:
+    """Rotated backup files go to «Storico» instead of being deleted; off unless the user turns it on."""
+    return bool(ui_settings(folder).get("backup_keep_history", False))
+
+
+def set_backup_folder(folder: Path, path: str, move_old: bool = False) -> List[Path]:
+    """Use `path` from now on; with `move_old` the files of the app's own scheme in the old folder come along. The old path is remembered."""
+    old = backup_files_folder(folder)
+    moved: List[Path] = []
+    if path:
+        Path(path).mkdir(parents=True, exist_ok=True)
+        if move_old and old and Path(old) != Path(path) and Path(old).is_dir():
+            moved = bf.move_scheme(Path(old), Path(path))
+    history = [item for item in ui_settings(folder).get("backup_folder_history", []) if isinstance(item, str)]
+    for used in (old, path):
+        if used and used not in history:
+            history.append(used)
+    save_ui_settings(folder, backup_files_folder=path, backup_folder_history=history, no_backup_notice_off=False)
+    return moved
+
+
+def set_backup_mode(folder: Path, mode: str) -> List[Path]:
+    """Change who manages the backups, without losing any. «Gestisco io» turns the automatic copies off; «Gestisce l'app» sets the user's files aside in «Gestione manuale». Returns what was moved."""
+    if mode not in bf.MODES:
+        raise ValueError(f"modalità sconosciuta: {mode}")
+    api = backups_api()
+    if api is not None:
+        settings = api.load_backup_settings(folder)
+        settings.auto = mode != bf.MODE_USER
+        api.save_backup_settings(folder, settings)
     target = backup_files_folder(folder)
-    backups = backups_api()
-    if not target or backups is None:
+    moved = bf.take_over(Path(target)) if mode == bf.MODE_APP and target and Path(target).is_dir() else []
+    save_ui_settings(folder, backup_mode=mode)
+    return moved
+
+
+def suggested_folder() -> Path:
+    """The folder proposed to the user: `ZibaldOne/Data` in the main storage of the phone, `Documenti/ZibaldOne/Data` elsewhere."""
+    if running_on_android():
+        return Path("/storage/emulated/0") / bf.SUGGESTED
+    home = Path.home()
+    documents = next((home / name for name in ("Documenti", "Documents") if (home / name).is_dir()), home / "Documents")
+    return documents / bf.SUGGESTED
+
+
+def create_suggested_folder(folder: Path) -> Path:
+    """Make the proposed folder and use it. Raises OSError when it cannot be made (on Android: the permission is missing)."""
+    path = suggested_folder()
+    path.mkdir(parents=True, exist_ok=True)
+    set_backup_folder(folder, str(path))
+    return path
+
+
+def keep_imported_copy(folder: Path, source: Path) -> None:
+    """A backup file brought in from outside is copied to «importati» of the backup folder (not when the user manages it alone). Never raises."""
+    target = backup_files_folder(folder)
+    if not target or backup_mode(folder) == bf.MODE_USER:
+        return
+    try:
+        bf.keep_imported_copy(Path(target), source)
+    except OSError:
+        pass
+
+
+def export_to_files_folder(folder: Path) -> str:
+    """Write the new backup files in the chosen folder, by the chosen mode, and rotate; returns a warning or ''. Blocking."""
+    target = backup_files_folder(folder)
+    if not target or backups_api() is None:
         return ""
     try:
-        snapshots = [info for info in backups.list_snapshots(folder) if not info.problem]
-        if snapshots:
-            from zibaldone.storage import bundle
-
-            bundle.export_bundle(folder, snapshots[0].id, Path(target))
+        bf.export_snapshots(folder, Path(target), backup_mode(folder))
+        if backup_mode(folder) != bf.MODE_USER:
+            bf.rotate(Path(target), keep_history(folder))
     except Exception as error:
         return f"file di backup non salvato in {target}: {error}"
     return ""
