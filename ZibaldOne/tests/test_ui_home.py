@@ -143,7 +143,7 @@ def test_oggi_can_be_reordered_by_dragging_right_there(base: Path) -> None:  # n
     drop(shell.body.content, "aree", "promemoria")  # «aree» goes first
     assert home_log.load_layout(base)[0] == "aree"
     assert any(isinstance(item, ft.Draggable) for item in walk(shell.body.content))  # still unlocked
-    remove = next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Togli da Oggi")
+    remove = next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Togli da Oikos home")
     before = home_log.load_layout(base)
     click(remove)  # the first block that can be taken away
     after = home_log.load_layout(base)

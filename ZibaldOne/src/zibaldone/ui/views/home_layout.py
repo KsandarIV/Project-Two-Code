@@ -140,7 +140,7 @@ def arrange(
     def card(key: str, faded: bool) -> ft.Control:
         label = ft.Row(
             [ft.Icon(W.icon_of("DRAG_INDICATOR"), size=20, color=T.TEXT_DIM), W.body(label_of(key, view_names), size=13, expand=True)]
-            + ([W.icon_button("CLOSE", lambda _, key=key: remove(key), "Togli da Oggi", color=T.TEXT_DIM)] if remove is not None and key not in home.FIXED and not faded else []),
+            + ([W.icon_button("CLOSE", lambda _, key=key: remove(key), "Togli da Oikos home", color=T.TEXT_DIM)] if remove is not None and key not in home.FIXED and not faded else []),
             vertical_alignment=ft.CrossAxisAlignment.CENTER,
         )
         grip = ft.Container(label, padding=ft.Padding.symmetric(horizontal=10, vertical=2), bgcolor=T.PANEL, border_radius=T.RADIUS_SMALL)
@@ -183,7 +183,7 @@ def build(ctx: AppContext) -> List[ft.Control]:
         def changed(event: Any) -> None:
             save(shown + [key] if event.control.value else [item for item in shown if item != key])
 
-        return ft.Switch(value=visible, on_change=changed, active_color=T.ACCENT, disabled=visible and len(shown) == 1, tooltip="Mostra in Oggi" if not visible else "Nascondi da Oggi")
+        return ft.Switch(value=visible, on_change=changed, active_color=T.ACCENT, disabled=visible and len(shown) == 1, tooltip="Mostra in Oikos home" if not visible else "Nascondi da Oikos home")
 
     def reset() -> None:
         home_log.reset_layout(ctx.folder)
@@ -210,7 +210,7 @@ def build(ctx: AppContext) -> List[ft.Control]:
         for slug in pinned
         if names[slug] is not None
     ]
-    controls.append(W.panel(ft.Column(pinned_rows or [W.caption("Nessuna. Da Modelli, la puntina mette un modello in Oggi: un tocco e scrivi.")], spacing=2)))
+    controls.append(W.panel(ft.Column(pinned_rows or [W.caption("Nessuna. Da Modelli, la puntina mette un modello in Oikos home: un tocco e scrivi.")], spacing=2)))
     controls.append(
         ft.Row(
             [W.secondary_button("Ripristina", lambda _: ctx.confirm("Ripristinare la home?", "I riquadri tornano tutti visibili, nell'ordine di partenza.", "Ripristina", reset, danger=False), icon="RESTART_ALT")],
