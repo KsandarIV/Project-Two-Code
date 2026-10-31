@@ -89,15 +89,21 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
         ctx.memory[ARRANGE_KEY] = not unlocked
         ctx.refresh()
 
+    shown = [key for key in layout if not key.startswith("vista:") or key.split(":", 1)[1] in view_names]
+    empty: List[str] = []  # on in the layout but with nothing to show now (no reminder yet, a pack missing): they are not on screen, so a reorder must not lose them
+
     def save(order: List[str]) -> None:
+        for key in empty:
+            if key not in order:
+                order.insert(min(shown.index(key), len(order)), key)
         home_log.save_layout(ctx.folder, order)
         ctx.refresh()
 
-    shown = [key for key in layout if not key.startswith("vista:") or key.split(":", 1)[1] in view_names]
     lock = W.icon_button("LOCK_OPEN" if unlocked else "LOCK", toggle_lock, "Blocca i riquadri" if unlocked else "Sblocca per spostare i riquadri")
     if unlocked:
         controls.append(ft.Row([W.caption("Sbloccata: trascina la maniglia di un riquadro per spostarlo."), lock], alignment=ft.MainAxisAlignment.SPACE_BETWEEN))
         entries = [(key, block) for key in shown for block in [_tile(ctx, key, model, tiles)] if block is not None]
+        empty[:] = [key for key in shown if key not in dict(entries)]
         controls.append(home_layout.arrange(ctx, entries, view_names, save, remove=lambda key: save([item for item in shown if item != key])))
         offered = [key for key in [*home.TILES, *[f"vista:{view_id}" for view_id in view_names]] if key not in shown]
         if offered:
