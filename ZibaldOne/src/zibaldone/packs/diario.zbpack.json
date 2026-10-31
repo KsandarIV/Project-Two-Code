@@ -2,10 +2,10 @@
   "format": 1,
   "id": "zibaldone.diario",
   "name": "Stoa · Diario",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "author": "ZibaldOne",
   "license": "CC0-1.0",
-  "description": "Il diario come esercizio quotidiano, alla maniera degli stoici: i 3 momenti della giornata, il check-in delle 8 aree della vita, le revisioni di settimana, mese e anno, i pensieri liberi, con le foto del giorno.",
+  "description": "Il diario come esercizio quotidiano, alla maniera degli stoici: i 3 momenti della giornata, il check-in delle 8 aree della vita, le revisioni di settimana, mese e anno, i pensieri liberi, con le foto del giorno, più un posto per le notti insonni.",
   "required_blocks": [
     "checklist",
     "choice",
@@ -480,6 +480,43 @@
       ],
       "description": "Revisione dell'anno: com'è andato e dove voglio andare. Leopardi, Dialogo di un venditore d'almanacchi e di un passeggere (1832).",
       "icon": "AUTO_AWESOME",
+      "color": "#8A2BE2",
+      "category": "diario"
+    },
+    {
+      "slug": "pannychis",
+      "name": "Pannychis",
+      "blocks": [
+        {
+          "key": "pensiero",
+          "type": "longtext",
+          "label": "Cosa ti tiene sveglio"
+        },
+        {
+          "key": "domani",
+          "type": "checklist",
+          "label": "Da lasciare a domani"
+        },
+        {
+          "key": "stato",
+          "type": "choice",
+          "label": "Come ti senti adesso",
+          "options": {
+            "choices": [
+              "😌 Più calmo",
+              "😐 Uguale",
+              "😟 Agitato"
+            ],
+            "values": [
+              3,
+              2,
+              1
+            ]
+          }
+        }
+      ],
+      "description": "Notti insonni: scrivi quello che ti tiene sveglio e lascialo sulla pagina. Veglia notturna, in greco pannychis.",
+      "icon": "BEDTIME",
       "color": "#8A2BE2",
       "category": "diario"
     }
