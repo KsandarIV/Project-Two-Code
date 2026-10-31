@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 from typer.testing import CliRunner
@@ -28,6 +29,9 @@ def test_builtin_packs_are_valid_and_cover_journal_app_ideas() -> None:
     assert set(packs) == {"diario", "aree", "collezioni", "io", "persone", "segreti", "finanze", "askesis", "theoria"}
     diario = {template.slug for template in packs["diario"].templates}
     assert {"mattina", "meta_giornata", "sera", "aree", "settimana", "mese", "anno", "pannychis"} <= diario
+    pannychis = next(template for template in packs["diario"].templates if template.slug == "pannychis")
+    assert pannychis.icon == "Pannychis" and pannychis.color == "#8A2BE2"
+    assert (Path(__file__).parents[1] / "src" / "assets" / "mascots" / "Pannychis.svg").is_file()
     aree = next(template for template in packs["diario"].templates if template.slug == "aree")
     assert [block.label for block in aree.blocks[:8]] == ["Personale", "Salute", "Finanze", "Famiglia", "Sociale", "Lavoro", "Studio", "Svago"]
     collezioni = {template.slug for template in packs["collezioni"].templates}
