@@ -172,13 +172,19 @@ def _moments(ctx: AppContext, model: vm.TodayModel) -> ft.Control:
     return ft.Column(parts, spacing=8)
 
 
+def _banner_icon(banner: vm.ReminderBanner) -> ft.Control:
+    if banner.night:
+        return ft.Image(src=f"{W.MASCOT_ASSETS}/Pannychis.svg", width=40, height=40, fit=ft.BoxFit.CONTAIN)
+    return ft.Icon(ft.Icons.NOTIFICATIONS_ACTIVE_OUTLINED, color=T.ACCENT_2, size=22)
+
+
 def _reminder_banner(ctx: AppContext, banner: vm.ReminderBanner) -> ft.Control:
     return W.panel(
         ft.Column(
             [
                 ft.Row(
                     [
-                        ft.Icon(ft.Icons.NOTIFICATIONS_ACTIVE_OUTLINED, color=T.ACCENT_2, size=22),
+                        _banner_icon(banner),
                         ft.Column([W.body(banner.title, size=13, dim=True), W.body(banner.body, size=15)], spacing=2, expand=True),
                     ],
                     spacing=12,

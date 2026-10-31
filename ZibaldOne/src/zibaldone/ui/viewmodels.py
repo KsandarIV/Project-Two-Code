@@ -19,7 +19,7 @@ from zibaldone.core.blocks import BLOCK_TYPES, PROGRESS_STATUSES, is_number
 from zibaldone.core.brand import AREAS, MASCOTS, Mascot, Quote, mascot_for, quote_of_the_day
 from zibaldone.core.packs import InstallPlan, Pack, build_pack, write_pack_file
 from zibaldone.core.stats import long_date
-from zibaldone.core.reminders import MOMENT_LABELS, MOMENTS, WEEKDAY_NAMES, MomentConfig, QuietHours, ReminderConfig
+from zibaldone.core.reminders import MOMENT_LABELS, MOMENTS, WEEKDAY_NAMES, MomentConfig, QuietHours, ReminderConfig, night_prompt
 from zibaldone.core.templates import SLUG, BlockSpec, Entry, Template, slugify, validate_values
 from zibaldone.ui import forms
 from zibaldone.ui.theme import ACCENT, CATEGORICAL, TEXT_DIM, color_or
@@ -234,9 +234,10 @@ class AreaCheckin:
 
 @dataclass(frozen=True)
 class ReminderBanner:
-    moment: str
+    moment: str  # the template slug "Scrivi ora" opens
     title: str
     body: str
+    night: bool = False  # the Pannychis banner (00:00-05:00), not one of the three moments
 
 
 @dataclass(frozen=True)
@@ -312,6 +313,9 @@ def build_today(
     )
     rows = tuple(entry_row(entry, templates[entry.template], today) for entry in todays if entry.template in templates)
     banner = ReminderBanner(reminder.moment, reminder.title, reminder.body) if reminder is not None else None
+    night = night_prompt(now) if banner is None else None  # a moment banner wins; the night one needs the model installed
+    if night is not None and night.template in templates:
+        banner = ReminderBanner(night.template, night.title, night.body, night=True)
     return TodayModel(
         today=today,
         date_label=italian_date(today),
