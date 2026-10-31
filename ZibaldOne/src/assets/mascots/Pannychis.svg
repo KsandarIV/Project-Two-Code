@@ -1,0 +1,19 @@
+<svg viewBox="0 0 100 100" width="100%" height="100%" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <mask id="mask-pannychis">
+      <rect width="100" height="100" fill="white" />
+
+      <!-- Luna piena -->
+      <circle cx="48" cy="52" r="27" fill="black" />
+
+      <!-- Quattro stelline a quattro punte, sparse -->
+      <path d="M 18 18 L 20 23 L 25 25 L 20 27 L 18 32 L 16 27 L 11 25 L 16 23 Z" fill="black" />
+      <path d="M 82 14 L 83.5 18 L 87.5 19.5 L 83.5 21 L 82 25 L 80.5 21 L 76.5 19.5 L 80.5 18 Z" fill="black" />
+      <path d="M 86 62 L 87.5 66 L 91.5 67.5 L 87.5 69 L 86 73 L 84.5 69 L 80.5 67.5 L 84.5 66 Z" fill="black" />
+      <path d="M 16 80 L 17.2 83 L 20.2 84.2 L 17.2 85.4 L 16 88.4 L 14.8 85.4 L 11.8 84.2 L 14.8 83 Z" fill="black" />
+    </mask>
+  </defs>
+
+  <!-- Sfondo col colore dell'area Almanacco (#8A2BE2) e angoli smussati -->
+  <rect width="100" height="100" rx="20" fill="#8A2BE2" mask="url(#mask-pannychis)" />
+</svg>

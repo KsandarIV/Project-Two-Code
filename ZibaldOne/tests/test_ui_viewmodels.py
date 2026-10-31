@@ -368,3 +368,11 @@ def test_anonymizer_preview_uses_the_people(store: Store) -> None:
     assert vm.anonymize_preview(store, "niente di personale", "anon").rows == ()
     add(store, "riflessione", {"titolo": "Pensieri", "testo": "Parlato con [[Giulia Bianchi]]."})
     assert vm.latest_entry_text(store) == "Pensieri\nParlato con Giulia Bianchi."
+
+
+def test_night_banner_shows_only_at_night_and_with_pannychis_installed(store: Store) -> None:
+    night = vm.build_today(store, datetime(2026, 10, 17, 2, 30))
+    assert night.reminder is not None and night.reminder.night
+    assert (night.reminder.moment, night.reminder.title) == ("pannychis", "Notti insonni")
+    assert vm.build_today(store, datetime(2026, 10, 17, 12, 0)).reminder is None
+    assert vm.build_today(store, datetime(2026, 10, 17, 5, 0)).reminder is None
