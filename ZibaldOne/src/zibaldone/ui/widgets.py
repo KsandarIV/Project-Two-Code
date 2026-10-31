@@ -286,6 +286,8 @@ def pill(text: str, color: str = T.TEXT_DIM, icon: str = "") -> ft.Container:
 
 
 def template_badge(icon: str, color: str, size: int = 40) -> ft.Container:
+    if icon.replace("_", "").isalnum() and (ASSETS_DIR / MASCOT_ASSETS / f"{icon}.svg").is_file():  # an icon named like a drawing (Pannychis): the drawing already has its own background
+        return ft.Container(ft.Image(src=f"{MASCOT_ASSETS}/{icon}.svg", width=size, height=size, fit=ft.BoxFit.CONTAIN), width=size, height=size)
     return ft.Container(
         ft.Icon(icon_of(icon), color=color, size=round(size * 0.55)),
         width=size,
