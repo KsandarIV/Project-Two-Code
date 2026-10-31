@@ -49,6 +49,7 @@ class Shell:
         self.ctx._navigate = self.navigate
         self.ctx._back = self.back
         self.ctx._refresh = self.refresh
+        self.ctx._retheme = self.retheme
         self.ctx._advance = self.advance
         self.ctx._data_changed = self.schedule_backup
         self.backup_running = False
@@ -75,10 +76,7 @@ class Shell:
         page = self.page
         page.title = APP_NAME
         page.theme_mode = ft.ThemeMode.DARK
-        theme = W.build_theme()
-        page.theme = theme
-        page.dark_theme = theme
-        page.bgcolor = T.BG
+        self.retheme(False)
         page.padding = 0
         page.spacing = 0
         page.locale_configuration = ft.LocaleConfiguration(
@@ -103,6 +101,18 @@ class Shell:
         self.advance()
         page.run_task(self.reminder_loop)
         page.run_task(self.update_check)
+
+    def retheme(self, redraw: bool = True) -> None:
+        """Put the palette chosen in Kosmesis on the window; with `redraw` also on what is on screen."""
+        T.apply(*services.theme_choice(self.folder))
+        theme = W.build_theme()
+        self.page.theme = theme
+        self.page.dark_theme = theme
+        self.page.bgcolor = T.BG
+        self.body.bgcolor = T.BG
+        if redraw:
+            self.mounted = None  # the bar or rail is built again with the new colours
+            self.show(self.current)
 
     def first_run_step(self) -> Optional[str]:
         """The onboarding page still to show, or None when the app can open."""

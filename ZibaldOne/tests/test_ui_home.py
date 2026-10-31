@@ -155,6 +155,26 @@ def test_oggi_can_be_reordered_by_dragging_right_there(base: Path) -> None:  # n
     assert not any(isinstance(item, ft.Draggable) for item in walk(shell.body.content))
 
 
+def test_kosmesis_changes_accent_and_background(base: Path) -> None:  # noqa: F811
+    from zibaldone.ui import services
+    from zibaldone.ui import theme as T
+
+    try:
+        shell = Shell(FakePage(), base)
+        shell.start("/organon/personalizza")
+        swatches = [item for item in walk(shell.body.content) if isinstance(item, ft.Container) and item.width == 44 and item.tooltip]
+        assert len(swatches) == len(T.ACCENT_CHOICES) + len(T.BACKGROUND_CHOICES)
+        next(item for item in swatches if item.tooltip == "Rosa").on_click(None)
+        next(item for item in swatches if item.tooltip == "Bosco").on_click(None)
+        assert services.theme_choice(base) == ("#FF007F", "#0C1511")
+        assert T.ACCENT == "#FF007F" and T.BG == "#0C1511" and shell.page.bgcolor == "#0C1511"
+        T.apply("#123456", "#FFFFFF")  # not on offer: back to the defaults
+        assert (T.ACCENT, T.BG) == (T.DEFAULT_ACCENT, T.DEFAULT_BG) and T.PANEL == "#141521"
+        assert all(T.contrast_ratio(accent, bg) >= 4.5 for _, accent in T.ACCENT_CHOICES for _, bg in T.BACKGROUND_CHOICES)
+    finally:
+        T.apply()
+        
+        
 def test_kosmesis_switches_blocks_off_and_on_by_dragging(base: Path) -> None:  # noqa: F811
     shell = Shell(FakePage(), base)
     shell.start("/organon/personalizza")
