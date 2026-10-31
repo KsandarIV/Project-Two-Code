@@ -143,6 +143,7 @@ def test_oggi_can_be_reordered_by_dragging_right_there(base: Path) -> None:  # n
     drop(shell.body.content, "aree", "citazione")  # «aree» goes right above «citazione» («promemoria» has a block only at some hours of the day)
     layout = home_log.load_layout(base)
     assert layout.index("aree") + 1 == layout.index("citazione")
+    assert "bilancio" in layout  # no finance pack here: the tile is empty, not on screen, and the reorder must keep it
     assert any(isinstance(item, ft.Draggable) for item in walk(shell.body.content))  # still unlocked
     remove = next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Togli da Oikos home")
     before = home_log.load_layout(base)
@@ -150,8 +151,8 @@ def test_oggi_can_be_reordered_by_dragging_right_there(base: Path) -> None:  # n
     after = home_log.load_layout(base)
     assert len(after) == len(before) - 1 and all(key in after for key in home.FIXED)
     click(button(shell.body.content, "Aggiungi un riquadro"))
-    click(button(shell.ctx.page.dialogs[-1], "Abitudini di oggi"))
-    assert "abitudini" in home_log.load_layout(base)
+    click(button(shell.ctx.page.dialogs[-1], "Ricorrenze"))  # the block just taken away is offered again
+    assert "ricorrenze" in home_log.load_layout(base)
     click(next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Blocca i riquadri"))
     assert not any(isinstance(item, ft.Draggable) for item in walk(shell.body.content))
 
