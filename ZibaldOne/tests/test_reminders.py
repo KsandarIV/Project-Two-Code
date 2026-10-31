@@ -34,6 +34,8 @@ from zibaldone.core.reminders import (
     prune_log,
     record_sent,
     reminder_body,
+    night_prompt,
+    NIGHT_MESSAGES,
     resolve_outcomes,
     settings_with_config,
     streak,
@@ -533,3 +535,18 @@ def test_install_and_uninstall_with_a_fake_schtasks() -> None:
     assert [result.action for result in results] == ["tolta", "assente", "assente"]
     assert ["schtasks", "/Delete", "/F", "/TN", task_name("mattina")] in runner.calls
     assert all_task_names() == [task_name(moment) for moment in MOMENTS]
+
+
+def test_night_prompt_shows_between_midnight_and_five_only() -> None:
+    assert night_prompt(datetime(2026, 10, 31, 2, 30)).body in NIGHT_MESSAGES
+    assert night_prompt(datetime(2026, 10, 31, 0, 0)) is not None
+    assert night_prompt(datetime(2026, 10, 31, 4, 59)) is not None
+    for hour in (5, 12, 22, 23):
+        assert night_prompt(datetime(2026, 10, 31, hour, 0)) is None
+
+
+def test_night_prompt_rotates_by_date_and_is_not_a_moment() -> None:
+    first = night_prompt(datetime(2026, 10, 31, 1, 0))
+    assert first == night_prompt(datetime(2026, 10, 31, 4, 0))  # same day, same text
+    assert len({night_prompt(datetime(2026, 11, day, 1, 0)).body for day in range(1, 5)}) == len(NIGHT_MESSAGES)
+    assert first.title == "Notti insonni" and first.template == "pannychis" and "pannychis" not in MOMENTS

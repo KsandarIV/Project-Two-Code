@@ -80,6 +80,17 @@ MILESTONE_MESSAGES: Tuple[str, ...] = (
     "Sei a {days} giorni di fila. Festeggiamo con due righe?",
     "{days} giorni di fila! Il tuo zibaldone cresce con te.",
 )
+# 0.3.3: the night banner (Pannychis). Not a fourth moment: no notification, only the banner in Oggi.
+NIGHT_START = time(0, 0)
+NIGHT_END = time(5, 0)
+NIGHT_LABEL = "Notti insonni"
+NIGHT_TEMPLATE = "pannychis"
+NIGHT_MESSAGES: Tuple[str, ...] = (
+    "Non riesci a dormire? Cosa ti tiene sveglio? Scriverlo potrebbe aiutarti a riconciliare il sonno.",
+    "Sveglio a quest'ora? Metti sulla pagina quello che ti gira in testa: domani sarà più leggero.",
+    "Una notte lunga? Scrivi cosa ti pesa, poi lascialo qui fino a domattina.",
+    "Il sonno non arriva? Due righe su ciò che hai in mente possono aiutare a fare spazio.",
+)
 STREAK_MILESTONES: Tuple[int, ...] = (3, 7, 14, 21, 30, 50, 75, 100, 150, 200, 250, 300, 365)
 
 # * — reasons shown by `zbone remind status` and `fire` —
@@ -660,6 +671,25 @@ def compose_reminder(moment: str, day: date, streak_days: int = 0) -> Reminder:
         body=reminder_body(moment, day, streak_days),
         milestone=is_milestone(streak_days),
     )
+
+
+@dataclass(frozen=True)
+class NightPrompt:
+    """The banner shown in Oggi between midnight and 5: never a notification (it would wake who sleeps)."""
+
+    title: str
+    body: str
+    template: str = NIGHT_TEMPLATE
+
+
+def night_prompt(now: datetime) -> Optional[NightPrompt]:
+    """The night message for `now` (naive local time), or None outside 00:00-05:00.
+
+    The text rotates by date, like `reminder_body`; the time of day does not change it.
+    """
+    if not NIGHT_START <= now.time() < NIGHT_END:
+        return None
+    return NightPrompt(title=NIGHT_LABEL, body=NIGHT_MESSAGES[now.date().toordinal() % len(NIGHT_MESSAGES)])
 
 
 # * — back-off: propose fewer reminders, never decide alone —

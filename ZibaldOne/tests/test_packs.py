@@ -27,7 +27,7 @@ def test_builtin_packs_are_valid_and_cover_journal_app_ideas() -> None:
     packs = {pack.short_name: pack for pack in builtin_packs()}
     assert set(packs) == {"diario", "aree", "collezioni", "io", "persone", "segreti", "finanze", "askesis", "theoria"}
     diario = {template.slug for template in packs["diario"].templates}
-    assert {"mattina", "meta_giornata", "sera", "aree", "settimana", "mese", "anno"} <= diario
+    assert {"mattina", "meta_giornata", "sera", "aree", "settimana", "mese", "anno", "pannychis"} <= diario
     aree = next(template for template in packs["diario"].templates if template.slug == "aree")
     assert [block.label for block in aree.blocks[:8]] == ["Personale", "Salute", "Finanze", "Famiglia", "Sociale", "Lavoro", "Studio", "Svago"]
     collezioni = {template.slug for template in packs["collezioni"].templates}
@@ -121,7 +121,7 @@ def test_cli_install_export_import(tmp_path) -> None:
     assert "diario" in listed.output and "da installare" in listed.output
     installed = runner.invoke(app, ["pack", "install", "diario", "--yes"])
     assert installed.exit_code == 0, installed.output
-    assert "Installati 8 modelli" in installed.output
+    assert "Installati 9 modelli" in installed.output
     again = runner.invoke(app, ["pack", "install", "diario", "--yes"])
     assert "già installato" in again.output
 
