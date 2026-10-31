@@ -140,8 +140,9 @@ def test_oggi_can_be_reordered_by_dragging_right_there(base: Path) -> None:  # n
     assert not any(isinstance(item, ft.Draggable) for item in walk(shell.body.content))  # locked by default
     lock = next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Sblocca per spostare i riquadri")
     click(lock)
-    drop(shell.body.content, "aree", "promemoria")  # «aree» goes first
-    assert home_log.load_layout(base)[0] == "aree"
+    drop(shell.body.content, "aree", "citazione")  # «aree» goes right above «citazione» («promemoria» has a block only at some hours of the day)
+    layout = home_log.load_layout(base)
+    assert layout.index("aree") + 1 == layout.index("citazione")
     assert any(isinstance(item, ft.Draggable) for item in walk(shell.body.content))  # still unlocked
     remove = next(item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Togli da Oikos home")
     before = home_log.load_layout(base)
