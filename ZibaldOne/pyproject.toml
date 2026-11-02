@@ -18,14 +18,14 @@ notifiche = [
 ]
 # Flet is pinned: with a different flet-desktop, Flet 1.0.4 would pip-install it by itself at start.
 ui = [
-  "flet[desktop]==1.0.4",
+  "flet[desktop]==1.0.5",
 ]
 web = [
-  "flet[web]==1.0.4",
+  "flet[web]==1.0.5",
 ]
 # `flet build apk` (docs/sviluppo/rilascio-android.md): Flutter and the Android SDK come by themselves.
 build = [
-  "flet[cli]==1.0.4",
+  "flet[cli]==1.0.5",
 ]
 
 [project.scripts]
@@ -62,7 +62,7 @@ path = "src"
 module = "main"
 
 [tool.flet.android]
-dependencies = ["flet==1.0.4", "flet-permission-handler==1.0.4"]
+dependencies = ["flet==1.0.5", "flet-permission-handler==1.0.4"]
 
 [tool.flet.android.permission]
 "android.permission.INTERNET" = true
@@ -72,7 +72,7 @@ dependencies = ["flet==1.0.4", "flet-permission-handler==1.0.4"]
 "android.permission.WRITE_EXTERNAL_STORAGE" = true
 
 [tool.flet.windows]
-dependencies = ["flet==1.0.4"]
+dependencies = ["flet==1.0.5"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
