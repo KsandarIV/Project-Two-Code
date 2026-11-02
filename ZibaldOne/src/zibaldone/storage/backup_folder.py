@@ -13,9 +13,10 @@ Files outside the scheme are still listed («Altri») when the user keeps managi
 
 import json
 import shutil
+from contextlib import contextmanager
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional
+from typing import Dict, Iterable, Iterator, List, Optional
 
 from zibaldone.storage import backups, bundle
 from zibaldone.storage.bundle import BUNDLE_SUFFIX
@@ -34,6 +35,21 @@ SET_ASIDE = "Gestione manuale"
 HISTORY = "Storico"
 OURS = (ROOT, IMPORTED, SET_ASIDE, HISTORY)
 SUGGESTED = "ZibaldOne/Data"
+
+
+class FolderWriteError(OSError):
+    """The visible folder cannot be written. The message is for the user: it says the data is safe and what to do."""
+
+
+@contextmanager
+def _explained() -> Iterator[None]:
+    """Turn the system's «[Errno 1] Operation not permitted» into a sentence the user can act on (Android refuses some folders)."""
+    try:
+        yield
+    except PermissionError as error:
+        raise FolderWriteError("l'app non ha il permesso di scrivere in questa cartella. Il tuo lavoro è salvo e la copia interna è fatta; scegli un'altra cartella in Impostazioni → Mnemosyne") from error
+    except OSError as error:
+        raise FolderWriteError(f"la cartella non si può scrivere ({error.strerror or error}). Il tuo lavoro è salvo e la copia interna è fatta") from error
 
 
 @dataclass(frozen=True)
@@ -78,34 +94,36 @@ def export_snapshots(folder: Path, target: Path, mode: str) -> List[Path]:
     «Gestisce l'app» and «Misto»: every manual, daily, weekly, monthly or yearly snapshot, in its own subfolder.
     """
     snapshots = [info for info in backups.list_snapshots(folder) if not info.problem]
-    if mode == MODE_USER:
-        return [bundle.export_bundle(folder, snapshots[0].id, target)] if snapshots else []
-    done = _done(folder, target)
-    written: List[Path] = []
-    for info in snapshots:
-        if info.reason not in TIER_DIRS or info.id in done:
-            continue
-        destination = tier_dir(target, info.reason) / _name(info)
-        written.append(bundle.export_bundle(folder, info.id, destination))
-        done.append(info.id)
-        _remember(folder, target, done)
-    return written
+    with _explained():
+        if mode == MODE_USER:
+            return [bundle.export_bundle(folder, snapshots[0].id, target)] if snapshots else []
+        done = _done(folder, target)
+        written: List[Path] = []
+        for info in snapshots:
+            if info.reason not in TIER_DIRS or info.id in done:
+                continue
+            destination = tier_dir(target, info.reason) / _name(info)
+            written.append(bundle.export_bundle(folder, info.id, destination))
+            done.append(info.id)
+            _remember(folder, target, done)
+        return written
 
 
 def rotate(target: Path, keep_history: bool = False) -> List[Path]:
     """In each rotating subfolder keep the newest few; the rest is deleted, or moved to «Storico» when asked. Returns what left."""
     gone: List[Path] = []
-    for reason, limit in KEEP.items():
-        directory = tier_dir(target, reason)
-        files = sorted(directory.glob(f"zibaldone-*{BUNDLE_SUFFIX}"), reverse=True) if directory.is_dir() else []
-        for old in files[limit:]:
-            if keep_history:
-                destination = target / HISTORY / TIER_DIRS[reason] / old.name
-                destination.parent.mkdir(parents=True, exist_ok=True)
-                shutil.move(str(old), str(destination))
-            else:
-                old.unlink()
-            gone.append(old)
+    with _explained():
+        for reason, limit in KEEP.items():
+            directory = tier_dir(target, reason)
+            files = sorted(directory.glob(f"zibaldone-*{BUNDLE_SUFFIX}"), reverse=True) if directory.is_dir() else []
+            for old in files[limit:]:
+                if keep_history:
+                    destination = target / HISTORY / TIER_DIRS[reason] / old.name
+                    destination.parent.mkdir(parents=True, exist_ok=True)
+                    shutil.move(str(old), str(destination))
+                else:
+                    old.unlink()
+                gone.append(old)
     return gone
 
 

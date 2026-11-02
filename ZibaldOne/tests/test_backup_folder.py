@@ -114,3 +114,24 @@ def test_remembered_folders_that_are_gone_are_not_shown(tmp_path) -> None:
     here = tmp_path / "qui"
     here.mkdir()
     assert bf.existing([str(here), str(tmp_path / "sparita"), str(here), ""]) == [str(here)]
+
+
+def test_a_folder_the_system_refuses_gives_a_plain_message_not_errno(data, target, monkeypatch) -> None:
+    snap(data, "manual", 0)
+
+    def refuse(*args, **kwargs):
+        raise PermissionError(1, "Operation not permitted", str(target))
+
+    monkeypatch.setattr(bundle, "export_bundle", refuse)
+    with pytest.raises(bf.FolderWriteError) as caught:
+        bf.export_snapshots(data, target, bf.MODE_APP)
+    message = str(caught.value)
+    assert "permesso" in message and "salvo" in message and "Errno" not in message
+    assert bf._done(data, target) == []  # nothing is marked as written: the next save tries again
+
+
+def test_another_write_failure_keeps_the_reason_and_says_the_work_is_safe(data, target, monkeypatch) -> None:
+    snap(data, "manual", 0)
+    monkeypatch.setattr(bundle, "export_bundle", lambda *a, **k: (_ for _ in ()).throw(OSError(28, "No space left on device")))
+    with pytest.raises(bf.FolderWriteError, match="No space left on device.*salvo"):
+        bf.export_snapshots(data, target, bf.MODE_APP)
