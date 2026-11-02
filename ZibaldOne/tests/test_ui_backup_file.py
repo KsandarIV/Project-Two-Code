@@ -179,3 +179,15 @@ def test_a_file_imported_from_outside_is_copied_to_importati(ready: Path, tmp_pa
     click(button(shell.body.content, "Importa da un file"))
     click(button(shell.ctx.page.dialogs[-1], "Aggiungi alle istantanee"))
     assert len(list((target / "importati").glob("*.zbbackup"))) == 1  # «Gestisco io»: nothing is added to the app's folders
+
+
+def test_a_refused_backup_folder_warns_without_saying_the_save_failed(ready: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    services.set_backup_folder(ready, str(tmp_path / "vietata"))
+    backups.create_snapshot(ready, reason="manual")
+
+    def refuse(*args, **kwargs):
+        raise PermissionError(1, "Operation not permitted")
+
+    monkeypatch.setattr(bundle, "export_bundle", refuse)
+    warning = services.export_to_files_folder(ready)
+    assert "vietata" in warning and "permesso" in warning and "salvo" in warning and "Errno" not in warning
