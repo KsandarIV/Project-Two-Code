@@ -3,13 +3,33 @@
 Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog](https://keepachangelog.com/it/1.1.0/), versioni [SemVer](https://semver.org/lang/it/).
 
 ## [Unreleased]
+
+## [0.3.3] — 2026-11-04
+Backup cifrati, password principale, database cifrato e sblocco con impronta; più Oikos, Pannychis e le mascotte nuove.
 ### Aggiunto
-- **Cartella dei backup in chiaro**: al primo avvio si propone `ZibaldOne/Data` (sul telefono nella memoria principale, sul PC in Documenti) con il pulsante «Crea la cartella per me» (su Android chiede il permesso di accedere ai file) e «Continua senza backup» con conferma.
-- **Chi gestisce i backup**: «Gestisce l'app», «Gestisco io», «Misto», cambiabili quando vuoi senza perdere nulla. L'app tiene nella cartella `backup/` le sottocartelle giornalieri (7), settimanali (4), mensili (3), annuali (3), manuali, più `importati`. Passando alla gestione dell'app i file non suoi vanno in `Gestione manuale`; «Storico» (spento di base) tiene i backup che la rotazione toglierebbe.
-- Cambiando cartella l'app chiede se spostare i file suoi; l'elenco delle cartelle usate prima (solo quelle che esistono ancora) è nel pulsante info.
-- Striscia «Stai usando l'app senza backup» in basso a destra, con le scelte per sistemare o spegnere l'avviso.
+- **Password principale generata dall'app**, obbligatoria al primo avvio: si scelgono solo le regole (tipi di caratteri, lunghezza da 16 a 64, minimi), mai sotto i 90 bit. Si conferma ricopiando due gruppi del codice di recupero; «Salva foglio di recupero» scrive password e codice in un file. Chi aveva una passphrase passa alla password senza perdere le istantanee già fatte. Il recupero con Google non è più proposto.
+- **File di backup cifrato per intero** («busta opaca»): senza password o codice di recupero non si legge nulla, nemmeno data o versione. Nome casuale, cartella piatta; in Mnemosyne la lista «I tuoi backup» con data, tipo e dimensione, riporta ed elimina.
+- **Database cifrato sul dispositivo** (`zibaldone.zbdb`, AES-256-GCM): la chiave sta nel portachiavi del sistema; la pagina «Apri il tuo diario» chiede password o codice se non la trova. Il terminale chiede la password principale.
+- **Sblocco con impronta, volto o blocco schermo** all'avvio e «Cambia password» da Mnemosyne.
+- **Cartella dei backup in chiaro**: al primo avvio si propone `ZibaldOne/Data` con «Crea la cartella per me» o «Continua senza backup»; chi la gestisce è «Gestisce l'app», «Gestisco io» o «Misto». Sottocartelle giornalieri (7), settimanali (4), mensili (3), annuali (3), manuali, importati; «Storico» tiene ciò che la rotazione toglierebbe. Striscia «Stai usando l'app senza backup» con le scelte per sistemare o spegnere l'avviso.
+- **Android: «Scarica» mette l'APK nella cartella Download** e apre l'installazione di Android (chiede una conferma); se non riesce apre il link nel browser. Nuova dipendenza di build `pyjnius` e permesso `REQUEST_INSTALL_PACKAGES`.
+- **Pannychis**: il messaggio notturno, il modello per le notti insonni e il banner notturno in Oggi.
+- **Oikos** dentro Kosmesis con anteprima vera e blocchi trascinabili; la sezione Oggi si chiama «Oikos home». In Kosmesis si scelgono colore d'accento e di sfondo; l'icona dell'app si sceglie al primo avvio e in Kosmesis.
+- Il badge dei modelli mostra il disegno se l'icona ha il nome di una mascotte.
+- **Versioni a quattro numeri** per le mini patch (`0.3.2.1`); `versionCode` di Android cambia formula, sempre crescente rispetto alle vecchie.
+- Test che fa rispettare la regola dei livelli (`core` non importa `ui`, `cli`, `storage`); mappa del codice in `docs/tecnica/mappa-codice.md` con `scripts/code_map.py`.
 ### Cambiato
-- L'informativa di Parresia dice dove stanno i backup e chi li gestisce, e non scrive più il percorso interno dei dati.
+- L'informativa di Parresia passa alla versione 7: dove stanno i dati e i backup, cosa esce dal dispositivo, i rischi nuovi (cartella dei backup visibile ad altre app, foglio di recupero, password e codice persi). Chi aveva già accettato la rivede una volta.
+- «Passphrase» diventa «password» nei messaggi dell'app e del terminale.
+- Le otto aree della home riempiono la larghezza: quattro per riga sul telefono; sul PC anche cosa comprende l'area.
+- Nelle Collezioni «Tutte» sta al centro della barra delle icone, come in Modelli.
+- Hobbsy, Hegy, Leopy e Monty ridisegnati a corpo intero e centrati.
+- Flet 1.0.5; i controlli di GitHub girano su ogni PR; la release esce da sola al merge della PR di rilascio (tag e prerelease).
+### Corretto
+- Se la cartella dei backup è vietata, l'errore lo spiega e dice che il lavoro è salvo (prima sembrava che il modello non si fosse salvato).
+- L'icona di Pannychis è la luna con le stelle; in Oggi sbloccata i riquadri vuoti restano nel layout dopo un riordino.
+### Da verificare sul telefono
+- Password, database cifrato e sblocco con impronta sono provati solo con test: non su un telefono né nelle build. Se l'avvio non riesce, serve un backup.
 
 ## [0.3.2] — 2026-10-25
 Aree multiple, icona dell'app e correzioni dopo la prova su Android.
