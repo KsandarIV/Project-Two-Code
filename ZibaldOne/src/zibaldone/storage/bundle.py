@@ -10,8 +10,14 @@ It is a zip with no compression (what is inside is already encrypted) holding:
 
 Importing never overwrites: the snapshot and the files are added next to the others, `keys.json` is installed
 only when this device has none, and the data is replaced only by `restore_bundle`, after the usual checks.
+
+**Opaque files (KAN-29).** Once the keys carry the opaque slots (`keys.opaque_slots`), that zip is written inside
+an opaque envelope (`core/crypto.py`): no name, date, version or structure can be read, and the file gets a random
+name (still ending in .zbbackup). It opens with the passphrase or the recovery code alone, on any device. Zip files (the
+format before) are still read.
 """
 
+import io
 import json
 import os
 import secrets
@@ -19,11 +25,13 @@ import zipfile
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import List, Optional
+from typing import BinaryIO, List, Optional, Tuple, Union
+
+from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 
 from zibaldone import __version__
-from zibaldone.core.blocks import MEDIA_FILE
-from zibaldone.core.crypto import CryptoError
+from zibaldone.core import crypto
+from zibaldone.core.crypto import CryptoError, DecryptionError
 from zibaldone.storage import backups, keys
 from zibaldone.storage.backups import BackupError, KeyRequiredError, RestoreResult, SnapshotInfo
 from zibaldone.storage.database import MIGRATIONS, database_path
@@ -36,6 +44,7 @@ INFO_FILE = "bundle.json"
 MEDIA_DIR = "media/"
 MAX_MEMBER_SIZE = backups.MAX_SNAPSHOT_FILE_SIZE
 NOT_A_BACKUP = "questo file non è un backup di ZibaldOne"
+ZIP_MAGIC = b"PK\x03\x04"
 
 
 @dataclass
@@ -50,6 +59,8 @@ class BundleInfo:
     schema_version: Optional[int] = None
     media: List[str] = field(default_factory=list)
     has_keys: bool = False
+    locked: bool = False  # an opaque file: nothing can be read before the passphrase or the recovery code
+    modified_at: Optional[datetime] = None  # for a locked file, the only date there is: when the file was written
     problems: List[str] = field(default_factory=list)
 
     @property
@@ -67,12 +78,33 @@ class ImportResult:
 # * — export —
 
 
+def opaque_ready(folder: Path) -> bool:
+    """True when backup files are written as opaque envelopes: the keys exist and carry the opaque slots."""
+    try:
+        return keys.is_configured(folder) and keys.opaque_slots(folder) is not None
+    except KeysError:
+        return False
+
+
+def random_name() -> str:
+    """A file name that tells nothing about the backup: 16 random hex digits. The extension stays, so the app and
+    the phone recognise the file; the default folder already says «ZibaldOne» anyway."""
+    return f"{secrets.token_hex(8)}{BUNDLE_SUFFIX}"
+
+
 def export_bundle(folder: Path, reference: str, destination: Path) -> Path:
-    """Write the backup file of one snapshot. `destination` is a file ending in .zbbackup, or a folder (made if missing) where the file is named after the snapshot's time."""
+    """Write the backup file of one snapshot. `destination` is a file ending in .zbbackup, or a folder (made if missing).
+
+    In a folder the file is named after the snapshot's time, or, for an opaque file, gets a random name.
+    """
     snapshot = backups.find_snapshot(folder, reference)
     if snapshot.problem:
         raise BackupError(f"l'istantanea {snapshot.id} non si legge: {snapshot.problem}")
-    target = destination if destination.suffix == BUNDLE_SUFFIX else destination / f"zibaldone-{snapshot.created_at.strftime('%Y-%m-%d-%H%M')}{BUNDLE_SUFFIX}"
+    opaque = opaque_ready(folder)
+    if destination.suffix == BUNDLE_SUFFIX:
+        target = destination
+    else:
+        target = destination / (random_name() if opaque else f"zibaldone-{snapshot.created_at.strftime('%Y-%m-%d-%H%M')}{BUNDLE_SUFFIX}")
     info = {
         "format": BUNDLE_FORMAT,
         "format_version": BUNDLE_FORMAT_VERSION,
@@ -85,24 +117,42 @@ def export_bundle(folder: Path, reference: str, destination: Path) -> Path:
         "media": snapshot.media,
         "keys": keys.is_configured(folder),
     }
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_STORED) as archive:
+        archive.writestr(INFO_FILE, json.dumps(info, indent=2))
+        archive.write(snapshot.path, snapshot.path.name)
+        for file in snapshot.media:
+            blob = backups.blob_path(folder, file)
+            if not blob.exists():
+                raise BackupError(f"nei backup manca l'allegato {file[:8]}")
+            archive.write(blob, f"{MEDIA_DIR}{file}{backups.BLOB_SUFFIX}")
+        if info["keys"]:
+            archive.write(keys.keys_path(folder), keys.KEYS_FILE)
+    content = seal(folder, buffer.getvalue()) if opaque else buffer.getvalue()
+    write_atomically(target, content)
+    return target
+
+
+def seal(folder: Path, data: bytes) -> bytes:
+    """`data` (a backup zip) inside an opaque envelope, for this device's keys. Needs no passphrase."""
+    slots = keys.opaque_slots(folder)
+    if slots is None:
+        raise BackupError("le chiavi di questo dispositivo non sanno ancora scrivere backup cifrati per intero")
+    try:
+        return crypto.seal_opaque(data, keys.load_public_key(folder), slots)
+    except (KeysError, CryptoError) as error:
+        raise BackupError(f"non posso cifrare il file di backup: {error}") from None
+
+
+def write_atomically(target: Path, content: bytes) -> None:
     target.parent.mkdir(parents=True, exist_ok=True)
     temporary = target.with_name(f"{backups.TEMP_PREFIX}{secrets.token_hex(4)}")
     try:
-        with zipfile.ZipFile(temporary, "w", zipfile.ZIP_STORED) as archive:
-            archive.writestr(INFO_FILE, json.dumps(info, indent=2))
-            archive.write(snapshot.path, snapshot.path.name)
-            for file in snapshot.media:
-                blob = backups.blob_path(folder, file)
-                if not blob.exists():
-                    raise BackupError(f"nei backup manca l'allegato {file[:8]}")
-                archive.write(blob, f"{MEDIA_DIR}{file}{backups.BLOB_SUFFIX}")
-            if info["keys"]:
-                archive.write(keys.keys_path(folder), keys.KEYS_FILE)
+        temporary.write_bytes(content)
         os.replace(temporary, target)
     except BaseException:
         temporary.unlink(missing_ok=True)
         raise
-    return target
 
 
 # * — reading —
@@ -115,11 +165,55 @@ def _member(archive: zipfile.ZipFile, name: str) -> bytes:
     return archive.read(name)
 
 
-def inspect_bundle(path: Path) -> BundleInfo:
-    """Check the shape of a backup file without importing or decrypting anything."""
+def is_zip(path: Path) -> bool:
+    """A backup file in the format before the opaque one (a zip). Raises OSError when it cannot be read."""
+    with open(path, "rb") as handle:
+        return handle.read(len(ZIP_MAGIC)) == ZIP_MAGIC
+
+
+def open_opaque_file(path: Path, passphrase: Optional[str] = None, recovery_code: Optional[str] = None) -> Tuple[bytes, X25519PrivateKey]:
+    """The backup zip inside an opaque file, and the private key that opened it."""
+    if Path(path).stat().st_size > MAX_MEMBER_SIZE * 2:
+        raise BackupError("il file è troppo grande per essere un backup")
+    data = Path(path).read_bytes()
+    try:
+        private_key = keys.unlock_opaque(crypto.opaque_slots_of(data), passphrase, recovery_code)
+        return crypto.open_opaque(data, private_key), private_key
+    except KeysError as error:
+        raise BackupError(f"{error}, oppure non è un backup di ZibaldOne" if isinstance(error, keys.WrongSecretError) else str(error)) from None
+    except DecryptionError:
+        raise BackupError("il file di backup è rovinato o è stato alterato") from None
+    except CryptoError as error:
+        raise BackupError(str(error)) from None
+
+
+def inspect_bundle(path: Path, passphrase: Optional[str] = None, recovery_code: Optional[str] = None) -> BundleInfo:
+    """Check the shape of a backup file without importing anything.
+
+    An opaque file says nothing without the passphrase or the recovery code: then the result is only `locked`.
+    """
     result = BundleInfo(path=Path(path))
     try:
-        with zipfile.ZipFile(path) as archive:
+        if is_zip(path):
+            return _inspect_zip(path, result)
+        result.encrypted = True
+        if not (passphrase or recovery_code):
+            stat = Path(path).stat()
+            if stat.st_size < crypto.OPAQUE_MIN_SIZE:
+                result.problems.append(NOT_A_BACKUP)
+            result.locked = True
+            result.modified_at = datetime.fromtimestamp(stat.st_mtime, timezone.utc)
+            return result
+        data, _ = open_opaque_file(path, passphrase, recovery_code)
+        return _inspect_zip(io.BytesIO(data), result)
+    except (OSError, BackupError) as error:
+        result.problems.append(str(error) if isinstance(error, BackupError) else NOT_A_BACKUP)
+    return result
+
+
+def _inspect_zip(source: Union[Path, BinaryIO], result: BundleInfo) -> BundleInfo:
+    try:
+        with zipfile.ZipFile(source) as archive:
             infos = {item.filename: item for item in archive.infolist()}
             if INFO_FILE not in infos:
                 result.problems.append(NOT_A_BACKUP)
@@ -177,7 +271,9 @@ def default_search_dirs() -> List[Path]:
 
 
 def find_backup_files(directories: Optional[List[Path]] = None) -> List[BundleInfo]:
-    """The valid backup files in these folders (not their subfolders), the newest backup first. Never raises."""
+    """The valid backup files in these folders (not their subfolders), the newest backup first. Never raises.
+
+    An opaque file counts by the time it was written: its own date is inside the encryption."""
     found: List[BundleInfo] = []
     for directory in default_search_dirs() if directories is None else directories:
         try:
@@ -188,7 +284,7 @@ def find_backup_files(directories: Optional[List[Path]] = None) -> List[BundleIn
             info = inspect_bundle(path)
             if info.ok and path.is_file():
                 found.append(info)
-    return sorted(found, key=lambda info: (info.created_at, info.snapshot_id), reverse=True)
+    return sorted(found, key=lambda info: (info.created_at or info.modified_at, info.snapshot_id), reverse=True)
 
 
 def first_run_candidate(folder: Path, directories: Optional[List[Path]] = None) -> Optional[BundleInfo]:
@@ -233,17 +329,36 @@ def _install_keys(folder: Path, data: bytes) -> None:
         raise BackupError(f"il file delle chiavi nel backup non è valido: {error}") from None
 
 
-def import_bundle(folder: Path, path: Path) -> ImportResult:
-    """Add the snapshot, its attached files and (if this device has none) the keys of a backup file. Replaces no data."""
-    description = inspect_bundle(path)
+def import_bundle(folder: Path, path: Path, passphrase: Optional[str] = None, recovery_code: Optional[str] = None) -> ImportResult:
+    """Add the snapshot, its attached files and (if this device has none) the keys of a backup file. Replaces no data.
+
+    An opaque file needs the passphrase or the recovery code even to be added.
+    """
+    return _import(folder, path, passphrase, recovery_code)[0]
+
+
+def _import(folder: Path, path: Path, passphrase: Optional[str], recovery_code: Optional[str]) -> Tuple[ImportResult, Optional[X25519PrivateKey]]:
+    private_key: Optional[X25519PrivateKey] = None
+    try:
+        source: Union[Path, BinaryIO] = path
+        if not is_zip(path):
+            if not (passphrase or recovery_code):
+                raise KeyRequiredError("questo backup è cifrato per intero: serve la passphrase dei backup o il codice di recupero")
+            data, private_key = open_opaque_file(path, passphrase, recovery_code)
+            source = io.BytesIO(data)
+    except OSError as error:
+        raise BackupError(f"non riesco a leggere il file: {error}") from None
+    description = _inspect_zip(source, BundleInfo(path=Path(path), encrypted=private_key is not None))
     if not description.ok:
         raise BackupError("; ".join(description.problems))
+    if isinstance(source, io.BytesIO):
+        source.seek(0)
     name = f"{description.snapshot_id}{backups.SNAPSHOT_SUFFIX}"
     directory = backups.backups_dir(folder)
     directory.mkdir(parents=True, exist_ok=True)
     keys_installed = other_key = False
     try:
-        with zipfile.ZipFile(path) as archive:
+        with zipfile.ZipFile(source) as archive:
             blobs = {file: _member(archive, f"{MEDIA_DIR}{file}{backups.BLOB_SUFFIX}") for file in description.media if not backups.blob_path(folder, file).exists()}
             snapshot_bytes = _member(archive, name) if not (directory / name).exists() else None
             bundle_keys = _member(archive, keys.KEYS_FILE) if description.has_keys else None
@@ -260,17 +375,20 @@ def import_bundle(folder: Path, path: Path) -> ImportResult:
         backups._atomic_write(backups.blob_path(folder, file), data)
     if snapshot_bytes is not None:
         backups._atomic_write(directory / name, snapshot_bytes)
-    return ImportResult(snapshot=backups.find_snapshot(folder, description.snapshot_id), keys_installed=keys_installed, other_key=other_key)
+    result = ImportResult(snapshot=backups.find_snapshot(folder, description.snapshot_id), keys_installed=keys_installed, other_key=other_key)
+    return result, private_key
 
 
 def restore_bundle(folder: Path, path: Path, passphrase: Optional[str] = None, recovery_code: Optional[str] = None) -> RestoreResult:
     """Import a backup file and bring the data back to it, undoably (as `backups.restore_snapshot`). Close every Store first."""
-    imported = import_bundle(folder, path)
+    imported, opened_with = _import(folder, path, passphrase, recovery_code)
     snapshot = imported.snapshot
     private_key = None
     if snapshot.encrypted:
         try:
-            if recovery_code:
+            if opened_with is not None:
+                private_key = opened_with  # the envelope and the snapshot inside are sealed to the same key
+            elif recovery_code:
                 if keys.is_configured(folder) and not imported.other_key:
                     private_key = keys.unlock_with_recovery_code(folder, recovery_code)
                 else:
@@ -284,4 +402,3 @@ def restore_bundle(folder: Path, path: Path, passphrase: Optional[str] = None, r
         except (KeysError, CryptoError) as error:
             raise BackupError(str(error)) from None
     return backups.restore_snapshot(folder, snapshot.id, private_key)
-

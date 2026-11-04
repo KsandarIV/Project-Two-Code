@@ -207,7 +207,10 @@ def import_backup(
         info = bundle.inspect_bundle(file)
         if not info.ok:
             fail("; ".join(info.problems))
-        typer.echo(f"Backup del {local_time(info.created_at)} · {'cifrato' if info.encrypted else 'in chiaro'} · creato con ZibaldOne {info.app_version or 'sconosciuta'}")
+        if info.locked:
+            typer.echo(f"File di backup scritto il {local_time(info.modified_at)} · cifrato per intero: data e versione si leggono solo con la passphrase o il codice di recupero")
+        else:
+            typer.echo(f"Backup del {local_time(info.created_at)} · {'cifrato' if info.encrypted else 'in chiaro'} · creato con ZibaldOne {info.app_version or 'sconosciuta'}")
         if not yes and not ask_yes_no("Riportare modelli e voci a questo backup? Lo stato attuale sarà salvato prima"):
             typer.echo("Va bene: non ho cambiato nulla.")
             raise typer.Exit()

@@ -65,7 +65,8 @@ def restore_first_backup(folder) -> bool:
         return False
     if candidate is None:
         return False
-    typer.echo(f"\nHo trovato un backup di ZibaldOne del {candidate.created_at.astimezone().strftime('%d/%m/%Y %H:%M')}: {candidate.path}")
+    when = candidate.created_at or candidate.modified_at
+    typer.echo(f"\nHo trovato un backup di ZibaldOne del {when.astimezone().strftime('%d/%m/%Y %H:%M')}: {candidate.path}")
     passphrase = recovery = None
     try:
         if candidate.encrypted:

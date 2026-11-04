@@ -1109,3 +1109,22 @@ def test_a_backup_file_is_written_in_the_chosen_folder(ready: Path, tmp_path: Pa
     services.set_backup_mode(ready, "utente")
     backups.create_snapshot(ready, reason="manual")
     assert services.export_to_files_folder(ready) == "" and len(list(target.glob("*.zbbackup"))) == 1
+
+
+def test_mnemosyne_lists_the_opaque_backup_files_with_date_and_kind(ready: Path, tmp_path: Path, monkeypatch) -> None:
+    from zibaldone.core.crypto import ScryptParams
+    from zibaldone.storage import backup_folder as bf
+    from zibaldone.storage import keys
+
+    monkeypatch.setattr(keys, "DEFAULT_SCRYPT_PARAMS", ScryptParams(n=2**10))
+    target = tmp_path / "ZibaldOne" / "Data"
+    services.set_backup_folder(ready, str(target))
+    services.save_ui_settings(ready, backup_mode=bf.MODE_APP)
+    keys.setup_keys(ready, "cavallo batteria graffetta")
+    backups.create_snapshot(ready, "manual")
+    assert services.export_to_files_folder(ready) == ""
+    shell = Shell(FakePage(), ready)
+    shell.start("/organon/mnemosyne")
+    shown = texts(shell.body.content)
+    assert "I tuoi backup" in shown and any(text.startswith("fatto a mano · ") for text in shown)
+    assert not any(path.name.startswith("zibaldone-") for path in target.iterdir())

@@ -18,6 +18,10 @@ public half of the "everyday" key (derived from the backup key, so it needs
 no backup of its own) and, when the user chose one, that key wrapped by the
 PIN. Five wrong PINs in a row remove the PIN wrap: then only the passphrase
 or the recovery code open the secrets.
+
+Opaque backup files: `opaque_slots` keeps the private key wrapped once more by the passphrase and by the recovery
+code, in the fixed-size form of `core/crypto.py`, with no key id (a file shows nothing). Made with the keys and
+whenever the passphrase changes; keys made before have none until the next setup.
 """
 
 import json
@@ -52,6 +56,10 @@ PIN_SLOT = "pin"
 PIN_MIN, PIN_MAX = 6, 12
 PIN_ATTEMPTS = 5
 PIN_SCRYPT_PARAMS = ScryptParams(n=2**16)  # 64 MiB: slow to try every PIN; tests may lower it
+
+OPAQUE_FIELD = "opaque_slots"  # the two slots every opaque backup file carries (core/crypto.py)
+OPAQUE_ORDER = (PASSPHRASE_SLOT, RECOVERY_SLOT)
+OPAQUE_RECOVERY_INFO = b"zibaldone/kek/v1/opaque-recovery"
 
 
 class KeysError(Exception):
@@ -163,6 +171,54 @@ def _kdf_of(wrap: Any, expected: str) -> Dict[str, Any]:
     return kdf
 
 
+# * — slots for opaque backup files —
+
+
+def _opaque_passphrase_slot(private_key: X25519PrivateKey, passphrase: str) -> bytes:
+    salt = crypto.new_salt()
+    kek = crypto.derive_passphrase_key(passphrase, salt, DEFAULT_SCRYPT_PARAMS)  # fixed by the file format
+    return crypto.opaque_slot(salt, kek, crypto.private_key_bytes(private_key), PASSPHRASE_SLOT)
+
+
+def _opaque_recovery_slot(private_key: X25519PrivateKey, recovery_raw: bytes) -> bytes:
+    salt = crypto.new_salt()
+    kek = crypto.derive_secret_key(recovery_raw, salt, OPAQUE_RECOVERY_INFO)
+    return crypto.opaque_slot(salt, kek, crypto.private_key_bytes(private_key), RECOVERY_SLOT)
+
+
+def opaque_slots(folder: Path) -> Optional[bytes]:
+    """The slots to copy into each opaque backup file, or None when these keys have none yet."""
+    section = _load(folder).get(OPAQUE_FIELD)
+    if not isinstance(section, dict):
+        return None
+    try:
+        slots = b"".join(crypto.b64decode(section.get(name), "serratura", crypto.OPAQUE_SLOT_SIZE) for name in OPAQUE_ORDER)
+    except CryptoError:
+        return None
+    return slots
+
+
+def unlock_opaque(slots: bytes, passphrase: Optional[str] = None, recovery_code: Optional[str] = None) -> X25519PrivateKey:
+    """Open the slots of an opaque file with the passphrase or the recovery code (no keys.json needed)."""
+    if len(slots) != crypto.OPAQUE_SLOTS_SIZE:
+        raise KeysError("serrature del file di misura sbagliata")
+    size = crypto.OPAQUE_SLOT_SIZE
+    try:
+        if passphrase:
+            slot = slots[:size]
+            kek = crypto.derive_passphrase_key(passphrase, crypto.opaque_slot_salt(slot), DEFAULT_SCRYPT_PARAMS)
+            raw = crypto.open_opaque_slot(slot, kek, PASSPHRASE_SLOT)
+        elif recovery_code:
+            slot = slots[size:]
+            kek = crypto.derive_secret_key(crypto.parse_recovery_code(recovery_code), crypto.opaque_slot_salt(slot), OPAQUE_RECOVERY_INFO)
+            raw = crypto.open_opaque_slot(slot, kek, RECOVERY_SLOT)
+        else:
+            raise KeysError("serve la passphrase dei backup o il codice di recupero")
+    except DecryptionError:
+        raise WrongSecretError("passphrase sbagliata" if passphrase else "codice di recupero sbagliato: non è quello di questo backup") from None
+    return crypto.load_private_key(raw)
+
+
 # * — keys.json —
 
 
@@ -255,6 +311,10 @@ def create_keys(passphrase: str, scrypt_params: Optional[ScryptParams] = None) -
             RECOVERY_SLOT: _secret_wrap(private_key, new_key_id, RECOVERY_SLOT, recovery_raw),
         },
         SECRETS_FIELD: {"key_id": crypto.key_fingerprint(everyday), "public_key": crypto.b64encode(crypto.public_key_bytes(everyday))},
+        OPAQUE_FIELD: {
+            PASSPHRASE_SLOT: crypto.b64encode(_opaque_passphrase_slot(private_key, passphrase)),
+            RECOVERY_SLOT: crypto.b64encode(_opaque_recovery_slot(private_key, recovery_raw)),
+        },
     }
     return NewKeys(key_id=new_key_id, document=document, recovery_code=recovery_code, private_key=private_key)
 
@@ -338,6 +398,8 @@ def _replace_passphrase(folder: Path, private_key: X25519PrivateKey, passphrase:
     document = _load(folder)
     _check_matches(document, private_key)
     document["wraps"][PASSPHRASE_SLOT] = _passphrase_wrap(private_key, document["key_id"], passphrase, scrypt_params)
+    if isinstance(document.get(OPAQUE_FIELD), dict):
+        document[OPAQUE_FIELD][PASSPHRASE_SLOT] = crypto.b64encode(_opaque_passphrase_slot(private_key, passphrase))
     _save(folder, document)
 
 

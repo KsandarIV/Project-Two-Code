@@ -355,3 +355,112 @@ def recovery_code_last_group(code: str) -> str:
 
 def new_salt() -> bytes:
     return os.urandom(SALT_SIZE)
+
+
+# * — opaque envelope (backup files that show no structure) —
+#
+# Version 1 has no magic and no header: nothing is in clear but the size, rounded up (Padmé).
+#
+#     ephemeral public key (32) | slots (2 x 76) | nonce (12) | AES-256-GCM(padded payload) + tag (16)
+#
+# A slot is `salt (16) | nonce (12) | wrapped private key (48)`: the backup private key locked by the passphrase or
+# by the recovery code (storage/keys.py makes them once and every file carries a copy), so a file opens anywhere.
+# Everything before the nonce is authenticated. The padded payload is `length (8, big endian) | payload | zeros`.
+
+OPAQUE_INFO = b"zibaldone/opaque/v1"
+OPAQUE_SLOT_AAD = "zibaldone/opaque-slot/v1|{name}"
+OPAQUE_SLOT_SIZE = SALT_SIZE + NONCE_SIZE + KEY_SIZE + TAG_SIZE
+OPAQUE_SLOT_COUNT = 2
+OPAQUE_SLOTS_SIZE = OPAQUE_SLOT_SIZE * OPAQUE_SLOT_COUNT
+OPAQUE_PREFIX_SIZE = KEY_SIZE + OPAQUE_SLOTS_SIZE
+OPAQUE_LENGTH_SIZE = 8
+OPAQUE_MIN_SIZE = OPAQUE_PREFIX_SIZE + NONCE_SIZE + OPAQUE_LENGTH_SIZE + TAG_SIZE
+
+
+def padme(length: int) -> int:
+    """Padmé padding: round up so the size leaks at most O(log log L) bits, never more than 12% bigger."""
+    if length < 4:
+        return length
+    exponent = length.bit_length() - 1
+    last_bits = exponent - exponent.bit_length()
+    mask = (1 << last_bits) - 1
+    return (length + mask) & ~mask
+
+
+def opaque_slot(salt: bytes, kek: bytes, key_material: bytes, name: str) -> bytes:
+    """One fixed-size slot: `key_material` locked by `kek`; `salt` is what made the kek."""
+    if len(salt) != SALT_SIZE or len(key_material) != KEY_SIZE:
+        raise ValueError("sale o chiave della serratura di misura sbagliata")
+    nonce = os.urandom(NONCE_SIZE)
+    return salt + nonce + AESGCM(kek).encrypt(nonce, key_material, OPAQUE_SLOT_AAD.format(name=name).encode("utf-8"))
+
+
+def opaque_slot_salt(slot: bytes) -> bytes:
+    return slot[:SALT_SIZE]
+
+
+def open_opaque_slot(slot: bytes, kek: bytes, name: str) -> bytes:
+    if len(slot) != OPAQUE_SLOT_SIZE:
+        raise CryptoError("serratura del file di misura sbagliata")
+    nonce = slot[SALT_SIZE : SALT_SIZE + NONCE_SIZE]
+    try:
+        return AESGCM(kek).decrypt(nonce, slot[SALT_SIZE + NONCE_SIZE :], OPAQUE_SLOT_AAD.format(name=name).encode("utf-8"))
+    except InvalidTag:
+        raise DecryptionError("chiave sbagliata o file alterato") from None
+
+
+def _opaque_key(shared: bytes, ephemeral_public: bytes, recipient_public: bytes) -> bytes:
+    return HKDF(algorithm=hashes.SHA256(), length=KEY_SIZE, salt=ephemeral_public + recipient_public, info=OPAQUE_INFO).derive(shared)
+
+
+def seal_opaque(payload: bytes, recipient: X25519PublicKey, slots: bytes) -> bytes:
+    """Encrypt `payload` to `recipient` with no readable structure; `slots` are copied in as they are."""
+    if len(payload) > MAX_PAYLOAD_SIZE:
+        raise CryptoError("file troppo grande da cifrare (massimo 1 GiB)")
+    if len(slots) != OPAQUE_SLOTS_SIZE:
+        raise ValueError("serrature di misura sbagliata")
+    ephemeral = X25519PrivateKey.generate()
+    ephemeral_public = public_key_bytes(ephemeral.public_key())
+    try:
+        shared = ephemeral.exchange(recipient)
+    except ValueError:
+        raise CryptoError("chiave pubblica non valida") from None
+    key = _opaque_key(shared, ephemeral_public, public_key_bytes(recipient))
+    # X25519 ignores the top bit of a public key (RFC 7748): a random one there keeps the bytes looking random.
+    shown = ephemeral_public[:-1] + bytes([ephemeral_public[-1] | (secrets.randbits(1) << 7)])
+    prefix = shown + slots
+    body = len(payload).to_bytes(OPAQUE_LENGTH_SIZE, "big") + payload
+    body += bytes(padme(len(body)) - len(body))
+    nonce = os.urandom(NONCE_SIZE)
+    return prefix + nonce + AESGCM(key).encrypt(nonce, body, prefix)
+
+
+def opaque_slots_of(data: bytes) -> bytes:
+    """The slots of an opaque file (read without any key)."""
+    if len(data) < OPAQUE_MIN_SIZE:
+        raise CryptoError("file troppo corto per essere un backup cifrato")
+    return data[KEY_SIZE:OPAQUE_PREFIX_SIZE]
+
+
+def open_opaque(data: bytes, private_key: X25519PrivateKey) -> bytes:
+    """Decrypt an opaque file. Raises DecryptionError for a wrong key or altered data: the two cannot be told apart."""
+    if len(data) < OPAQUE_MIN_SIZE:
+        raise CryptoError("file troppo corto per essere un backup cifrato")
+    if len(data) > MAX_PAYLOAD_SIZE * 2:
+        raise CryptoError("file troppo grande (massimo 1 GiB)")
+    shown = data[:KEY_SIZE]
+    ephemeral_public = shown[:-1] + bytes([shown[-1] & 0x7F])
+    try:
+        shared = private_key.exchange(load_public_key(ephemeral_public))
+    except ValueError:
+        raise DecryptionError("il file non si apre con questa chiave, oppure è rovinato") from None
+    key = _opaque_key(shared, ephemeral_public, public_key_bytes(private_key.public_key()))
+    nonce = data[OPAQUE_PREFIX_SIZE : OPAQUE_PREFIX_SIZE + NONCE_SIZE]
+    try:
+        body = AESGCM(key).decrypt(nonce, data[OPAQUE_PREFIX_SIZE + NONCE_SIZE :], data[:OPAQUE_PREFIX_SIZE])
+    except InvalidTag:
+        raise DecryptionError("il file non si apre con questa chiave, oppure è rovinato") from None
+    length = int.from_bytes(body[:OPAQUE_LENGTH_SIZE], "big")
+    if length > len(body) - OPAQUE_LENGTH_SIZE:
+        raise DecryptionError("il file è rovinato")
+    return body[OPAQUE_LENGTH_SIZE : OPAQUE_LENGTH_SIZE + length]

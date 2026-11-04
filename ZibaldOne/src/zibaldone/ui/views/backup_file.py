@@ -67,17 +67,22 @@ def import_file(ctx: AppContext, on_done: Optional[Callable[[], Any]] = None) ->
         if not raw:
             ctx.toast("Il selettore non ha dato il percorso del file: riprova da una cartella del telefono.", error=True)
             return
-        path = Path(raw)
-        ctx.run_blocking(lambda: bundle.inspect_bundle(path), lambda info: _offer(ctx, path, info, on_done), lambda problem: ctx.toast(cm.error_text(problem), error=True))
+        open_file(ctx, Path(raw), on_done)
 
     ctx.pick_files(picked, multiple=False)
+
+
+def open_file(ctx: AppContext, path: Path, on_done: Optional[Callable[[], Any]] = None) -> None:
+    """Read what a backup file says about itself, then offer «add to the list» or «restore my data»."""
+    ctx.run_blocking(lambda: bundle.inspect_bundle(path), lambda info: _offer(ctx, path, info, on_done), lambda problem: ctx.toast(cm.error_text(problem), error=True))
 
 
 def _offer(ctx: AppContext, path: Path, info: Any, on_done: Optional[Callable[[], Any]]) -> None:
     if not info.ok:
         ctx.toast("; ".join(info.problems).capitalize() + ".", error=True)
         return
-    when = info.created_at.astimezone().strftime("%d/%m/%Y alle %H:%M") if info.created_at else "data sconosciuta"
+    moment = info.created_at or info.modified_at
+    when = moment.astimezone().strftime("%d/%m/%Y alle %H:%M") if moment else "data sconosciuta"
     passphrase = W.text_input("", label="Passphrase dei backup", password=True, can_reveal_password=True, visible=info.encrypted)
     recovery = W.text_input("", label="oppure il codice di recupero", visible=info.encrypted)
     error = W.error_text()
@@ -101,15 +106,23 @@ def _offer(ctx: AppContext, path: Path, info: Any, on_done: Optional[Callable[[]
         services.keep_imported_copy(ctx.folder, path)
         return result
 
+    def typed() -> tuple:
+        return (passphrase.value or "").strip() or None, (recovery.value or "").strip() or None
+
     def add(_: Any) -> None:
-        ctx.run_blocking(lambda: imported(lambda: bundle.import_bundle(ctx.folder, path)), lambda _result: finish("Aggiunto alle istantanee. Da lì puoi riportare i dati a quel momento."), fail)
+        pass_value, code = typed()
+        ctx.run_blocking(lambda: imported(lambda: bundle.import_bundle(ctx.folder, path, passphrase=pass_value, recovery_code=code)), lambda _result: finish("Aggiunto alle istantanee. Da lì puoi riportare i dati a quel momento."), fail)
 
     def restore(_: Any) -> None:
-        pass_value, code = (passphrase.value or "").strip() or None, (recovery.value or "").strip() or None
+        pass_value, code = typed()
         ctx.run_blocking(lambda: imported(lambda: bundle.restore_bundle(ctx.folder, path, passphrase=pass_value, recovery_code=code)), lambda _result: finish("Dati riportati al backup. Prima ne ho salvata un'istantanea per tornare indietro."), fail)
 
+    if info.locked:
+        summary = f"File di backup scritto il {when}, cifrato per intero: data, versione e contenuto si leggono solo con la passphrase o il codice di recupero."
+    else:
+        summary = f"Backup del {when}" + (f", fatto con ZibaldOne {info.app_version}" if info.app_version else "") + (", cifrato." if info.encrypted else ".")
     lines = [
-        W.body(f"Backup del {when}" + (f", fatto con ZibaldOne {info.app_version}" if info.app_version else "") + (", cifrato." if info.encrypted else ".")),
+        W.body(summary),
         W.caption("«Ripristina i dati» sostituisce quelli di ora con questo backup (ne salvo prima una copia per tornare indietro). «Aggiungi alle istantanee» non cambia nulla."),
         passphrase,
         recovery,
@@ -134,7 +147,8 @@ def found_backup_panel(ctx: AppContext, on_done: Callable[[], Any]) -> Optional[
         return None
     if candidate is None:
         return None
-    when = candidate.created_at.astimezone().strftime("%d/%m/%Y alle %H:%M") if candidate.created_at else "data sconosciuta"
+    moment = candidate.created_at or candidate.modified_at
+    when = moment.astimezone().strftime("%d/%m/%Y alle %H:%M") if moment else "data sconosciuta"
 
     def skip(_: Any) -> None:
         ctx.memory[SKIPPED_KEY] = True

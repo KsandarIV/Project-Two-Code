@@ -1,7 +1,7 @@
 """Organon: privacy (Parresia), reminders (Daimon), backups (Mnemosyne),
 account and cloud (Le Nuvole) and the about page."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any, List, Optional
 
@@ -70,6 +70,17 @@ def _header(ctx: AppContext, key: str, subtitle: str = "") -> ft.Control:
     part = settings_part(key)
     return W.screen_header(part.nickname, part.label, subtitle or part.description, on_back=ctx.back)
 
+
+FILE_KIND_LABELS = {
+    "auto": "di oggi",
+    "week": "della settimana",
+    "month": "del mese",
+    "year": "dell'anno",
+    "manual": "fatto a mano",
+    "importati": "importato",
+    "storico": "nello storico",
+}
+MAX_FILES_SHOWN = 30
 
 MODE_TEXT = {
     bf.MODE_APP: "Ogni giorno, dopo l'1:00 e con l'app aperta, l'app fa la copia e tiene le cartelle in ordine: 7 giornaliere, 4 settimanali, 3 mensili, 3 annuali (le più vecchie vengono tolte). I file che non ha fatto l'app stanno in «Gestione manuale».",
@@ -490,10 +501,11 @@ class MnemosyneScreen:
 
         rows: List[ft.Control] = [W.body("Cartella dei backup", weight=ft.FontWeight.W_600), W.body(current or "Nessuna: i file non vengono salvati fuori dall'app.", size=13, selectable=bool(current))]
         if current:
-            files = bf.list_files(Path(current))
+            files = bf.list_files(Path(current), self.ctx.folder)
             counts = {kind: sum(1 for item in files if item.kind == kind) for kind in {item.kind for item in files}}
             others = counts.get("altri", 0)
             rows.append(W.caption(f"{len(files)} file di backup trovati" + (f", di cui {others} in «Altri» (non fatti dall'app: li gestisci tu)." if others else ".")))
+            rows.extend(self.files_list(Path(current), files))
             rows.append(ft.Switch(label="Tieni in «Storico» i backup che la rotazione toglierebbe", value=services.keep_history(self.ctx.folder), on_change=history_changed, active_color=T.ACCENT))
         buttons = [W.secondary_button("Scegli la cartella" if not current else "Cambia cartella", lambda _: self.ctx.pick_folder(chosen), icon="FOLDER_OPEN"), W.icon_button("INFO_OUTLINE", history, "Cartelle usate prima")]
         if not current:
@@ -501,6 +513,55 @@ class MnemosyneScreen:
             rows.append(W.caption(f"Ti consiglio {bf.SUGGESTED}: {services.suggested_folder()}"))
         rows.append(ft.Row(buttons, alignment=ft.MainAxisAlignment.END, wrap=True, spacing=8))
         return W.panel(ft.Column(rows, spacing=8), padding=14)
+
+    def files_list(self, target: Path, files: List[bf.FolderFile]) -> List[ft.Control]:
+        """«I tuoi backup»: the app's files with their date and kind, which the random names no longer show (KAN-29)."""
+        mine = [item for item in files if item.kind in FILE_KIND_LABELS]
+        old = [item for item in files if item.kind == bf.OLD_FORMAT]
+        controls: List[ft.Control] = []
+        if mine:
+            controls.append(W.body("I tuoi backup", weight=ft.FontWeight.W_600))
+            controls.extend(self._file_row(target, item) for item in mine[:MAX_FILES_SHOWN])
+            if len(mine) > MAX_FILES_SHOWN:
+                controls.append(W.caption(f"E altri {len(mine) - MAX_FILES_SHOWN}, più vecchi."))
+        if old:
+            def delete_old() -> None:
+                try:
+                    deleted = bf.delete_old_format(self.ctx.folder, target)
+                except OSError as problem:
+                    self.ctx.toast(str(problem), error=True)
+                else:
+                    self.ctx.toast(f"Eliminati {len(deleted)} file nel vecchio formato.")
+                self.ctx.refresh()
+
+            controls.append(W.caption(f"{len(old)} file nel vecchio formato: il nome dice data e ora, e senza cifratura si legge anche il contenuto. Ne ho già fatto una copia cifrata per intero."))
+            controls.append(ft.Row([W.secondary_button("Elimina i vecchi file", lambda _: self.ctx.confirm("Elimino i vecchi file?", f"Elimino {len(old)} file nel vecchio formato. Le loro copie cifrate per intero restano.", "Elimina", delete_old), icon="DELETE_OUTLINE")], alignment=ft.MainAxisAlignment.END))
+        return controls
+
+    def _file_row(self, target: Path, item: bf.FolderFile) -> ft.Control:
+        try:
+            stat = item.path.stat()
+        except OSError:
+            return W.caption(item.path.name)
+        moment = item.created_at or datetime.fromtimestamp(stat.st_mtime, timezone.utc)
+
+        def delete() -> None:
+            try:
+                bf.delete_file(self.ctx.folder, target, item.path)
+            except OSError as problem:
+                self.ctx.toast(str(problem), error=True)
+            self.ctx.refresh()
+
+        return ft.Row(
+            [
+                ft.Icon(ft.Icons.INVENTORY_2_OUTLINED, color=T.ACCENT, size=18),
+                ft.Column([W.body(moment.astimezone().strftime("%d/%m/%Y %H:%M"), size=14), W.caption(f"{FILE_KIND_LABELS[item.kind]} · {human_size(stat.st_size)}")], spacing=0, expand=True),
+                W.icon_button("SETTINGS_BACKUP_RESTORE", lambda _: backup_file.open_file(self.ctx, item.path), "Riporta o aggiungi alle istantanee"),
+                W.icon_button("DELETE_OUTLINE", lambda _: self.ctx.confirm("Elimino questo backup?", "Il file sparisce dalla cartella. Le altre copie restano.", "Elimina", delete), "Elimina"),
+            ],
+            spacing=10,
+            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+        )
 
     def create_folder(self, _: Any = None) -> None:
         def answered(granted: bool) -> None:
