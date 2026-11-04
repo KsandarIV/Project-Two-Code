@@ -62,8 +62,8 @@ path = "src"
 module = "main"
 
 [tool.flet.android]
-# KAN-107: the key of the encrypted database stays in the system keystore
-dependencies = ["flet==1.0.5", "flet-permission-handler==1.0.4", "flet-secure-storage==1.0.5"]
+# KAN-107: the key of the encrypted database stays in the system keystore; KAN-108: fingerprint or face open it
+dependencies = ["flet==1.0.5", "flet-permission-handler==1.0.4", "flet-secure-storage==1.0.5", "flet-local-auth==1.0.5"]
 
 [tool.flet.android.permission]
 "android.permission.INTERNET" = true
@@ -71,9 +71,11 @@ dependencies = ["flet==1.0.5", "flet-permission-handler==1.0.4", "flet-secure-st
 "android.permission.MANAGE_EXTERNAL_STORAGE" = true
 "android.permission.READ_EXTERNAL_STORAGE" = true
 "android.permission.WRITE_EXTERNAL_STORAGE" = true
+# KAN-108: fingerprint or face before the diary opens
+"android.permission.USE_BIOMETRIC" = true
 
 [tool.flet.windows]
-dependencies = ["flet==1.0.5", "flet-secure-storage==1.0.5"]
+dependencies = ["flet==1.0.5", "flet-secure-storage==1.0.5", "flet-local-auth==1.0.5"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]

@@ -201,7 +201,7 @@ def recovery_sheet(password: str, code: str, when: datetime) -> str:
         "ZibaldOne · foglio di recupero\n"
         f"Creato il {when.day} {MONTHS_SHORT[when.month - 1]} {when.year}\n\n"
         f"Password principale: {password}\n"
-        f"Codice di recupero:  {code}\n\n"
+        f"Codice di recupero:  {code or 'quello di prima, non cambia'}\n\n"
         "Con la password, oppure con il codice, si aprono i tuoi backup di ZibaldOne su qualsiasi dispositivo.\n"
         "Chi ha questo foglio può aprirli: stampalo o copialo su carta, tienilo lontano dal telefono "
         "e poi cancella questo file.\n"

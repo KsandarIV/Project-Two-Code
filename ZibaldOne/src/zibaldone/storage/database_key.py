@@ -10,8 +10,11 @@
 import base64
 import binascii
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Tuple
 
+from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
+
+from zibaldone.core import crypto
 from zibaldone.storage import keys, sealed_db
 from zibaldone.storage.database import Store, database_path
 
@@ -48,6 +51,11 @@ def seal_if_ready(folder: Path) -> Optional[bytes]:
 
 def unlock_with_secret(folder: Path, password: Optional[str] = None, recovery_code: Optional[str] = None) -> bytes:
     """Open the database with the main password or the recovery code; returns its key (for the keystore)."""
+    return unlock_with_secret_keys(folder, password, recovery_code)[0]
+
+
+def unlock_with_secret_keys(folder: Path, password: Optional[str] = None, recovery_code: Optional[str] = None) -> Tuple[bytes, X25519PrivateKey]:
+    """Like `unlock_with_secret`, with the backup private key too (the app keeps both in the keystore)."""
     if password:
         private_key = keys.unlock_with_passphrase(folder, password)
     elif recovery_code:
@@ -56,7 +64,17 @@ def unlock_with_secret(folder: Path, password: Optional[str] = None, recovery_co
         raise keys.KeysError("serve la password principale o il codice di recupero")
     key = keys.open_database_key(folder, private_key)
     sealed_db.unlock(folder, key)
-    return key
+    return key, private_key
+
+
+def private_key_from_stored(text: Optional[str]) -> Optional[X25519PrivateKey]:
+    """The backup private key read back from the keystore (KAN-108), or None."""
+    if not text:
+        return None
+    try:
+        return crypto.load_private_key(base64.b64decode(text, validate=True))
+    except (binascii.Error, ValueError, crypto.CryptoError):
+        return None
 
 
 def unlock_with_stored_key(folder: Path, text: Optional[str]) -> bool:
@@ -71,4 +89,5 @@ def unlock_with_stored_key(folder: Path, text: Optional[str]) -> bool:
 
 
 def stored_form(key: bytes) -> str:
+    """Base64, as the keystore keeps strings."""
     return base64.b64encode(key).decode("ascii")
