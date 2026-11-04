@@ -15,7 +15,7 @@ from zibaldone.storage import backup_folder as bf
 from zibaldone.storage.paths import folder_usage, human_size
 from zibaldone.storage.settings import SettingsError, consent_status
 from zibaldone.ui import cloud_model as cm
-from zibaldone.ui import services
+from zibaldone.ui import apk_update, services
 from zibaldone.ui import theme as T
 from zibaldone.ui import viewmodels as vm
 from zibaldone.ui import widgets as W
@@ -667,10 +667,9 @@ class UpdatesPanel:
             if release is None:
                 self.result.controls = [W.body(f"Hai la versione più recente ({__version__}).", dim=True)]
                 return
-            url = release.apk_url if services.running_on_android() and release.apk_url else release.page_url
             self.result.controls = [
                 W.body(f"È uscita ZibaldOne {release.version} (tu hai la {__version__}).", size=14),
-                W.primary_button("Scarica", lambda _: self.ctx.open_url(url), icon="DOWNLOAD"),
+                W.primary_button("Scarica", lambda _: apk_update.fetch(self.ctx, release), icon="DOWNLOAD"),
             ]
 
         def failed(problem: Exception) -> None:
