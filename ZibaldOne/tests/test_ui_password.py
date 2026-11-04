@@ -11,7 +11,8 @@ from test_ui_views import FakePage, button, click, folder, texts, walk  # noqa: 
 
 from zibaldone.core.crypto import ScryptParams  # noqa: E402
 from zibaldone.core.privacy import NOTICE_VERSION  # noqa: E402
-from zibaldone.storage import keys  # noqa: E402
+from zibaldone.storage import database_key, keys, sealed_db  # noqa: E402
+from zibaldone.storage.database import Store, database_path  # noqa: E402
 from zibaldone.storage.settings import record_consent  # noqa: E402
 from zibaldone.ui import cloud_model as cm  # noqa: E402
 from zibaldone.ui import services  # noqa: E402
@@ -80,6 +81,7 @@ def test_the_first_start_asks_for_the_password_and_saves_nothing_before_the_code
     keys.unlock_with_recovery_code(consented, code)
     assert shell.current.screen == "cartella"
     assert not services.password_pending(consented)
+    assert sealed_db.is_sealed(consented) and not database_path(consented).exists()  # KAN-107: encrypted from the start
 
 
 def test_three_wrong_answers_save_nothing(consented: Path) -> None:
@@ -154,3 +156,35 @@ def test_both_old_secrets_lost_start_over_with_new_keys(consented: Path) -> None
     _, code = dialog_secrets(dialog)
     answer(dialog, code)
     assert keys.key_id(consented) != before.key_id and keys.uses_generated_password(consented)
+
+
+# * — KAN-107: the encrypted database —
+
+
+def test_a_plain_database_is_encrypted_at_the_next_start(consented: Path) -> None:
+    Store.open(consented).close()  # the database exists, plain
+    keys.save_new_keys(consented, keys.create_keys("x" * 20, generated=True))
+    assert database_path(consented).exists()
+    page = FakePage()
+    shell = Shell(page, consented)
+    shell.start("/")
+    assert sealed_db.is_sealed(consented) and not database_path(consented).exists()
+    assert shell.current.screen == "cartella"
+
+
+def test_without_the_key_the_app_asks_the_password(consented: Path) -> None:
+    made = "y" * 20
+    keys.save_new_keys(consented, keys.create_keys(made, generated=True))
+    database_key.seal_if_ready(consented)
+    sealed_db.forget()  # a new start, and no keystore here
+    page = FakePage()
+    shell = Shell(page, consented)
+    shell.start("/")
+    assert shell.current.screen == "sblocca"
+    field = next(item for item in walk(shell.body.content) if isinstance(item, ft.TextField))
+    field.value = "non è lei"
+    click(button(shell.body.content, "Apri"))
+    assert any("password sbagliata" in text.lower() for text in texts(shell.body.content))
+    field.value = made
+    click(button(shell.body.content, "Apri"))
+    assert sealed_db.is_unlocked(consented) and shell.current.screen == "cartella"

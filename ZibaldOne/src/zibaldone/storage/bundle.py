@@ -34,7 +34,7 @@ from zibaldone.core import crypto
 from zibaldone.core.crypto import CryptoError, DecryptionError
 from zibaldone.storage import backups, keys
 from zibaldone.storage.backups import BackupError, KeyRequiredError, RestoreResult, SnapshotInfo
-from zibaldone.storage.database import MIGRATIONS, database_path
+from zibaldone.storage.database import MIGRATIONS, database_exists
 from zibaldone.storage.keys import KeysError
 
 BUNDLE_SUFFIX = ".zbbackup"
@@ -293,7 +293,7 @@ def first_run_candidate(folder: Path, directories: Optional[List[Path]] = None) 
     Only when this device has no data and no snapshot of its own: with either of them there is nothing to bring back
     (and what is there must not be replaced without being asked).
     """
-    if database_path(folder).exists() or backups.has_local_backup(folder):
+    if database_exists(folder) or backups.has_local_backup(folder):
         return None
     files = find_backup_files(directories)
     return files[0] if files else None

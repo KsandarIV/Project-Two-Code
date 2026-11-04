@@ -9,7 +9,7 @@ import typer
 from zibaldone.cloud import account, sync
 from zibaldone.cloud.http import CloudError
 from zibaldone.core.privacy import NOTICE_VERSION, notice_text
-from zibaldone.storage import backups, bundle
+from zibaldone.storage import backups, bundle, database_key
 from zibaldone.storage.backups import BackupError
 from zibaldone.storage.database import Store, StoreError
 from zibaldone.storage.keys import KeysError
@@ -164,6 +164,20 @@ def run_auto_backup() -> None:
             warn(f"copia del backup non riuscita: {error}")
 
 
+def ensure_database_open() -> None:
+    """The encrypted database (KAN-107): the terminal has no keystore, so it asks the main password each time."""
+    folder = data_dir()
+    if not database_key.is_locked(folder):
+        return
+    typer.echo("Il database è cifrato. Scrivi la password principale, o lascia vuoto per usare il codice di recupero.")
+    password = typer.prompt("Password principale", default="", hide_input=True, show_default=False) or None
+    recovery = None if password else (typer.prompt("Codice di recupero", default="", hide_input=True, show_default=False) or None)
+    try:
+        database_key.unlock_with_secret(folder, password=password, recovery_code=recovery)
+    except (KeysError, StoreError) as error:
+        fail(str(error))
+
+
 @contextmanager
 def open_store(require_account: bool = True) -> Iterator[Store]:
     """Ask for consent (and the account) if needed, open the database and turn known errors into messages.
@@ -177,6 +191,7 @@ def open_store(require_account: bool = True) -> Iterator[Store]:
     if require_account:
         ensure_account()
     folder = data_dir()
+    ensure_database_open()
     try:
         backups.maybe_pre_migration_snapshot(folder)
     except BackupError as error:

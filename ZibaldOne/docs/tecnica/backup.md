@@ -60,11 +60,23 @@ La «passphrase» non la sceglie più l'utente: la genera l'app (`core/password.
 - **Recupero con Google.** Non viene più proposto: chi entra nell'account Google aprirebbe i backup. Chi l'aveva attivo lo vede ancora nelle Nuvole, per toglierlo.
 - **Terminale.** `zbone backup setup` e `zbone backup passphrase` chiedono ancora una passphrase scelta a mano: alla prossima apertura l'app chiede di passare alla password.
 
+### Il database cifrato (KAN-107)
+Con la password principale anche il database sul dispositivo è cifrato: chi conosce il percorso della cartella dati e prova a leggerlo trova solo byte a caso.
+
+- **Sul disco** c'è `zibaldone.zbdb`: `ZBDB` + versione + nonce di 12 byte + AES-256-GCM dell'intero file SQLite. `zibaldone.db` non c'è più. SQLCipher non c'è per Flet su Android, quindi il database si apre **in memoria** (`sqlite3` deserialize) e si riscrive cifrato, in modo atomico, quando un `Store` che l'ha cambiato si chiude.
+- **Una copia in memoria per cartella**, condivisa da tutti gli `Store` del processo e protetta da un lucchetto: due thread non lavorano mai su due copie, quindi non si perde nulla. Due processi insieme (l'app e `zbone`) non si coordinano: vince l'ultimo che salva.
+- **La chiave** è di 32 byte casuali. Sta nel portachiavi del sistema (`flet-secure-storage`: Android Keystore, Windows Credential Manager) e, chiusa con la chiave pubblica dei backup, in `keys.json` (`database_key`). Si aggiunge senza chiedere nulla; la password principale o il codice di recupero la riaprono.
+- **Quando**: subito dopo la pagina della password (un database nuovo nasce già cifrato) e, per chi aveva già la password, al primo avvio dopo l'aggiornamento. La chiave va prima in `keys.json`, poi il file in chiaro viene cifrato, controllato e cancellato (con i suoi journal).
+- **All'avvio** l'app cerca la chiave nel portachiavi. Se non c'è (portachiavi cancellato, avvio con `flet run` o dal web, dove l'estensione manca) chiede la password principale o il codice di recupero nella pagina «Apri il tuo diario», poi rimette la chiave nel portachiavi.
+- **Terminale**: `zbone` non ha portachiavi, quindi chiede la password principale ogni volta che apre i dati.
+- **Istantanee e ripristino** lavorano sulla copia in memoria: l'istantanea contiene il database in chiaro dentro il suo involucro cifrato; il ripristino riscrive `zibaldone.zbdb` cifrato.
+- **Limiti noti**: gli allegati (`media/`) sul dispositivo restano in chiaro; il database aperto sta in chiaro nella memoria dell'app; il file in chiaro cancellato può restare sul disco finché non viene sovrascritto.
+
 ## Verifica
 `zbone backup verify` controlla l'ultima istantanea (`--all` tutte, oppure un ID): zip integro, impronta SHA-256, `PRAGMA integrity_check` di SQLite e versione dello schema.
 
 ## Cifratura · Anello di Gige (dalla 0.0.7)
-Con `zbone backup setup` ogni istantanea viene cifrata sul dispositivo prima di essere scritta, e quelle già fatte vengono cifrate al loro posto. Il database sul dispositivo resta in chiaro: la cifratura riguarda le istantanee, cioè tutto ciò che può uscire dal dispositivo.
+Con `zbone backup setup` ogni istantanea viene cifrata sul dispositivo prima di essere scritta, e quelle già fatte vengono cifrate al loro posto. Da KAN-107, con la password principale, anche il database sul dispositivo è cifrato (vedi «Il database cifrato» qui sotto).
 
 **Le chiavi.** Al setup l'app crea una coppia di chiavi X25519, salvata in `keys.json`:
 - la **chiave pubblica** cifra ogni istantanea senza chiedere nulla: per questo i backup automatici non chiedono mai la passphrase;

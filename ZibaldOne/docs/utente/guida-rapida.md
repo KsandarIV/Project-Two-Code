@@ -230,6 +230,8 @@ Nell'app la password dei backup la crea ZibaldOne al primo avvio (puoi cambiare 
 
 Senza passphrase e senza codice di recupero nessuno può aprire i backup, nemmeno chi ha creato l'app.
 
+Con la password principale anche il diario sul dispositivo è cifrato. L'app lo apre da sola con la chiave che custodisce il sistema; se non la trova ti chiede la password o il codice di recupero. Il terminale (`zbone`) chiede la password principale ogni volta che apre i dati.
+
 ### I segreti · Arcana
 Con la cifratura attiva puoi scrivere **segreti**: il diario segreto (*A se stesso*), le note mediche (*Ippocrate*), l'indirizzo e i documenti di una persona. Si cifrano prima di essere salvati e non entrano mai nella ricerca, nelle esportazioni o nell'IA. Scriverli non chiede nulla; per rileggerli tocca **Apri** nella pagina della voce.
 

@@ -40,3 +40,12 @@ def password_already_set(request, monkeypatch):
 def password_step():
     """Ask for this to keep the real main password page in the first start."""
     return True
+
+
+@pytest.fixture(autouse=True)
+def no_database_keys_left():
+    """The key of an encrypted database stays in the process (KAN-107): every test starts without any."""
+    yield
+    from zibaldone.storage import sealed_db
+
+    sealed_db.forget()

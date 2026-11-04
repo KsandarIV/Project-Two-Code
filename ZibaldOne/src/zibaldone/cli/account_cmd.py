@@ -20,7 +20,7 @@ from zibaldone.cloud.http import CloudError, OfflineError
 from zibaldone.core.crypto import CryptoError
 from zibaldone.storage import backups, keys
 from zibaldone.storage.backups import BackupError
-from zibaldone.storage.database import database_path
+from zibaldone.storage.database import database_exists
 from zibaldone.storage.keys import KeysError
 from zibaldone.storage.paths import data_dir, human_size
 from zibaldone.storage.settings import SettingsError
@@ -301,7 +301,7 @@ def recover(
         destination = sync._destination(folder, None, None)
         snapshot = sync._pick(sync.remote_snapshots(destination.list_files()), reference)
         typer.echo(f"Istantanea {snapshot.id} del {local_time(snapshot.created_at)} ({human_size(snapshot.size)}), da {destination.label}.")
-        if database_path(folder).exists() and not yes:
+        if database_exists(folder) and not yes:
             question = "Sostituire modelli e voci di questo dispositivo? Lo stato attuale sarà salvato prima"
             if not ask_yes_no(question):
                 typer.echo("Va bene: non ho cambiato nulla.")

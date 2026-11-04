@@ -39,10 +39,10 @@
 ## Blocchi segreti (dalla 0.2.3)
 - Documenti, indirizzi, note mediche e il diario segreto vanno in **blocchi segreti**, cifrati sul dispositivo con la chiave dei backup prima di essere salvati ([i segreti](segreti.md), [ADR-0012](../decisioni/ADR-0012-blocchi-segreti.md)). Sono le categorie particolari dell'art. 9 GDPR, spesso di altre persone: per questo non entrano mai nella ricerca, nelle esportazioni, nell'anonimizzatore o nell'IA.
 - Il **PIN** apre solo il livello protetto ed è una comodità: chi copia `keys.json` può provare tutti i PIN fuori dall'app. Quello che conta va al livello massimo, che si apre solo con la passphrase.
-- Il resto del database resta in chiaro. L'avviso privacy non cambia: nessun dato nuovo lascia il dispositivo.
+- Il resto del database, dalla KAN-107, è cifrato sul disco con la password principale ([il database cifrato](backup.md)). L'avviso privacy non cambia: nessun dato nuovo lascia il dispositivo.
 
 ## Allegati (dalla 0.2.4)
-- Foto, video, audio e documenti allegati stanno sul dispositivo in chiaro, nella cartella `media/`, come il database. Nei backup e nelle Nuvole vanno solo cifrati ([gli allegati](allegati.md)).
+- Foto, video, audio e documenti allegati stanno sul dispositivo in chiaro, nella cartella `media/` (il database invece è cifrato dalla KAN-107). Nei backup e nelle Nuvole vanno solo cifrati ([gli allegati](allegati.md)).
 - Chi ha i file dei backup vede quanti allegati ci sono e la loro impronta SHA-256, non il contenuto: può solo confermare che hai un file che possiede già.
 - Le foto possono contenere la posizione (EXIF): l'app non la legge e non la toglie.
 
