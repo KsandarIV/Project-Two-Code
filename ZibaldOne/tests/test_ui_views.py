@@ -1015,6 +1015,21 @@ def test_collections_have_pages_per_kind_with_the_collection_colour_and_back_to_
     assert shell.ctx.memory["collezioni_pagina"] != ""
 
 
+def test_the_eight_areas_fill_the_home_on_phone_and_desktop(ready: Path) -> None:
+    """KAN-23, KAN-25: before the check-in every area is a tile; on a wide screen it also says what the area covers."""
+    for width, wide in ((412, False), (1440, True)):
+        shell = Shell(FakePage(width=width), ready)
+        shell.start("/oggi")
+        tiles = [item for item in walk(shell.body.content) if isinstance(item, ft.Container) and str(item.tooltip or "").startswith("Apri l'area")]
+        if not tiles:
+            pytest.skip("the areas pack is not installed in this fixture")
+        assert len(tiles) == 8
+        shown = texts(shell.body.content)
+        assert ("lavoro, carriera, progetti" in shown) is wide
+        click(tiles[0])
+        assert shell.current.path.startswith("/aree/")
+
+
 def test_no_wrapping_row_holds_an_expanding_child(ready: Path) -> None:
     """A Row with wrap=True cannot lay out a child with expand=True: on the phone it shows as a grey box. Looked for on the screens that had one."""
     from zibaldone.ui import drafts

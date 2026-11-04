@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional
 
 import flet as ft
 
+from zibaldone.core import areas as areas_
 from zibaldone.core import home
 from zibaldone.core import views as V
 from zibaldone.storage import home_log
@@ -152,7 +153,7 @@ def _tile(ctx: AppContext, key: str, model: vm.TodayModel, tiles: Dict[str, Opti
     if key == "aree":
         if not model.areas.installed:
             return None
-        return ft.Column([W.section_label("Le otto aree", "Eudaimonia"), _areas(ctx, model.areas)], spacing=8)
+        return ft.Column([W.section_label("Le otto aree", "Eudaimonia"), _areas(ctx, model.areas)], spacing=8, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
     return tiles.get(key)
 
 
@@ -243,21 +244,59 @@ def _moment_card(ctx: AppContext, card: vm.MomentCard) -> ft.Control:
     )
 
 
+def _mascot_tile(ctx: AppContext, score: vm.AreaScore) -> ft.Control:
+    """One of the eight areas before the check-in: on a phone the mascot and its name, four per row;
+    on a wide screen also what the area covers, so the panel fills the page (KAN-23, KAN-25)."""
+    name = score.mascot.name if score.mascot else score.label
+    if ctx.wide:
+        covers = areas_.AREA_BY_KEY[score.area].covers if score.area in areas_.AREA_BY_KEY else ""
+        body: ft.Control = ft.Row(
+            [
+                W.mascot_avatar(score.mascot, 40),
+                ft.Column(
+                    [
+                        ft.Text(f"{score.label} · {name}", size=14, weight=ft.FontWeight.W_600, color=T.TEXT),
+                        W.caption(covers),
+                    ],
+                    spacing=2,
+                    expand=True,
+                ),
+            ],
+            spacing=10,
+        )
+        col: Any = {"xs": 12, "md": 6, "xl": 3}
+    else:
+        body = ft.Column(
+            [W.mascot_avatar(score.mascot, 40), ft.Text(score.label, size=12, color=T.TEXT_DIM, text_align=ft.TextAlign.CENTER, no_wrap=True)],
+            spacing=4,
+            horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+        )
+        col = {"xs": 3}
+    return ft.Container(
+        body,
+        col=col,
+        padding=ft.Padding.symmetric(vertical=4, horizontal=4),
+        on_click=lambda _, area=score.area: ctx.go(f"/aree/{area}"),
+        border_radius=T.RADIUS_SMALL,
+        ink=True,
+        tooltip=f"Apri l'area {score.label}",
+    )
+
+
 def _areas(ctx: AppContext, areas: vm.AreaCheckin) -> ft.Control:
     if not areas.done:
-        avatars = ft.Row([W.mascot_avatar(score.mascot, 34) for score in areas.scores], spacing=6, wrap=True, run_spacing=6, alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+        guide = W.secondary_button("Le otto aree", lambda _: ctx.go("/aree"), icon="DONUT_LARGE")
+        checkin = W.primary_button("Fai il check-in", lambda _: ctx.go("/scrivi/aree"), icon="DONUT_LARGE")
+        guide.expand = checkin.expand = True
         return W.panel(
             ft.Column(
                 [
-                    avatars,
+                    ft.ResponsiveRow([_mascot_tile(ctx, score) for score in areas.scores], spacing=8, run_spacing=10),
                     W.body("Come vanno oggi le otto aree della tua vita? Un tocco per ciascuna, senza pensarci troppo."),
-                    ft.Row(
-                        [W.text_button("Le otto aree", lambda _: ctx.go("/aree"), icon="DONUT_LARGE"), W.primary_button("Fai il check-in", lambda _: ctx.go("/scrivi/aree"), icon="DONUT_LARGE")],
-                        alignment=ft.MainAxisAlignment.SPACE_BETWEEN,
-                        wrap=True,
-                    ),
+                    ft.Row([guide, checkin], spacing=10),
                 ],
                 spacing=12,
+                horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
             )
         )
     tiles = []
