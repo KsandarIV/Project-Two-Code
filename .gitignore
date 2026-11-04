@@ -239,3 +239,6 @@ ZibaldOne/docs/docs della versione precedente/
 .claude/
 .agents/
 CLAUDE.md
+
+# Documentazione di progetto in stile Scrum: solo in locale, mai su GitHub
+project-manifest/
