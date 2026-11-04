@@ -335,3 +335,72 @@ def finish(ctx: AppContext, store: Callable[[], Any], private_key: Any, on_done:
         ctx.toast(f"Password non salvata: {cm.error_text(problem)}", error=True)
 
     ctx.run_blocking(work, done, failed)
+
+
+# * — KAN-107: opening the encrypted database —
+
+UNLOCK_INTRO = (
+    "Il tuo diario è cifrato su questo dispositivo. Di solito si apre da solo con la chiave custodita dal sistema; "
+    "qui non la trovo (app reinstallata, dati del sistema cancellati, o avvio senza portachiavi). "
+    "Aprilo con la password principale o con il codice di recupero: poi la rimetto al suo posto."
+)
+
+
+def unlock_step(ctx: AppContext, route: Route) -> ft.Control:
+    """Ask the keystore first; without the key, the main password or the recovery code open the database."""
+    from zibaldone.storage import database_key
+    from zibaldone.ui import keystore
+    from zibaldone.ui.views.onboarding import brand
+
+    folder = ctx.folder
+    secret = W.text_input("", label="Password principale", password=True, can_reveal_password=True, autofocus=True)
+    with_code = ft.Switch(label="Uso il codice di recupero", value=False, active_color=T.ACCENT)
+    error = W.error_text()
+    open_button = W.primary_button("Apri", None, icon="LOCK_OPEN")
+    form = ft.Column([W.panel(ft.Column([W.wide(secret), with_code, error], spacing=10)), ft.Row([open_button], alignment=ft.MainAxisAlignment.END)], spacing=14)
+    waiting = W.body("Cerco la chiave nel portachiavi del sistema…", dim=True)
+    form.visible = ctx.page is None
+
+    def switched(_: Any = None) -> None:
+        secret.label = "Codice di recupero" if with_code.value else "Password principale"
+        secret.password = not with_code.value
+        secret.capitalization = ft.TextCapitalization.CHARACTERS if with_code.value else ft.TextCapitalization.NONE
+        ctx.update(secret)
+
+    def opened(key: bytes) -> None:
+        ctx.keep_database_key(key)
+        ctx.advance()
+
+    def failed(problem: Exception) -> None:
+        open_button.disabled = False
+        error.value, error.visible = cm.error_text(problem), True
+        ctx.update(open_button, error)
+
+    def unlock(_: Any = None) -> None:
+        value = (secret.value or "").strip()
+        if not value:
+            error.value, error.visible = "Scrivi la password principale o il codice di recupero.", True
+            ctx.update(error)
+            return
+        open_button.disabled = True
+        ctx.update(open_button)
+        code = bool(with_code.value)
+        ctx.run_blocking(lambda: database_key.unlock_with_secret(folder, password=None if code else value, recovery_code=value if code else None), opened, failed)
+
+    with_code.on_change = switched
+    open_button.on_click = unlock
+    secret.on_submit = unlock
+
+    async def from_keystore() -> None:
+        text = await keystore.read(ctx)
+        if database_key.unlock_with_stored_key(folder, text):
+            ctx.advance()
+            return
+        waiting.visible, form.visible = False, True
+        ctx.update(waiting, form)
+
+    if ctx.page is not None:
+        ctx.page.run_task(from_keystore)
+    else:
+        waiting.visible = False
+    return W.screen([brand(), W.title_with_nickname("Apri il tuo diario", "Mnemosyne", size=22), W.body(UNLOCK_INTRO, dim=True), waiting, form], ctx.wide)

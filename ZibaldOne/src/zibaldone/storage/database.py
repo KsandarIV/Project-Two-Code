@@ -11,6 +11,9 @@ FTS5 table is optional: SQLite builds without FTS5 use a LIKE search instead.
 From 0.2.0 an entry can have its own life area (`entries.area`); the derived
 table `entry_areas` lists every area of each entry (its own, its template's,
 and those of an `aree` tags block), so lists and searches can filter by area.
+
+KAN-107: once the main password exists the database is encrypted on disk (`zibaldone.zbdb`, `sealed_db.py`) and
+a Store works on the one copy in memory of its folder; `zibaldone.db` is then gone.
 """
 
 import json
@@ -24,7 +27,7 @@ from typing import Any, Dict, Iterable, Iterator, List, Optional, Sequence, Tupl
 from zibaldone.core.areas import entry_areas
 from zibaldone.core.templates import Entry, Template, check_area, now_iso, validate_values
 from zibaldone.core import secrets
-from zibaldone.storage import media
+from zibaldone.storage import media, sealed_db
 from zibaldone.core.blocks import parse_day
 from zibaldone.core.links import (
     KIND_BLOCK,
@@ -170,6 +173,11 @@ def database_path(folder: Path) -> Path:
     return folder / DATABASE_FILE
 
 
+def database_exists(folder: Path) -> bool:
+    """True when there is a database, plain or encrypted."""
+    return database_path(folder).exists() or sealed_db.is_sealed(folder)
+
+
 def fts5_available(connection: sqlite3.Connection) -> bool:
     """True when this SQLite build has FTS5 (not guaranteed on every Android build)."""
     try:
@@ -196,10 +204,11 @@ class Store:
     the environment variable ZIBALDONE_NO_FTS=1).
     """
 
-    def __init__(self, path: Path, use_fts: Optional[bool] = None) -> None:
+    def __init__(self, path: Path, use_fts: Optional[bool] = None, sealed: bool = False) -> None:
         path.parent.mkdir(parents=True, exist_ok=True)
         self.path = path
-        self.connection = sqlite3.connect(str(path))
+        self.sealed = sealed  # the shared copy in memory of an encrypted database (KAN-107)
+        self.connection = sealed_db.acquire(path.parent) if sealed else sqlite3.connect(str(path))
         self.connection.row_factory = sqlite3.Row
         self.connection.execute("PRAGMA foreign_keys = ON")
         if use_fts is None:
@@ -208,12 +217,14 @@ class Store:
         try:
             self.migrate()
         except Exception:
-            self.connection.close()
+            self.close()
             raise
 
     @classmethod
     def open(cls, folder: Path, use_fts: Optional[bool] = None) -> "Store":
-        return cls(database_path(folder), use_fts=use_fts)
+        """The encrypted database when there is one (or its key is already known), else the plain file."""
+        sealed = sealed_db.is_sealed(folder) or (sealed_db.is_unlocked(folder) and not database_path(folder).exists())
+        return cls(database_path(folder), use_fts=use_fts, sealed=sealed)
 
     def __enter__(self) -> "Store":
         return self
@@ -222,7 +233,11 @@ class Store:
         self.close()
 
     def close(self) -> None:
-        self.connection.close()
+        if not self.sealed:
+            self.connection.close()
+        elif self.sealed is True:
+            self.sealed = "closed"  # the shared connection stays open; released once
+            sealed_db.release(self.path.parent)
 
     # — schema —
 

@@ -120,6 +120,18 @@ def password_pending(folder: Path) -> bool:
         return False
 
 
+def database_locked(folder: Path) -> bool:
+    """The database is encrypted (KAN-107) and this start does not have its key yet."""
+    module = optional_module("zibaldone.storage.database_key")
+    return module is not None and module.is_locked(folder)
+
+
+def seal_database(folder: Path) -> Optional[bytes]:
+    """Encrypt the database once the main password exists; the new key comes back for the keystore."""
+    module = optional_module("zibaldone.storage.database_key")
+    return module.seal_if_ready(folder) if module is not None else None
+
+
 def login_required(folder: Path) -> bool:
     """True only when the account part exists and asks for a sign-in."""
     account = account_api()

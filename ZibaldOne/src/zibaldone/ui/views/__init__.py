@@ -43,10 +43,11 @@ SCREENS: Dict[str, Builder] = {
     "accesso": onboarding.sign_in,
     "copie": onboarding.copies,
     "password": encryption.password_step,
+    "sblocca": encryption.unlock_step,
     "cartella": onboarding.files_folder,
     "diario": onboarding.diario,
     "icona": onboarding.app_icon_step,
 }
 
 # Shown full screen, without the navigation.
-ONBOARDING_SCREENS = frozenset({"consenso", "accesso", "copie", "password", "cartella", "diario", "icona"})
+ONBOARDING_SCREENS = frozenset({"consenso", "accesso", "copie", "password", "sblocca", "cartella", "diario", "icona"})

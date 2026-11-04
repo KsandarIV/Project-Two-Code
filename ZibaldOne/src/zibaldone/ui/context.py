@@ -251,6 +251,20 @@ class AppContext:
 
         self.page.run_task(task)
 
+    def keep_database_key(self, key: bytes, on_done: Optional[Callable[[bool], Any]] = None) -> None:
+        """Put the key of the encrypted database in the system keystore (KAN-107); `on_done(kept)`."""
+        if self.page is None:
+            return
+        from zibaldone.storage.database_key import stored_form
+        from zibaldone.ui import keystore
+
+        async def task() -> None:
+            kept = await keystore.write(self, stored_form(key))
+            if on_done is not None:
+                on_done(kept)
+
+        self.page.run_task(task)
+
     def run_blocking(
         self,
         work: Callable[[], Any],

@@ -13,7 +13,7 @@ from typing import Iterator, List, Optional
 import typer
 from cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey
 
-from zibaldone.cli.common import ask_yes_no, ensure_consent, fail, run_auto_backup, sync_quietly  # noqa: F401 (re-exported)
+from zibaldone.cli.common import ask_yes_no, ensure_consent, ensure_database_open, fail, run_auto_backup, sync_quietly  # noqa: F401 (re-exported)
 from zibaldone.core.crypto import RECOVERY_LOOKALIKES, CryptoError, RecoveryCodeError, recovery_code_last_group
 from zibaldone.storage import backups, bundle, keys
 from zibaldone.storage.backups import BackupError, BackupSettings, SnapshotInfo
@@ -114,6 +114,7 @@ def require_encryption(folder: Path) -> None:
 def create_backup(note: str = typer.Option("", "--note", "-n", help="una nota breve, per esempio 'prima del trasloco'")) -> None:
     """Salva adesso un'istantanea completa dei tuoi dati."""
     ensure_consent()
+    ensure_database_open()
     with backup_errors():
         snapshot = backups.create_snapshot(data_dir(), "manual", note)
     typer.echo(f"Istantanea creata: {snapshot.id}")
@@ -162,6 +163,7 @@ def restore_backup(
         if not yes and not ask_yes_no(question):
             typer.echo("Va bene: non ho cambiato nulla.")
             raise typer.Exit()
+        ensure_database_open()
         result = backups.restore_snapshot(folder, snapshot.id, unlock_for(folder, [snapshot]))
     typer.echo(f"Dati riportati all'istantanea del {local_time(result.restored.created_at)} ({result.restored.id}).")
     if result.undo:

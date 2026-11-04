@@ -58,7 +58,9 @@ from zibaldone.core import crypto
 from zibaldone.core.crypto import CryptoError
 from zibaldone.core.blocks import MEDIA_FILE
 from zibaldone.storage import keys, media
-from zibaldone.storage.database import DATABASE_FILE, MIGRATIONS, database_path
+from zibaldone.core.errors import StoreError
+from zibaldone.storage import sealed_db
+from zibaldone.storage.database import DATABASE_FILE, MIGRATIONS, database_exists, database_path
 from zibaldone.storage.keys import KeysError
 from zibaldone.storage.settings import SETTINGS_FILE, SettingsError, load_settings, save_settings, settings_path
 
@@ -507,8 +509,30 @@ def _count(connection: sqlite3.Connection, table: str) -> Optional[int]:
         return None  # table not created yet (schema 0)
 
 
+def _copy_sealed_database(folder: Path) -> _DatabaseCopy:
+    """The encrypted database (KAN-107): its copy in memory, plain, only for the snapshot (itself encrypted)."""
+    try:
+        data = sealed_db.plain_bytes(folder)
+        if len(data) > MAX_SNAPSHOT_SIZE:
+            raise BackupError("il database è troppo grande per un'istantanea (massimo 1 GiB)")
+        target = sqlite3.connect(":memory:")
+        try:
+            target.deserialize(data)
+            schema = target.execute("PRAGMA user_version").fetchone()[0]
+            entries, templates = _count(target, "entries"), _count(target, "templates")
+        finally:
+            target.close()
+    except sqlite3.Error as error:
+        raise BackupError(f"non riesco a copiare il database: {error}") from None
+    except StoreError as error:
+        raise BackupError(str(error)) from None
+    return _DatabaseCopy(data, schema, entries, templates)
+
+
 def _copy_database(folder: Path, db: Path) -> _DatabaseCopy:
     """A consistent copy through SQLite's backup API, never a copy of the live file."""
+    if sealed_db.is_sealed(folder):
+        return _copy_sealed_database(folder)
     if db.stat().st_size > MAX_SNAPSHOT_SIZE:
         raise BackupError("il database è troppo grande per un'istantanea (massimo 1 GiB)")
     temporary = _new_temp_path(folder, ".db")
@@ -599,7 +623,7 @@ def create_snapshot(folder: Path, reason: str = "manual", note: str = "", now: O
         raise ValueError(f"motivo sconosciuto: {reason}")
     note = _clean_note(note)
     db = database_path(folder)
-    if not db.exists():
+    if not database_exists(folder):
         raise BackupError("non ci sono ancora dati da salvare: aggiungi prima un modello o una voce")
     recipient = _encryption_target(folder)
     created = _utc(now)
@@ -803,13 +827,19 @@ def restore_snapshot(folder: Path, reference: str, private_key: Optional[X25519P
         if inspection.problems:
             raise BackupError(f"l'istantanea {snapshot.id} non è integra: {'; '.join(inspection.problems)}")
         db = database_path(folder)
+        sealed = sealed_db.is_sealed(folder)
         undo = None
-        if db.exists():
+        if sealed:
+            undo = create_snapshot(folder, "pre-restore")
+        elif db.exists():
             _ensure_database_idle(db)
             undo = create_snapshot(folder, "pre-restore")
         _restore_media(folder, media_list(inspection.manifest.get("media")), private_key)
         try:
-            os.replace(inspection.database_path, db)
+            if sealed:  # the restored copy goes back encrypted (KAN-107)
+                sealed_db.replace(folder, inspection.database_path)
+            else:
+                os.replace(inspection.database_path, db)
         except OSError as error:
             raise BackupError(f"non riesco a sostituire il database ({error}). {IN_USE}") from None
         _fsync_directory(folder)
@@ -913,8 +943,10 @@ def maybe_auto_snapshot(folder: Path, now: Optional[datetime] = None, tz: Option
     raises BackupError only on a real failure, which the caller should show as a warning without failing the command.
     """
     backup = load_backup_settings(folder)
-    if not backup.auto or not database_path(folder).exists():
+    if not backup.auto or not database_exists(folder):
         return None
+    if sealed_db.is_sealed(folder) and not sealed_db.is_unlocked(folder):
+        return None  # encrypted and still locked: the next start with the key makes the copy
     current = _utc(now)
     scheme = backup.scheme
     made = _when(scheme.get("current"))
@@ -939,6 +971,15 @@ def maybe_auto_snapshot(folder: Path, now: Optional[datetime] = None, tz: Option
 def maybe_pre_migration_snapshot(folder: Path) -> Optional[SnapshotInfo]:
     """Before `Store.open` migrates an older database, keep a copy of it."""
     db = database_path(folder)
+    if sealed_db.is_sealed(folder):
+        if not sealed_db.is_unlocked(folder):
+            return None
+        connection = sealed_db.acquire(folder)
+        try:
+            version = connection.execute("PRAGMA user_version").fetchone()[0]
+        finally:
+            sealed_db.release(folder)
+        return create_snapshot(folder, "pre-migration") if 0 < version < len(MIGRATIONS) else None
     if not db.exists():
         return None
     try:

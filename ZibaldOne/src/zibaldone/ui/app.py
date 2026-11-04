@@ -124,6 +124,16 @@ class Shell:
             return "/benvenuto/copie"
         if services.password_pending(self.folder):
             return "/benvenuto/password"
+        if services.database_locked(self.folder):
+            return "/benvenuto/sblocca"
+        try:
+            key = services.seal_database(self.folder)  # KAN-107: once, right after the main password
+        except Exception as problem:  # the plain database stays as it was; tried again at the next start
+            logger.exception("sealing the database failed")
+            self.ctx.toast(f"Non sono riuscito a cifrare il database: {problem}", error=True)
+            key = None
+        if key is not None:
+            self.ctx.keep_database_key(key)
         if services.backup_files_pending(self.folder):
             return "/benvenuto/cartella"
         if not self.migration_checked:  # before the first Store.open may migrate the database
