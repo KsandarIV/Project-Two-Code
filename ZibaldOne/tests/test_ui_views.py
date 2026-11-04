@@ -1003,6 +1003,8 @@ def test_collections_have_pages_per_kind_with_the_collection_colour_and_back_to_
     shell = Shell(FakePage(width=412), ready)
     shell.start("/collezioni")
     assert "Dune" not in texts(shell.body.content)
+    bar = [item.tooltip for item in walk(shell.body.content) if isinstance(item, ft.Container) and item.padding == 4 and item.tooltip]
+    assert bar.index("Tutte") == (len(bar) - 1) // 2  # KAN-22: in the middle of the icon bar too, as in the carousel
     click(next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and item.tooltip == "Biblioteca di Babele"))
     assert "Dune" in texts(shell.body.content) and shell.current.path == "/collezioni"
     assert shell.can_go_back()
