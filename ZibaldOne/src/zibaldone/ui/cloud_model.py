@@ -5,8 +5,10 @@ here only what the screens show: lines, choices, checks and the app wording
 of messages that were written for the terminal.
 """
 
+import secrets
 from dataclasses import dataclass
-from typing import Any, Iterable, List, Optional, Tuple
+from datetime import datetime
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 from zibaldone.ui.viewmodels import MONTHS_SHORT, local_timestamp
 
@@ -30,8 +32,8 @@ APP_HINTS: Tuple[Tuple[str, str], ...] = (
 
 RECOVERY_TRADEOFF_FALLBACK = (
     "Recupero con l'account Google (facoltativo): se lo attivi, su un dispositivo nuovo ti basterà entrare "
-    "con Google per riavere i backup, anche senza passphrase. Il prezzo: chi riesce a entrare nel tuo account "
-    "Google può aprirli. Se non lo attivi, servono la passphrase o il codice di recupero."
+    "con Google per riavere i backup, anche senza password. Il prezzo: chi riesce a entrare nel tuo account "
+    "Google può aprirli. Se non lo attivi, servono la password o il codice di recupero."
 )
 
 
@@ -160,7 +162,7 @@ def check_new_passphrase(first: str, second: str) -> str:
         except KeysError as problem:
             return error_text(problem)
     if first != second:
-        return "Le due passphrase non coincidono."
+        return "Le due password non coincidono."
     return ""
 
 
@@ -172,6 +174,38 @@ def recovery_answer_ok(code: str, answer: str) -> bool:
     """The user copied the last group of the code (case and O/0, I/L/1 forgiven)."""
     cleaned = "".join((answer or "").split()).replace("-", "").upper().translate(LOOKALIKES)
     return bool(cleaned) and cleaned == recovery_last_group(code)
+
+
+def recovery_groups_to_ask(code: str, how_many: int = 2) -> List[int]:
+    """Which groups of the code (counted from 1) the user copies back, chosen at random each time."""
+    count = len((code or "").split("-"))
+    return sorted(secrets.SystemRandom().sample(range(1, count + 1), min(how_many, count)))
+
+
+def recovery_groups_ok(code: str, answers: Dict[int, str]) -> bool:
+    """Every asked group copied right (case, dashes and O/0, I/L/1 forgiven)."""
+    groups = [group.strip().upper().translate(LOOKALIKES) for group in (code or "").split("-")]
+    for number, answer in answers.items():
+        cleaned = "".join((answer or "").split()).replace("-", "").upper().translate(LOOKALIKES)
+        if not cleaned or not 1 <= number <= len(groups) or cleaned != groups[number - 1]:
+            return False
+    return bool(answers)
+
+
+RECOVERY_SHEET_NAME = "zibaldone-foglio-di-recupero.txt"
+
+
+def recovery_sheet(password: str, code: str, when: datetime) -> str:
+    """The «foglio di recupero»: the password and the code, to print or copy on paper, then delete."""
+    return (
+        "ZibaldOne · foglio di recupero\n"
+        f"Creato il {when.day} {MONTHS_SHORT[when.month - 1]} {when.year}\n\n"
+        f"Password principale: {password}\n"
+        f"Codice di recupero:  {code}\n\n"
+        "Con la password, oppure con il codice, si aprono i tuoi backup di ZibaldOne su qualsiasi dispositivo.\n"
+        "Chi ha questo foglio può aprirli: stampalo o copialo su carta, tienilo lontano dal telefono "
+        "e poi cancella questo file.\n"
+    )
 
 
 # * — the copies that are out there —
@@ -209,13 +243,13 @@ def restored_text(result: Any) -> str:
     if created is not None:
         when = remote_choices([restored])[0].label.split(" · ")[0]
     text = f"Dati riportati all'istantanea del {when}." if when else "Dati riportati."
-    return text + " Le chiavi dei backup ora sono anche qui: i prossimi backup useranno la stessa passphrase."
+    return text + " Le chiavi dei backup ora sono anche qui: i prossimi backup useranno la stessa password."
 
 
 def recovery_methods(google_available: bool) -> List[Tuple[str, str]]:
-    methods = [("passphrase", "Con la passphrase dei backup"), ("code", "Con il codice di recupero")]
+    methods = [("passphrase", "Con la password principale"), ("code", "Con il codice di recupero")]
     if google_available:
-        methods.insert(0, ("google", "Con l'account Google, senza passphrase"))
+        methods.insert(0, ("google", "Con l'account Google, senza password"))
     return methods
 
 

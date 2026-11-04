@@ -343,7 +343,7 @@ def _import(folder: Path, path: Path, passphrase: Optional[str], recovery_code: 
         source: Union[Path, BinaryIO] = path
         if not is_zip(path):
             if not (passphrase or recovery_code):
-                raise KeyRequiredError("questo backup è cifrato per intero: serve la passphrase dei backup o il codice di recupero")
+                raise KeyRequiredError("questo backup è cifrato per intero: serve la password principale o il codice di recupero")
             data, private_key = open_opaque_file(path, passphrase, recovery_code)
             source = io.BytesIO(data)
     except OSError as error:
@@ -398,7 +398,7 @@ def restore_bundle(folder: Path, path: Path, passphrase: Optional[str] = None, r
                     raise BackupError("questo backup si apre solo con il codice di recupero")
                 private_key = keys.unlock_with_passphrase(folder, passphrase)
             else:
-                raise KeyRequiredError("serve la passphrase dei backup o il codice di recupero")
+                raise KeyRequiredError("serve la password principale o il codice di recupero")
         except (KeysError, CryptoError) as error:
             raise BackupError(str(error)) from None
     return backups.restore_snapshot(folder, snapshot.id, private_key)

@@ -122,7 +122,7 @@ def test_notes_after_signing_in() -> None:
 
 def test_new_passphrase_and_recovery_code_checks() -> None:
     assert "almeno 10" in cm.check_new_passphrase("corta", "corta")
-    assert cm.check_new_passphrase(PASSPHRASE, PASSPHRASE + "!") == "Le due passphrase non coincidono."
+    assert cm.check_new_passphrase(PASSPHRASE, PASSPHRASE + "!") == "Le due password non coincidono."
     assert cm.check_new_passphrase(PASSPHRASE, PASSPHRASE) == ""
     code = "9678-2FKR-NANA-4PM3-DBFZ-CFGM-05CX"
     assert cm.recovery_answer_ok(code, "05cx")
@@ -245,10 +245,10 @@ def test_encryption_save_seals_old_snapshots(needs_flet, folder: Path) -> None:
 
     backups.create_snapshot(folder, "manual")
     ctx = AppContext(folder)
-    new_keys = keys.create_keys(PASSPHRASE)
+    new_keys = keys.create_keys(PASSPHRASE, generated=True)
     done = []
-    encryption.save(ctx, keys, new_keys, PASSPHRASE, lambda: done.append(True))
+    encryption.finish(ctx, lambda: keys.save_new_keys(folder, new_keys), new_keys.private_key, lambda: done.append(True))
     assert services.encryption_on(folder)
     assert all(snapshot.encrypted for snapshot in backups.list_snapshots(folder))
-    assert ctx.toasts[0].startswith("Cifratura attiva") and "ora cifrate: 1" in ctx.toasts[0]
+    assert ctx.toasts[0].startswith("Password principale salvata") and "ora cifrate: 1" in ctx.toasts[0]
     assert done == [True]

@@ -196,9 +196,9 @@ def offer_google_recovery(folder: Path, passphrase: Optional[str] = None) -> Non
         return
     typer.echo("\n" + GOOGLE_RECOVERY_TRADEOFF)
     if not ask_yes_no("Attivare il recupero con l'account Google?"):
-        typer.echo("Va bene: per recuperare i backup serviranno la passphrase o il codice di recupero.")
+        typer.echo("Va bene: per recuperare i backup serviranno la password o il codice di recupero.")
         return
-    secret = passphrase or typer.prompt("Passphrase dei backup", hide_input=True)
+    secret = passphrase or typer.prompt("Password principale", hide_input=True)
     try:
         sync.enable_google_recovery(folder, secret)
     except OfflineError as error:
@@ -291,7 +291,7 @@ def list_remote() -> None:
 @cloud_app.command("recover")
 def recover(
     reference: Optional[str] = typer.Argument(None, metavar="[ID]", help="di base la più recente"),
-    code: bool = typer.Option(False, "--code", help="usa il codice di recupero invece della passphrase"),
+    code: bool = typer.Option(False, "--code", help="usa il codice di recupero invece della password"),
     yes: bool = typer.Option(False, "--yes", "-y", help="non chiedere conferma"),
 ) -> None:
     """Riporta i dati da Drive o dalla cartella, per esempio su un dispositivo nuovo."""
@@ -309,15 +309,15 @@ def recover(
         passphrase = recovery_code = None
         if code:
             recovery_code = typer.prompt("Codice di recupero", hide_input=True)
-        elif sync.google_recovery_available(folder, destination) and ask_yes_no("Il recupero con Google è attivo. Usarlo, senza passphrase?"):
+        elif sync.google_recovery_available(folder, destination) and ask_yes_no("Il recupero con Google è attivo. Usarlo, senza password?"):
             pass
         else:
-            passphrase = typer.prompt("Passphrase dei backup", hide_input=True)
+            passphrase = typer.prompt("Password principale", hide_input=True)
         result = sync.recover_from_cloud(folder, passphrase, recovery_code, snapshot.id, destination)
     typer.echo(f"Dati riportati all'istantanea del {local_time(result.restored.created_at)} ({result.restored.id}).")
     if result.undo:
         typer.echo(f"Per annullare: zbone backup restore {result.undo.id}")
-    typer.echo("Le chiavi dei backup ora sono anche su questo dispositivo: i prossimi backup useranno la stessa passphrase.")
+    typer.echo("Le chiavi dei backup ora sono anche su questo dispositivo: i prossimi backup useranno la stessa password.")
 
 
 @cloud_app.command("recovery")
@@ -330,7 +330,7 @@ def recovery_switch(state: str = typer.Argument(..., metavar="on|off", help="on 
     if state == "off":
         with cloud_errors():
             sync.disable_google_recovery(folder)
-        typer.echo("Recupero con Google tolto: ora servono la passphrase o il codice di recupero.")
+        typer.echo("Recupero con Google tolto: ora servono la password o il codice di recupero.")
         return
     with cloud_errors():
         status = account.account_status(folder)

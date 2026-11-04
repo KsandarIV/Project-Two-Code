@@ -168,7 +168,7 @@ def test_a_device_with_other_keys_keeps_them_and_the_file_opens_with_its_own_sec
     mine = keys.setup_keys(device, "un'altra passphrase lunga")
     with pytest.raises(KeyRequiredError):
         bundle.import_bundle(device, path)
-    with pytest.raises(BackupError, match="passphrase sbagliata"):
+    with pytest.raises(BackupError, match="password sbagliata"):
         bundle.import_bundle(device, path, passphrase="un'altra passphrase lunga")
     imported = bundle.import_bundle(device, path, recovery_code=new_keys.recovery_code)
     assert imported.other_key and not imported.keys_installed and keys.key_id(device) == mine.key_id

@@ -440,7 +440,7 @@ def blob_bytes(folder: Path, file: str, private_key: Optional[X25519PrivateKey])
         raise BackupError(f"nei backup manca l'allegato {file[:8]}") from None
     if crypto.is_sealed(data):
         if private_key is None:
-            raise KeyRequiredError("gli allegati dei backup sono cifrati: serve la passphrase")
+            raise KeyRequiredError("gli allegati dei backup sono cifrati: serve la password")
         sealed = crypto.open_sealed(data, private_key)
         if sealed.header.get("media") != file:
             raise BackupError(f"l'allegato {file[:8]} nei backup non corrisponde al suo nome")
@@ -658,7 +658,7 @@ def _open_payload(data: bytes, private_key: Optional[X25519PrivateKey]) -> Tuple
     if not crypto.is_sealed(data):
         return data, None
     if private_key is None:
-        raise KeyRequiredError("questa istantanea è cifrata: serve la passphrase")
+        raise KeyRequiredError("questa istantanea è cifrata: serve la password")
     sealed = crypto.open_sealed(data, private_key)
     return sealed.plaintext, sealed.header
 

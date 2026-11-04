@@ -109,7 +109,7 @@ def test_keys_set_up_before_0_2_3_learn_the_everyday_key_once(store: Store) -> N
     document = keys._load(folder)
     document.pop(keys.SECRETS_FIELD)
     keys._save(folder, document)
-    with pytest.raises(StoreError, match="una volta con la passphrase"):
+    with pytest.raises(StoreError, match="una volta con la password"):
         store.add_entry("diario_segreto", {"testo": "prima"})
     store.add_entry("note_mediche", {"dettagli": "il livello massimo usa la chiave dei backup"})
     keys.unlock_secrets_with_passphrase(folder, PASSPHRASE)

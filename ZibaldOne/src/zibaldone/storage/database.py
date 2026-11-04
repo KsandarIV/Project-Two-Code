@@ -514,7 +514,7 @@ class Store:
 
         def key_for(level: str) -> Any:
             if level not in public:
-                raise StoreError("apri i segreti una volta con la passphrase (`zbone segreti apri`, o nell'app): poi i segreti protetti si scrivono senza chiedere nulla")
+                raise StoreError("apri i segreti una volta con la password (`zbone segreti apri`, o nell'app): poi i segreti protetti si scrivono senza chiedere nulla")
             return public[level]
 
         return secrets.seal_entry_values(template, values, key_for)

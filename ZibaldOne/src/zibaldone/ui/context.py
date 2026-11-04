@@ -30,6 +30,7 @@ class AppContext:
         self.memory: Dict[str, Any] = {}  # screen state kept while the app is open (filters …)
         self.toasts: List[str] = []  # what was shown, for tests
         self.opened: List[Path] = []  # files handed to the system, for tests
+        self.saved: List[str] = []  # names offered to «save as», for tests
         self._navigate: Callable[[str, bool], None] = lambda path, replace: None
         self._back: Callable[[], None] = lambda: None
         self._refresh: Callable[[], None] = lambda: None
@@ -228,6 +229,25 @@ class AppContext:
             except Exception as error:  # no app for this kind of file
                 logger.info("open file failed", exc_info=True)
                 self.toast(f"Non riesco ad aprire il file: {error}", error=True)
+
+        self.page.run_task(task)
+
+    def save_file(self, name: str, data: bytes, on_saved: Optional[Callable[[str], Any]] = None) -> None:
+        """The system «save as» dialog for `data` (phone, desktop and web); `on_saved(where)` once it is written."""
+        self.saved.append(name)
+        if self.page is None:
+            return
+
+        async def task() -> None:
+            try:
+                where = await ft.FilePicker().save_file(file_name=name, src_bytes=data)
+            except Exception as error:
+                logger.info("save file failed", exc_info=True)
+                self.toast(f"Non riesco a salvare il file: {error}", error=True)
+                return
+            if where and on_saved is not None:
+                on_saved(str(where))
+            self.update()
 
         self.page.run_task(task)
 

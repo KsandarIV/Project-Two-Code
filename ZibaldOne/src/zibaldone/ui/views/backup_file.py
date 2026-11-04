@@ -83,7 +83,7 @@ def _offer(ctx: AppContext, path: Path, info: Any, on_done: Optional[Callable[[]
         return
     moment = info.created_at or info.modified_at
     when = moment.astimezone().strftime("%d/%m/%Y alle %H:%M") if moment else "data sconosciuta"
-    passphrase = W.text_input("", label="Passphrase dei backup", password=True, can_reveal_password=True, visible=info.encrypted)
+    passphrase = W.text_input("", label="Password principale", password=True, can_reveal_password=True, visible=info.encrypted)
     recovery = W.text_input("", label="oppure il codice di recupero", visible=info.encrypted)
     error = W.error_text()
 
@@ -118,7 +118,7 @@ def _offer(ctx: AppContext, path: Path, info: Any, on_done: Optional[Callable[[]
         ctx.run_blocking(lambda: imported(lambda: bundle.restore_bundle(ctx.folder, path, passphrase=pass_value, recovery_code=code)), lambda _result: finish("Dati riportati al backup. Prima ne ho salvata un'istantanea per tornare indietro."), fail)
 
     if info.locked:
-        summary = f"File di backup scritto il {when}, cifrato per intero: data, versione e contenuto si leggono solo con la passphrase o il codice di recupero."
+        summary = f"File di backup scritto il {when}, cifrato per intero: data, versione e contenuto si leggono solo con la password o il codice di recupero."
     else:
         summary = f"Backup del {when}" + (f", fatto con ZibaldOne {info.app_version}" if info.app_version else "") + (", cifrato." if info.encrypted else ".")
     lines = [

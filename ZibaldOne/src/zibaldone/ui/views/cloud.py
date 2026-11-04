@@ -148,19 +148,19 @@ def offer_google_recovery(ctx: AppContext, passphrase: str = "", then: Callback 
         _later(then)
         return
     folder = ctx.folder
-    secret = W.text_input(passphrase, label="Passphrase dei backup", password=True, can_reveal_password=True, visible=not passphrase)
+    secret = W.text_input(passphrase, label="Password principale", password=True, can_reveal_password=True, visible=not passphrase)
     error = W.error_text()
     turn_on = W.primary_button("Attiva", None, icon="KEY")
 
     def decline(_: Any = None) -> None:
         ctx.close_dialog()
-        ctx.toast("Va bene: per recuperare i backup serviranno la passphrase o il codice di recupero.")
+        ctx.toast("Va bene: per recuperare i backup serviranno la password o il codice di recupero.")
         _later(then)
 
     def accept(_: Any = None) -> None:
         value = secret.value or ""
         if not value:
-            error.value, error.visible = "Scrivi la passphrase dei backup.", True
+            error.value, error.visible = "Scrivi la password principale.", True
             ctx.update(error)
             return
         turn_on.disabled = True
@@ -205,7 +205,7 @@ def use_google(ctx: AppContext, then: Callback = None) -> None:
 
     def done(status: Any) -> None:
         ctx.toast(f"Copie: {status.mode_label} ({status.email}). Su Drive vanno solo istantanee già cifrate.")
-        offer_google_recovery(ctx, then=lambda: first_sync(ctx, then))
+        first_sync(ctx, then)
 
     def failed(problem: Exception) -> None:
         ctx.toast(cm.error_text(problem), error=True)
@@ -214,13 +214,14 @@ def use_google(ctx: AppContext, then: Callback = None) -> None:
     ctx.run_blocking(lambda: api.choose_mode(folder, "google"), done, failed)
 
 
-def after_encryption_setup(ctx: AppContext, passphrase: str, then: Callback = None) -> None:
-    """Called once Mnemosyne's encryption is on: offer the Google recovery and send the first copies."""
+def after_encryption_setup(ctx: AppContext, then: Callback = None) -> None:
+    """Called once the main password is saved: send the first copies. The Google recovery is no longer offered
+    (KAN-29): whoever got into the Google account could open the backups."""
     status, _ = services.account_status(ctx.folder)
     if status is None or status.mode == "local":
         _later(then)
         return
-    offer_google_recovery(ctx, passphrase, then=lambda: first_sync(ctx, then))
+    first_sync(ctx, then)
 
 
 # * — the page —
@@ -307,12 +308,12 @@ class CloudScreen:
             items.append(ft.Row([W.primary_button("Attiva la cifratura", lambda _: setup_encryption(self.ctx, self.ctx.refresh), icon="LOCK_OUTLINE")], alignment=ft.MainAxisAlignment.END))
         elif sync is not None:
             items.append(ft.Row([W.primary_button("Sincronizza ora", self.sync, icon="SYNC")], alignment=ft.MainAxisAlignment.END))
-        if sync is not None and status.mode == "google" and encryption and hasattr(sync, "enable_google_recovery"):
+        if sync is not None and status.mode == "google" and encryption and getattr(status, "google_recovery", False):  # only to turn it off (KAN-29)
             items.append(W.divider())
             items.append(
                 ft.Row(
                     [
-                        ft.Column([W.body("Recupero con l'account Google"), W.caption("su un dispositivo nuovo basta entrare con Google, senza passphrase")], spacing=2, expand=True),
+                        ft.Column([W.body("Recupero con l'account Google"), W.caption("su un dispositivo nuovo basta entrare con Google, senza password")], spacing=2, expand=True),
                         ft.Switch(value=bool(status.google_recovery), active_color=T.ACCENT, on_change=self.recovery_switched),
                     ],
                     vertical_alignment=ft.CrossAxisAlignment.CENTER,
@@ -417,14 +418,14 @@ class CloudScreen:
         def turn_off() -> None:
             self.ctx.run_blocking(
                 lambda: sync.disable_google_recovery(folder),
-                lambda _: (self.ctx.toast("Recupero con Google tolto: ora servono la passphrase o il codice di recupero."), self.ctx.refresh()),
+                lambda _: (self.ctx.toast("Recupero con Google tolto: ora servono la password o il codice di recupero."), self.ctx.refresh()),
                 lambda problem: (self.ctx.toast(cm.error_text(problem), error=True), self.ctx.refresh()),
             )
 
         switch.value = True
         self.ctx.confirm(
             "Togliere il recupero con Google?",
-            "Per riavere i backup su un dispositivo nuovo serviranno la passphrase o il codice di recupero.",
+            "Per riavere i backup su un dispositivo nuovo serviranno la password o il codice di recupero.",
             "Togli",
             turn_off,
             danger=False,
@@ -508,7 +509,7 @@ class RecoverDialog:
         self.button = W.danger_button("Riporta i dati", self.confirm)
 
     def secret_label(self) -> str:
-        return "Codice di recupero" if self.method == "code" else "Passphrase dei backup"
+        return "Codice di recupero" if self.method == "code" else "Password principale"
 
     def open(self) -> None:
         dialog = ft.AlertDialog(
