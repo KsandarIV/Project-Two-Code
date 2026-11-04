@@ -72,6 +72,12 @@ Con la password principale anche il database sul dispositivo è cifrato: chi con
 - **Istantanee e ripristino** lavorano sulla copia in memoria: l'istantanea contiene il database in chiaro dentro il suo involucro cifrato; il ripristino riscrive `zibaldone.zbdb` cifrato.
 - **Limiti noti**: gli allegati (`media/`) sul dispositivo restano in chiaro; il database aperto sta in chiaro nella memoria dell'app; il file in chiaro cancellato può restare sul disco finché non viene sovrascritto.
 
+### Impronta, volto e cambio della password (KAN-108)
+- **All'avvio**, quando il database è cifrato, l'app chiede impronta, volto o blocco schermo (`flet-local-auth` 1.0.5, nelle build per Android e Windows) e solo dopo legge la chiave dal portachiavi. La risposta del sistema è solo sì o no: a proteggere i dati resta la chiave nel portachiavi. Se si annulla, la pagina offre «Usa impronta o volto» per riprovare, o la password principale. Dove non c'è blocco schermo, o l'estensione manca (`flet run`, web, Linux), si apre con il solo portachiavi come prima.
+- **Dispositivo principale**: dopo la pagina della password, o dopo uno sblocco con la password, l'app tiene nel portachiavi anche la chiave privata dei backup. Da Impostazioni · Mnemosyne, «Cambia password» chiede impronta o volto e poi propone una nuova password, senza la vecchia. Senza chiave nel portachiavi chiede la password attuale o il codice di recupero.
+- **Cambio della password**: si conferma ricopiando gli ultimi 4 caratteri; c'è «Salva foglio di recupero». Il codice di recupero non cambia. I file di backup già nella cartella tengono la serratura di prima: si aprono con la vecchia password o con il codice.
+- **Limiti noti**: l'app non si richiude da sola quando torna in primo piano; la chiave privata nel portachiavi vale quanto la chiave del database già lì.
+
 ## Verifica
 `zbone backup verify` controlla l'ultima istantanea (`--all` tutte, oppure un ID): zip integro, impronta SHA-256, `PRAGMA integrity_check` di SQLite e versione dello schema.
 

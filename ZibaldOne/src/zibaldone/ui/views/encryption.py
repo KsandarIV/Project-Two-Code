@@ -326,6 +326,7 @@ def finish(ctx: AppContext, store: Callable[[], Any], private_key: Any, on_done:
         if failed:
             message += f" {len(failed)} sono rimaste in chiaro perché rovinate."
         ctx.toast(message, error=bool(failed))
+        ctx.keep_backup_key(private_key)  # KAN-108: this device can give a new password without the old one
         from zibaldone.ui.views.cloud import after_encryption_setup
 
         after_encryption_setup(ctx, on_done)
@@ -340,25 +341,27 @@ def finish(ctx: AppContext, store: Callable[[], Any], private_key: Any, on_done:
 # * — KAN-107: opening the encrypted database —
 
 UNLOCK_INTRO = (
-    "Il tuo diario è cifrato su questo dispositivo. Di solito si apre da solo con la chiave custodita dal sistema; "
-    "qui non la trovo (app reinstallata, dati del sistema cancellati, o avvio senza portachiavi). "
-    "Aprilo con la password principale o con il codice di recupero: poi la rimetto al suo posto."
+    "Il tuo diario è cifrato su questo dispositivo. Di solito si apre con l'impronta, il volto o il blocco schermo, "
+    "e la chiave la custodisce il sistema. Se non va, aprilo con la password principale o con il codice di recupero."
 )
 
 
 def unlock_step(ctx: AppContext, route: Route) -> ft.Control:
-    """Ask the keystore first; without the key, the main password or the recovery code open the database."""
+    """Fingerprint, face or screen lock (KAN-108), then the key in the keystore (KAN-107); without them, the main
+    password or the recovery code open the database and put both keys back in the keystore."""
     from zibaldone.storage import database_key
-    from zibaldone.ui import keystore
+    from zibaldone.ui import biometrics, keystore
     from zibaldone.ui.views.onboarding import brand
 
     folder = ctx.folder
-    secret = W.text_input("", label="Password principale", password=True, can_reveal_password=True, autofocus=True)
+    secret = W.text_input("", label="Password principale", password=True, can_reveal_password=True)
     with_code = ft.Switch(label="Uso il codice di recupero", value=False, active_color=T.ACCENT)
     error = W.error_text()
     open_button = W.primary_button("Apri", None, icon="LOCK_OPEN")
-    form = ft.Column([W.panel(ft.Column([W.wide(secret), with_code, error], spacing=10)), ft.Row([open_button], alignment=ft.MainAxisAlignment.END)], spacing=14)
-    waiting = W.body("Cerco la chiave nel portachiavi del sistema…", dim=True)
+    again = W.secondary_button("Usa impronta o volto", None, icon="FINGERPRINT")
+    again.visible = False
+    form = ft.Column([W.panel(ft.Column([W.wide(secret), with_code, error], spacing=10)), ft.Row([again, open_button], alignment=ft.MainAxisAlignment.END, wrap=True, spacing=8)], spacing=14)
+    waiting = W.body("Un momento: chiedo al sistema di riconoscerti…", dim=True)
     form.visible = ctx.page is None
 
     def switched(_: Any = None) -> None:
@@ -367,8 +370,10 @@ def unlock_step(ctx: AppContext, route: Route) -> ft.Control:
         secret.capitalization = ft.TextCapitalization.CHARACTERS if with_code.value else ft.TextCapitalization.NONE
         ctx.update(secret)
 
-    def opened(key: bytes) -> None:
+    def opened(found: Any) -> None:
+        key, private_key = found
         ctx.keep_database_key(key)
+        ctx.keep_backup_key(private_key)
         ctx.advance()
 
     def failed(problem: Exception) -> None:
@@ -385,22 +390,175 @@ def unlock_step(ctx: AppContext, route: Route) -> ft.Control:
         open_button.disabled = True
         ctx.update(open_button)
         code = bool(with_code.value)
-        ctx.run_blocking(lambda: database_key.unlock_with_secret(folder, password=None if code else value, recovery_code=value if code else None), opened, failed)
+        ctx.run_blocking(lambda: database_key.unlock_with_secret_keys(folder, password=None if code else value, recovery_code=value if code else None), opened, failed)
+
+    def show_form(biometrics_refused: bool) -> None:
+        waiting.visible, form.visible, again.visible = False, True, biometrics_refused
+        ctx.update(waiting, form)
+
+    async def from_keystore() -> None:
+        answer = await biometrics.confirm(ctx)
+        if answer is False:
+            show_form(True)
+            return
+        if database_key.unlock_with_stored_key(folder, await keystore.read(ctx)):
+            ctx.advance()
+            return
+        show_form(False)
+
+    def retry(_: Any = None) -> None:
+        if ctx.page is not None:
+            ctx.page.run_task(from_keystore)
 
     with_code.on_change = switched
     open_button.on_click = unlock
     secret.on_submit = unlock
-
-    async def from_keystore() -> None:
-        text = await keystore.read(ctx)
-        if database_key.unlock_with_stored_key(folder, text):
-            ctx.advance()
-            return
-        waiting.visible, form.visible = False, True
-        ctx.update(waiting, form)
-
+    again.on_click = retry
     if ctx.page is not None:
         ctx.page.run_task(from_keystore)
     else:
         waiting.visible = False
     return W.screen([brand(), W.title_with_nickname("Apri il tuo diario", "Mnemosyne", size=22), W.body(UNLOCK_INTRO, dim=True), waiting, form], ctx.wide)
+
+
+# * — KAN-108: a new main password from this device —
+
+
+def change_password(ctx: AppContext, on_done: Optional[Callable[[], Any]] = None) -> None:
+    """Fingerprint or face, then the backup key kept in the keystore; else the current password or the code."""
+    from zibaldone.storage import database_key
+    from zibaldone.ui import biometrics, keystore
+
+    if ctx.page is None:
+        ask_current_secret(ctx, lambda private_key: choose_new_password(ctx, private_key, on_done))
+        return
+
+    async def start() -> None:
+        answer = await biometrics.confirm(ctx, "Cambia la password principale")
+        private_key = None
+        if answer is not False:
+            private_key = database_key.private_key_from_stored(await keystore.read(ctx, keystore.BACKUP_KEY))
+        if private_key is None:
+            ask_current_secret(ctx, lambda found: choose_new_password(ctx, found, on_done))
+        else:
+            choose_new_password(ctx, private_key, on_done)
+        ctx.update()
+
+    ctx.page.run_task(start)
+
+
+def ask_current_secret(ctx: AppContext, then: Callable[[Any], Any]) -> None:
+    keys = services.keys_api()
+    folder = ctx.folder
+    secret = W.text_input("", label="Password principale attuale", password=True, can_reveal_password=True, autofocus=True)
+    with_code = ft.Switch(label="Uso il codice di recupero", value=False, active_color=T.ACCENT)
+    error = W.error_text()
+    go_on = W.primary_button("Avanti", None, icon="ARROW_FORWARD")
+
+    def switched(_: Any = None) -> None:
+        secret.label = "Codice di recupero" if with_code.value else "Password principale attuale"
+        secret.password = not with_code.value
+        ctx.update(secret)
+
+    def failed(problem: Exception) -> None:
+        go_on.disabled = False
+        error.value, error.visible = cm.error_text(problem), True
+        ctx.update(go_on, error)
+
+    def opened(private_key: Any) -> None:
+        ctx.close_dialog()
+        then(private_key)
+
+    def proceed(_: Any = None) -> None:
+        value = (secret.value or "").strip()
+        if not value:
+            error.value, error.visible = "Scrivi la password attuale o il codice di recupero.", True
+            ctx.update(error)
+            return
+        go_on.disabled = True
+        ctx.update(go_on)
+        work = (lambda: keys.unlock_with_recovery_code(folder, value)) if with_code.value else (lambda: keys.unlock_with_passphrase(folder, value))
+        ctx.run_blocking(work, opened, failed)
+
+    with_code.on_change = switched
+    go_on.on_click = proceed
+    secret.on_submit = proceed
+    ctx.show_dialog(
+        ft.AlertDialog(
+            modal=True,
+            scrollable=True,
+            title="Cambia la password principale",
+            content=ft.Container(ft.Column([W.body("Prima conferma che sei tu.", size=14), W.wide(secret), with_code, error], spacing=12, tight=True), width=460),
+            actions=[W.text_button("Annulla", ctx.close_dialog, color=T.TEXT), go_on],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+    )
+
+
+def choose_new_password(ctx: AppContext, private_key: Any, on_done: Optional[Callable[[], Any]] = None) -> None:
+    """The generator, then the new password shown once and its last 4 characters copied back."""
+    keys = services.keys_api()
+    folder = ctx.folder
+    picker = PasswordPicker(ctx)
+    answer = W.text_input("", label="Per conferma, gli ultimi 4 caratteri", width=220)
+    error = W.error_text()
+    sheet_note = W.caption("Foglio salvato. Stampalo o copialo su carta, poi cancella il file.", color=T.SUCCESS)
+    sheet_note.visible = False
+    confirm = W.primary_button("Usa questa password", None, icon="CHECK")
+
+    def sheet_saved(_where: str) -> None:
+        sheet_note.visible = True
+        ctx.update(sheet_note)
+
+    def save_sheet(_: Any = None) -> None:
+        ctx.save_file(cm.RECOVERY_SHEET_NAME, cm.recovery_sheet(picker.value, "", ctx.now()).encode("utf-8"), sheet_saved)
+
+    def done(_: Any) -> None:
+        ctx.close_dialog()
+        ctx.keep_backup_key(private_key)
+        ctx.toast("Password principale cambiata. Il codice di recupero resta lo stesso; i file di backup già fatti si aprono anche con la password di prima.")
+        if on_done is not None:
+            on_done()
+
+    def failed(problem: Exception) -> None:
+        confirm.disabled = False
+        error.value, error.visible = cm.error_text(problem), True
+        ctx.update(confirm, error)
+
+    def check(_: Any = None) -> None:
+        if (answer.value or "").strip() != picker.value[-4:]:
+            error.value, error.visible = "Non corrispondono: ricopia gli ultimi 4 caratteri della password qui sopra.", True
+            ctx.update(error)
+            return
+        confirm.disabled = True
+        ctx.update(confirm)
+        chosen = picker.value
+        ctx.run_blocking(lambda: keys.set_password(folder, private_key, chosen), done, failed)
+
+    confirm.on_click = check
+    answer.on_submit = check
+    ctx.show_dialog(
+        ft.AlertDialog(
+            modal=True,
+            scrollable=True,
+            title="La nuova password",
+            content=ft.Container(
+                ft.Column(
+                    [
+                        picker.build(),
+                        ft.Row([W.secondary_button("Salva foglio di recupero", save_sheet, icon="DOWNLOAD")], alignment=ft.MainAxisAlignment.CENTER),
+                        sheet_note,
+                        W.caption("Scrivila su carta prima di confermare: la vecchia password non aprirà più i backup nuovi."),
+                        answer,
+                        error,
+                    ],
+                    spacing=12,
+                    tight=True,
+                    horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+                ),
+                width=480,
+            ),
+            actions=[W.text_button("Annulla", ctx.close_dialog, color=T.TEXT), confirm],
+            actions_alignment=ft.MainAxisAlignment.END,
+        )
+    )

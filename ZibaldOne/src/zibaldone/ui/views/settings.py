@@ -410,12 +410,20 @@ class MnemosyneScreen:
                 key = keys.format_key_id(keys.key_id(self.ctx.folder))
             except Exception:
                 key = ""
-            text = "Cifratura attiva: le istantanee si aprono solo con la tua password o con il codice di recupero."
+            text = "Cifratura attiva: il diario e i backup si aprono solo con la tua password principale o con il codice di recupero."
+            from zibaldone.ui.views.encryption import change_password
+
             return W.panel(
-                ft.Row(
-                    [ft.Icon(ft.Icons.LOCK_OUTLINE, color=T.SUCCESS, size=22), ft.Column([W.body(text), W.caption(f"chiave {key}" if key else "")], spacing=2, expand=True)],
-                    spacing=12,
-                    vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                ft.Column(
+                    [
+                        ft.Row(
+                            [ft.Icon(ft.Icons.LOCK_OUTLINE, color=T.SUCCESS, size=22), ft.Column([W.body(text), W.caption(f"chiave {key}" if key else "")], spacing=2, expand=True)],
+                            spacing=12,
+                            vertical_alignment=ft.CrossAxisAlignment.CENTER,
+                        ),
+                        ft.Row([W.secondary_button("Cambia password", lambda _: change_password(self.ctx), icon="PASSWORD")], alignment=ft.MainAxisAlignment.END),
+                    ],
+                    spacing=10,
                 ),
                 padding=14,
             )

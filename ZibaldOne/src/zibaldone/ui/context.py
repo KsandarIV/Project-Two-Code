@@ -253,13 +253,25 @@ class AppContext:
 
     def keep_database_key(self, key: bytes, on_done: Optional[Callable[[bool], Any]] = None) -> None:
         """Put the key of the encrypted database in the system keystore (KAN-107); `on_done(kept)`."""
+        from zibaldone.ui import keystore
+
+        self._keep(keystore.DATABASE_KEY, key, on_done)
+
+    def keep_backup_key(self, private_key: Any) -> None:
+        """Put the backup private key in the keystore (KAN-108): this device can then give a new main password."""
+        from zibaldone.core.crypto import private_key_bytes
+        from zibaldone.ui import keystore
+
+        self._keep(keystore.BACKUP_KEY, private_key_bytes(private_key))
+
+    def _keep(self, what: str, raw: bytes, on_done: Optional[Callable[[bool], Any]] = None) -> None:
         if self.page is None:
             return
         from zibaldone.storage.database_key import stored_form
         from zibaldone.ui import keystore
 
         async def task() -> None:
-            kept = await keystore.write(self, stored_form(key))
+            kept = await keystore.write(self, stored_form(raw), what)
             if on_done is not None:
                 on_done(kept)
 

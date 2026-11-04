@@ -188,3 +188,81 @@ def test_without_the_key_the_app_asks_the_password(consented: Path) -> None:
     field.value = made
     click(button(shell.body.content, "Apri"))
     assert sealed_db.is_unlocked(consented) and shell.current.screen == "cartella"
+
+
+# * — KAN-108: fingerprint or face, and a new password from this device —
+
+
+def sealed_with_password(where: Path):
+    made = "w" * 20
+    new = keys.create_keys(made, generated=True)
+    keys.save_new_keys(where, new)
+    key = database_key.seal_if_ready(where)
+    sealed_db.forget()
+    return made, new.recovery_code, key
+
+
+def test_fingerprint_then_the_keystore_open_the_diary(consented: Path, monkeypatch) -> None:
+    from zibaldone.ui import biometrics, keystore
+
+    _, _, key = sealed_with_password(consented)
+    asked = []
+
+    async def confirm(ctx, reason=biometrics.REASON):
+        asked.append(reason)
+        return True
+
+    async def read(ctx, what=keystore.DATABASE_KEY):
+        return database_key.stored_form(key) if what == keystore.DATABASE_KEY else None
+
+    monkeypatch.setattr(biometrics, "confirm", confirm)
+    monkeypatch.setattr(keystore, "read", read)
+    shell = Shell(FakePage(), consented)
+    shell.start("/")
+    assert asked == ["Apri il tuo diario"] and sealed_db.is_unlocked(consented) and shell.current.screen == "cartella"
+
+
+def test_a_refused_fingerprint_leaves_the_password_and_a_second_try(consented: Path, monkeypatch) -> None:
+    from zibaldone.ui import biometrics, keystore
+
+    made, _, key = sealed_with_password(consented)
+    answers = [False, True]
+
+    async def confirm(ctx, reason=biometrics.REASON):
+        return answers.pop(0)
+
+    async def read(ctx, what=keystore.DATABASE_KEY):
+        return database_key.stored_form(key)
+
+    monkeypatch.setattr(biometrics, "confirm", confirm)
+    monkeypatch.setattr(keystore, "read", read)
+    shell = Shell(FakePage(), consented)
+    shell.start("/")
+    assert shell.current.screen == "sblocca" and not sealed_db.is_unlocked(consented)  # the keystore stays shut
+    click(button(shell.body.content, "Usa impronta o volto"))
+    assert sealed_db.is_unlocked(consented) and shell.current.screen == "cartella"
+
+
+def test_a_new_password_from_the_settings_keeps_the_recovery_code(consented: Path) -> None:
+    from zibaldone.ui.views import encryption
+
+    made, code, _ = sealed_with_password(consented)
+    page = FakePage()
+    ctx = AppContext(consented, page)
+    encryption.change_password(ctx)
+    ask = page.dialogs[-1]
+    next(item for item in walk(ask) if isinstance(item, ft.TextField)).value = made
+    click(button(ask, "Avanti"))
+    new_dialog = page.dialogs[-1]
+    new_password = shown_password(new_dialog)
+    field = next(item for item in walk(new_dialog) if isinstance(item, ft.TextField) and item.label == "Per conferma, gli ultimi 4 caratteri")
+    field.value = "nope"
+    click(button(new_dialog, "Usa questa password"))
+    keys.unlock_with_passphrase(consented, made)  # unchanged until the confirmation
+    field.value = new_password[-4:]
+    click(button(new_dialog, "Usa questa password"))
+    keys.unlock_with_passphrase(consented, new_password)
+    with pytest.raises(keys.WrongSecretError):
+        keys.unlock_with_passphrase(consented, made)
+    keys.unlock_with_recovery_code(consented, code)
+    assert "Password principale cambiata" in ctx.toasts[-1]
