@@ -2,14 +2,22 @@
   <defs>
     <mask id="mask-hegy">
       <rect width="100" height="100" fill="white" />
-      <!-- Sagoma nottola -->
-      <path d="M30 70 L30 45 C30 30, 70 30, 70 45 L70 70 Z" fill="black" />
-      <polygon points="30,45 30,25 45,35" fill="black" />
-      <polygon points="70,45 70,25 55,35" fill="black" />
-      <!-- Dettagli visibili (occhi grandi e becco) -->
-      <circle cx="42" cy="48" r="6" fill="white" />
-      <circle cx="58" cy="48" r="6" fill="white" />
-      <polygon points="48,55 52,55 50,60" fill="white" />
+      <!-- Sagoma nottola intera, posata su un ramo: ciuffi, ali chiuse, zampe, coda -->
+      <g transform="translate(0 -4)">
+        <path d="M 34 18 L 42 28 Q 50 25 58 28 L 66 18 L 68 34 C 76 46 76 66 64 76 L 36 76 C 24 66 24 46 32 34 Z" fill="black" />
+        <rect x="42" y="74" width="4" height="6" fill="black" />
+        <rect x="54" y="74" width="4" height="6" fill="black" />
+        <rect x="18" y="79" width="64" height="5" rx="2.5" fill="black" />
+        <polygon points="45,84 55,84 50,92" fill="black" />
+        <!-- Dettagli visibili: occhi grandi, becco, ali -->
+        <circle cx="42" cy="42" r="6" fill="white" />
+        <circle cx="58" cy="42" r="6" fill="white" />
+        <circle cx="42" cy="43" r="2.4" fill="black" />
+        <circle cx="58" cy="43" r="2.4" fill="black" />
+        <polygon points="47.5,50 52.5,50 50,55.5" fill="white" />
+        <path d="M 33 52 Q 35 64 43 71" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none" />
+        <path d="M 67 52 Q 65 64 57 71" stroke="white" stroke-width="2.5" stroke-linecap="round" fill="none" />
+      </g>
     </mask>
   </defs>
   <rect width="100" height="100" rx="20" fill="#8A2BE2" mask="url(#mask-hegy)" />

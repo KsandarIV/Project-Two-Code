@@ -2,12 +2,13 @@
   <defs>
     <mask id="mask-hobbsy">
       <rect width="100" height="100" fill="white" />
-      <!-- Sagoma lupo (muso frontale, orecchie dritte, collo di pelo) -->
-      <path d="M 28 14 L 43 30 Q 50 28 57 30 L 72 14 L 74 38 L 88 52 L 76 56 L 84 72 L 66 68 L 50 90 L 34 68 L 16 72 L 24 56 L 12 52 L 26 38 Z" fill="black" />
-      <!-- Dettagli visibili: occhi e naso -->
-      <circle cx="40" cy="46" r="3.2" fill="white" />
-      <circle cx="60" cy="46" r="3.2" fill="white" />
-      <path d="M 44 62 L 56 62 L 50 70 Z" fill="white" />
+      <!-- Sagoma lupo intero, posa da gioco: testa bassa, zampe davanti distese, sedere in su, coda alta -->
+      <g transform="translate(0 5)">
+        <path d="M 10 58 L 22 52 L 28 48 L 30 34 L 36 44 L 40 34 L 44 46 C 56 44 64 36 72 32 C 76 24 80 18 86 12 Q 92 12 90 20 C 88 28 84 34 80 38 C 86 46 86 56 82 64 L 86 78 L 74 78 L 74 68 C 70 62 64 60 58 62 L 46 68 L 34 66 L 26 64 L 14 62 Z" fill="black" />
+        <path d="M 48 64 L 50 78 L 16 78 Q 11 78 12 74 Q 13 71 18 71 L 40 69 Z" fill="black" />
+        <!-- Dettagli visibili: occhio -->
+        <circle cx="25" cy="55" r="2.2" fill="white" />
+      </g>
     </mask>
   </defs>
   <rect width="100" height="100" rx="20" fill="#00E5FF" mask="url(#mask-hobbsy)" />
