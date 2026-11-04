@@ -41,8 +41,14 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
         ctx.refresh()
 
     ctx.back_hook = carousel.hook_back(ctx, ALL, page, lambda: choose(ALL))
-    bar = [carousel.bar_item(ft.Icon(W.icon_of("COLLECTIONS_BOOKMARK_OUTLINED"), size=24, color=T.ACCENT), T.ACCENT, "Tutte", page == ALL, lambda: choose(ALL))]
-    bar += [carousel.bar_item(ft.Icon(W.icon_of(group.icon), size=24, color=group.color), group.color, group.name, group.slug == page, lambda target=group.slug: choose(target)) for group in groups]
+    by_slug = {group.slug: group for group in groups}
+    bar = []  # same order as the pages: «Tutte» in the middle, as in Modelli (KAN-22)
+    for key in pages:
+        if key == ALL:
+            bar.append(carousel.bar_item(ft.Icon(W.icon_of("COLLECTIONS_BOOKMARK_OUTLINED"), size=24, color=T.ACCENT), T.ACCENT, "Tutte", page == ALL, lambda: choose(ALL)))
+        else:
+            group = by_slug[key]
+            bar.append(carousel.bar_item(ft.Icon(W.icon_of(group.icon), size=24, color=group.color), group.color, group.name, key == page, lambda target=key: choose(target)))
     shown = next((group for group in groups if group.slug == page), None)
     if shown is not None:
         controls[0] = W.screen_header(shown.name, "Museion", shown.description or shown.count_label, actions=[W.primary_button("Aggiungi", lambda _: ctx.go(f"/scrivi/{shown.slug}"), icon="ADD"), import_button])
