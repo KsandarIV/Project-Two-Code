@@ -24,7 +24,7 @@ from zibaldone.core.brand import APP_NAME, mascot_for
 from zibaldone.core.privacy import NOTICE_VERSION
 from zibaldone.storage.database import StoreError
 from zibaldone.storage.settings import SettingsError, has_consent
-from zibaldone.ui import services
+from zibaldone.ui import apk_update, services
 from zibaldone.ui import theme as T
 from zibaldone.ui import widgets as W
 from zibaldone.ui.context import AppContext
@@ -419,8 +419,7 @@ class Shell:
             logger.debug("update check failed", exc_info=True)
             return
         if release is not None:
-            url = release.apk_url if services.running_on_android() and release.apk_url else release.page_url
-            self.ctx.toast(f"È uscita ZibaldOne {release.version}.", action="Scarica", on_action=lambda: self.ctx.open_url(url))
+            self.ctx.toast(f"È uscita ZibaldOne {release.version}.", action="Scarica", on_action=lambda: apk_update.fetch(self.ctx, release))
             self.ctx.update()
 
     # — the Daimon while the app is open —

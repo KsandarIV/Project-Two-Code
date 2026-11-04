@@ -62,8 +62,10 @@ path = "src"
 module = "main"
 
 [tool.flet.android]
-# KAN-107: the key of the encrypted database stays in the system keystore; KAN-108: fingerprint or face open it
-dependencies = ["flet==1.0.5", "flet-permission-handler==1.0.4", "flet-secure-storage==1.0.5", "flet-local-auth==1.0.5"]
+# KAN-107: the key of the encrypted database stays in the system keystore; KAN-108: fingerprint or face open it;
+# KAN-12: pyjnius reaches Android's download manager and installer for the new APK (not pinned, as in the Flet docs:
+# the build takes the one Flet ships for its Python)
+dependencies = ["flet==1.0.5", "flet-permission-handler==1.0.4", "flet-secure-storage==1.0.5", "flet-local-auth==1.0.5", "pyjnius"]
 
 [tool.flet.android.permission]
 "android.permission.INTERNET" = true
@@ -73,6 +75,8 @@ dependencies = ["flet==1.0.5", "flet-permission-handler==1.0.4", "flet-secure-st
 "android.permission.WRITE_EXTERNAL_STORAGE" = true
 # KAN-108: fingerprint or face before the diary opens
 "android.permission.USE_BIOMETRIC" = true
+# KAN-12: open the installer on the APK the app downloaded (Android still asks the user to confirm)
+"android.permission.REQUEST_INSTALL_PACKAGES" = true
 
 [tool.flet.windows]
 dependencies = ["flet==1.0.5", "flet-secure-storage==1.0.5", "flet-local-auth==1.0.5"]
