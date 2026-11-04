@@ -318,7 +318,7 @@ def set_backup_folder(folder: Path, path: str, move_old: bool = False) -> List[P
     if path:
         Path(path).mkdir(parents=True, exist_ok=True)
         if move_old and old and Path(old) != Path(path) and Path(old).is_dir():
-            moved = bf.move_scheme(Path(old), Path(path))
+            moved = bf.move_scheme(Path(old), Path(path), folder)
     history = [item for item in ui_settings(folder).get("backup_folder_history", []) if isinstance(item, str)]
     for used in (old, path):
         if used and used not in history:
@@ -337,7 +337,7 @@ def set_backup_mode(folder: Path, mode: str) -> List[Path]:
         settings.auto = mode != bf.MODE_USER
         api.save_backup_settings(folder, settings)
     target = backup_files_folder(folder)
-    moved = bf.take_over(Path(target)) if mode == bf.MODE_APP and target and Path(target).is_dir() else []
+    moved = bf.take_over(Path(target), folder) if mode == bf.MODE_APP and target and Path(target).is_dir() else []
     save_ui_settings(folder, backup_mode=mode)
     return moved
 
@@ -365,9 +365,9 @@ def keep_imported_copy(folder: Path, source: Path) -> None:
     if not target or backup_mode(folder) == bf.MODE_USER:
         return
     try:
-        bf.keep_imported_copy(Path(target), source)
-    except OSError:
-        pass
+        bf.keep_imported_copy(Path(target), source, folder)
+    except Exception:
+        pass  # the import itself worked: a missing copy in «importati» must not undo it
 
 
 def export_to_files_folder(folder: Path) -> str:
@@ -378,7 +378,7 @@ def export_to_files_folder(folder: Path) -> str:
     try:
         bf.export_snapshots(folder, Path(target), backup_mode(folder))
         if backup_mode(folder) != bf.MODE_USER:
-            bf.rotate(Path(target), keep_history(folder))
+            bf.rotate(Path(target), keep_history(folder), folder)
     except Exception as error:
         return f"file di backup non salvato in {target}: {error}"
     return ""

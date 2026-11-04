@@ -37,6 +37,19 @@ Un solo file da portare via e riportare (`storage/bundle.py`): è uno zip senza 
 - Importare non sovrascrive: aggiunge l'istantanea e gli allegati accanto agli altri e installa `keys.json` solo se il dispositivo non ne ha; i dati cambiano solo con il ripristino, dopo i soliti controlli.
 - **Al primo avvio**: su un'installazione senza dati né backup propri, dopo il consenso, l'app cerca un `.zbbackup` in Download, Documenti e Scrivania e propone di riportarlo (passphrase o codice di recupero se è cifrato). Non blocca mai l'avvio.
 
+### Cifrato per intero (busta opaca, KAN-29)
+Quando le chiavi hanno le «serrature» per i file (`opaque_slots` in `keys.json`), lo zip qui sopra viene chiuso in una busta che non mostra nulla: niente firma, niente zip, niente data, versione o elenco degli allegati. In chiaro resta solo la dimensione, arrotondata per eccesso (Padmé, al massimo +12%). Il nome è casuale (`3f9a1c0b7d2e4a56.zbbackup`).
+
+```
+chiave pubblica usa e getta (32) | serratura passphrase (76) | serratura codice di recupero (76) | nonce (12) | AES-256-GCM(lunghezza + zip + riempimento)
+```
+
+- Le copie automatiche non chiedono nulla: la chiave pubblica chiude la busta, le due serrature (la chiave privata chiusa da passphrase e da codice di recupero) sono preparate una volta e copiate in ogni file. Si apre su qualsiasi dispositivo con la passphrase o il codice di recupero.
+- Le serrature si creano con le chiavi; cambiando passphrase si rinnova la sua. I file già scritti tengono la serratura che avevano. Chiavi fatte prima di questa versione non hanno serrature: l'app continua a scrivere zip finché non le rifà.
+- **Cartella dei backup**: con la busta opaca la cartella è piatta, senza sottocartelle. Che cosa sia ogni file (istantanea, tipo, data) lo sa un indice nella cartella privata dell'app (`backup_folder_index.json`): lo usano la rotazione (7 di oggi, 4 della settimana, 3 del mese, 3 dell'anno) e la lista «I tuoi backup» in Mnemosyne, da cui si riporta o si elimina un file.
+- I file dello schema precedente (sottocartelle `backup/…`, nomi con la data) ricevono una copia opaca; i vecchi restano finché l'utente non sceglie «Elimina i vecchi file».
+- Un file opaco si riconosce solo aprendolo: per aggiungerlo alle istantanee serve già la passphrase o il codice di recupero.
+
 ## Verifica
 `zbone backup verify` controlla l'ultima istantanea (`--all` tutte, oppure un ID): zip integro, impronta SHA-256, `PRAGMA integrity_check` di SQLite e versione dello schema.
 

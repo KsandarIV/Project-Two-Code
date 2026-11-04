@@ -261,3 +261,68 @@ def test_broken_or_tampered_keys_file(folder) -> None:
     path.write_text("{ rotto", encoding="utf-8")
     with pytest.raises(KeysError, match="non riesco a leggere"):
         keys.unlock_with_passphrase(folder, PASSPHRASE)
+
+
+# * — opaque envelope (KAN-29) —
+
+
+def test_padme_rounds_up_by_at_most_twelve_percent() -> None:
+    for length in (4, 100, 1000, 12345, 10**6, 10**8):
+        padded = crypto.padme(length)
+        assert length <= padded <= length * 1.12
+    assert crypto.padme(12345) == crypto.padme(12300)  # nearby sizes look the same
+
+
+def test_opaque_round_trip_and_nothing_to_read_without_the_key(folder) -> None:
+    new_keys = keys.setup_keys(folder, PASSPHRASE)
+    slots = keys.opaque_slots(folder)
+    assert slots is not None and len(slots) == crypto.OPAQUE_SLOTS_SIZE
+    payload = b"bundle.json zibaldone 2026-11-04" * 50
+    sealed = crypto.seal_opaque(payload, keys.load_public_key(folder), slots)
+    assert payload[:20] not in sealed and crypto.opaque_slots_of(sealed) == slots
+    assert crypto.open_opaque(sealed, new_keys.private_key) == payload
+    assert crypto.seal_opaque(payload, keys.load_public_key(folder), slots)[:32] != sealed[:32]  # a fresh ephemeral key each time
+    for secret in ({"passphrase": PASSPHRASE}, {"recovery_code": new_keys.recovery_code}):
+        assert crypto.private_key_bytes(keys.unlock_opaque(slots, **secret)) == crypto.private_key_bytes(new_keys.private_key)
+
+
+def test_the_top_bit_of_the_ephemeral_key_varies_and_is_ignored(folder) -> None:
+    new_keys = keys.setup_keys(folder, PASSPHRASE)
+    slots, public = keys.opaque_slots(folder), keys.load_public_key(folder)
+    files = [crypto.seal_opaque(b"x", public, slots) for _ in range(40)]
+    assert {data[31] >> 7 for data in files} == {0, 1}
+    assert all(crypto.open_opaque(data, new_keys.private_key) == b"x" for data in files)
+
+
+def test_an_opaque_file_refuses_another_key_any_flipped_byte_and_a_wrong_secret(folder, tmp_path) -> None:
+    keys.setup_keys(folder, PASSPHRASE)
+    other = keys.setup_keys(tmp_path / "altro", PASSPHRASE)
+    slots = keys.opaque_slots(folder)
+    sealed = crypto.seal_opaque(b"segreto" * 20, keys.load_public_key(folder), slots)
+    with pytest.raises(DecryptionError):
+        crypto.open_opaque(sealed, other.private_key)
+    mine = keys.unlock_opaque(slots, passphrase=PASSPHRASE)
+    for index in (0, 40, crypto.OPAQUE_PREFIX_SIZE + 3, len(sealed) - 1):
+        with pytest.raises(DecryptionError):
+            crypto.open_opaque(flip(sealed, index), mine)
+    with pytest.raises(CryptoError):
+        crypto.open_opaque(sealed[: crypto.OPAQUE_MIN_SIZE - 1], mine)
+    with pytest.raises(WrongSecretError):
+        keys.unlock_opaque(slots, passphrase="non è questa")
+    with pytest.raises(WrongSecretError):
+        keys.unlock_opaque(slots, recovery_code=other.recovery_code)
+    with pytest.raises(KeysError):
+        keys.unlock_opaque(slots)
+
+
+def test_a_new_passphrase_renews_only_its_opaque_slot(folder) -> None:
+    new_keys = keys.setup_keys(folder, PASSPHRASE)
+    before = keys.opaque_slots(folder)
+    keys.change_passphrase(folder, PASSPHRASE, "una passphrase tutta nuova")
+    after = keys.opaque_slots(folder)
+    size = crypto.OPAQUE_SLOT_SIZE
+    assert after[:size] != before[:size] and after[size:] == before[size:]
+    assert keys.unlock_opaque(after, passphrase="una passphrase tutta nuova")
+    assert keys.unlock_opaque(after, recovery_code=new_keys.recovery_code)
+    with pytest.raises(WrongSecretError):
+        keys.unlock_opaque(after, passphrase=PASSPHRASE)

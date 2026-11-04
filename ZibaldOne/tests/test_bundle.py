@@ -6,6 +6,7 @@ from pathlib import Path
 
 import pytest
 
+from zibaldone.core import crypto
 from zibaldone.core.crypto import ScryptParams
 from zibaldone.core.templates import BlockSpec, Template
 from zibaldone.storage import backups, bundle, keys, media
@@ -44,6 +45,13 @@ def make_data(folder: Path, *names: str) -> None:
             store.add_entry("libro", {"titolo": name}, day="2026-10-01")
 
 
+def without_opaque_slots(folder: Path) -> None:
+    """Keys made before the opaque files: backup files are still written as zips (the format before)."""
+    document = json.loads(keys.keys_path(folder).read_text(encoding="utf-8"))
+    document.pop(keys.OPAQUE_FIELD)
+    keys.keys_path(folder).write_text(json.dumps(document), encoding="utf-8")
+
+
 def rewrite(source: Path, target: Path, change) -> Path:
     """Copy a backup file member by member, letting `change(name, data)` alter or drop (None) each one."""
     with zipfile.ZipFile(source) as read, zipfile.ZipFile(target, "w", zipfile.ZIP_STORED) as write:
@@ -74,13 +82,66 @@ def test_an_encrypted_backup_comes_back_on_a_new_device_with_the_passphrase_and_
         store.add_entry("libro", {"titolo": "Con foto"}, day="2026-10-02")
     snapshot = create_snapshot(folder)
     path = bundle.export_bundle(folder, snapshot.id, tmp_path)
-    info = bundle.inspect_bundle(path)
-    assert info.ok and info.encrypted and info.has_keys and info.media == [attachment.file]
+    locked = bundle.inspect_bundle(path)
+    assert locked.ok and locked.locked and locked.encrypted and locked.created_at is None and locked.modified_at is not None
+    info = bundle.inspect_bundle(path, passphrase=PASSPHRASE)
+    assert info.ok and info.encrypted and info.has_keys and info.media == [attachment.file] and info.created_at == snapshot.created_at
     result = bundle.restore_bundle(device, path, passphrase=PASSPHRASE)
     assert result.restored.id == snapshot.id and result.undo is None
     assert titles(device) == ["Con foto", "Dune", "Solaris"]
     assert keys.key_id(device) == new_keys.key_id  # the keys travelled in the file
     assert media.read(device, attachment.file) == b"\x89PNG-pretend"
+
+
+def test_an_opaque_file_shows_no_name_date_version_or_structure(folder, tmp_path) -> None:
+    make_data(folder, "Dune")
+    keys.setup_keys(folder, PASSPHRASE)
+    snapshot = create_snapshot(folder)
+    path = bundle.export_bundle(folder, snapshot.id, tmp_path)
+    data = path.read_bytes()
+    assert path.suffix == ".zbbackup" and snapshot.id not in path.name and snapshot.created_at.strftime("%Y") not in path.name
+    assert not data.startswith(bundle.ZIP_MAGIC) and not data.startswith(crypto.MAGIC)
+    for visible in (crypto.MAGIC, b"zibaldone", b"bundle.json", b"keys.json", b"format_version", snapshot.id.encode(), snapshot.created_at.strftime("%Y-%m-%d").encode()):
+        assert visible not in data, visible
+    assert len(data) == crypto.padme(len(data) - crypto.OPAQUE_PREFIX_SIZE - crypto.NONCE_SIZE - crypto.TAG_SIZE) + crypto.OPAQUE_PREFIX_SIZE + crypto.NONCE_SIZE + crypto.TAG_SIZE
+    assert bundle.export_bundle(folder, snapshot.id, tmp_path).name != path.name  # a new random name each time
+
+
+def test_an_altered_opaque_file_is_refused_and_changes_nothing(folder, device, tmp_path) -> None:
+    make_data(folder, "Dune")
+    keys.setup_keys(folder, PASSPHRASE)
+    path = bundle.export_bundle(folder, create_snapshot(folder).id, tmp_path)
+    data = bytearray(path.read_bytes())
+    data[-40] ^= 1
+    bad = tmp_path / "bad.zbbackup"
+    bad.write_bytes(bytes(data))
+    with pytest.raises(BackupError, match="rovinato o è stato alterato"):
+        bundle.restore_bundle(device, bad, passphrase=PASSPHRASE)
+    assert not (device / "zibaldone.db").exists()
+    assert "rovinato" in " ".join(bundle.inspect_bundle(bad, passphrase=PASSPHRASE).problems)
+
+
+def test_keys_made_before_the_opaque_files_still_write_the_zip_format(folder, device, tmp_path) -> None:
+    make_data(folder, "Dune")
+    keys.setup_keys(folder, PASSPHRASE)
+    without_opaque_slots(folder)
+    assert not bundle.opaque_ready(folder)
+    path = bundle.export_bundle(folder, create_snapshot(folder).id, tmp_path)
+    assert bundle.is_zip(path) and path.name.startswith("zibaldone-")
+    bundle.restore_bundle(device, path, passphrase=PASSPHRASE)
+    assert titles(device) == ["Dune"]
+
+
+def test_a_new_passphrase_opens_the_files_written_after_it(folder, device, tmp_path) -> None:
+    make_data(folder, "Dune")
+    new_keys = keys.setup_keys(folder, PASSPHRASE)
+    before = bundle.export_bundle(folder, create_snapshot(folder).id, tmp_path / "prima")
+    keys.change_passphrase(folder, PASSPHRASE, "una passphrase tutta nuova")
+    after = bundle.export_bundle(folder, create_snapshot(folder).id, tmp_path / "dopo")
+    assert bundle.inspect_bundle(after, passphrase="una passphrase tutta nuova").ok
+    assert not bundle.inspect_bundle(after, passphrase=PASSPHRASE).ok
+    assert bundle.inspect_bundle(before, passphrase=PASSPHRASE).ok  # a copy already made keeps the slots it had
+    assert bundle.inspect_bundle(before, recovery_code=new_keys.recovery_code).ok
 
 
 def test_the_recovery_code_alone_opens_it_and_a_wrong_secret_changes_nothing(folder, device, tmp_path) -> None:
@@ -99,14 +160,31 @@ def test_the_recovery_code_alone_opens_it_and_a_wrong_secret_changes_nothing(fol
     assert any(item.reason == "pre-restore" for item in list_snapshots(device))  # the old data can be brought back
 
 
-def test_a_device_with_other_keys_keeps_them_and_only_the_recovery_code_opens_the_file(folder, device, tmp_path) -> None:
+def test_a_device_with_other_keys_keeps_them_and_the_file_opens_with_its_own_secrets(folder, device, tmp_path) -> None:
     make_data(folder, "Dune")
     new_keys = keys.setup_keys(folder, PASSPHRASE)
     path = bundle.export_bundle(folder, create_snapshot(folder).id, tmp_path)
     make_data(device)
     mine = keys.setup_keys(device, "un'altra passphrase lunga")
-    imported = bundle.import_bundle(device, path)
+    with pytest.raises(KeyRequiredError):
+        bundle.import_bundle(device, path)
+    with pytest.raises(BackupError, match="passphrase sbagliata"):
+        bundle.import_bundle(device, path, passphrase="un'altra passphrase lunga")
+    imported = bundle.import_bundle(device, path, recovery_code=new_keys.recovery_code)
     assert imported.other_key and not imported.keys_installed and keys.key_id(device) == mine.key_id
+    bundle.restore_bundle(device, path, passphrase=PASSPHRASE)
+    assert titles(device) == ["Dune"] and keys.key_id(device) == mine.key_id
+
+
+def test_a_zip_file_from_other_keys_still_opens_only_with_the_recovery_code(folder, device, tmp_path) -> None:
+    make_data(folder, "Dune")
+    new_keys = keys.setup_keys(folder, PASSPHRASE)
+    without_opaque_slots(folder)
+    path = bundle.export_bundle(folder, create_snapshot(folder).id, tmp_path)
+    make_data(device)
+    mine = keys.setup_keys(device, "un'altra passphrase lunga")
+    imported = bundle.import_bundle(device, path)
+    assert imported.other_key and not imported.keys_installed
     with pytest.raises(BackupError, match="codice di recupero"):
         bundle.restore_bundle(device, path, passphrase=PASSPHRASE)
     bundle.restore_bundle(device, path, recovery_code=new_keys.recovery_code)
@@ -170,6 +248,7 @@ def test_files_that_are_not_backups_and_unexpected_members_are_refused(folder, d
 def test_a_tampered_snapshot_inside_the_file_is_caught_by_the_restore(folder, device, tmp_path) -> None:
     make_data(folder, "Dune")
     keys.setup_keys(folder, PASSPHRASE)
+    without_opaque_slots(folder)
     good = bundle.export_bundle(folder, create_snapshot(folder).id, tmp_path / "ok")
     bad = rewrite(good, tmp_path / "bad.zbbackup", lambda name, data: data[:-1] + bytes([data[-1] ^ 1]) if name.endswith(".zbsnap") else data)
     with pytest.raises(BackupError):
