@@ -663,7 +663,7 @@ OPTION_FIELDS: Dict[str, Tuple[OptionField, ...]] = {
     "bookmark": (OptionField("placeholder", "Esempio da mostrare", "text", "pag. 150"),),
     "link": (OptionField("template", "Solo voci del modello", "template"), OptionField("multiple", "Più collegamenti", "bool")),
     "secret": (
-        OptionField("level", "Livello", "text", "protetto (PIN o passphrase) o massimo (solo passphrase)"),
+        OptionField("level", "Livello", "text", "protetto (PIN o password) o massimo (solo password)"),
         OptionField("multiline", "Più righe", "bool"),
         OptionField("placeholder", "Esempio da mostrare", "text"),
         OptionField("format", "Importo di denaro", "text", "importo o saldo (anche negativo); vuoto = testo libero"),

@@ -171,7 +171,7 @@ def test_setup_encrypts_existing_snapshots_and_restore_asks_passphrase(isolated_
 
     invoke("entry", "add", "libro", "--set", "titolo=Emma")
     wrong = invoke("backup", "restore", encrypted, "--yes", input="non è questa\n")
-    assert wrong.exit_code == 1 and "passphrase sbagliata" in wrong.output
+    assert wrong.exit_code == 1 and "password sbagliata" in wrong.output
     no_traceback(wrong)
     assert "Emma" in invoke("entry", "list").output
 
@@ -204,15 +204,15 @@ def test_change_passphrase_and_recover(isolated_data_dir) -> None:
     assert setup_encryption().exit_code == 0
 
     wrong = invoke("backup", "passphrase", input="sbagliata sbagliata\n")
-    assert wrong.exit_code == 1 and "passphrase sbagliata" in wrong.output
+    assert wrong.exit_code == 1 and "password sbagliata" in wrong.output
     changed = invoke("backup", "passphrase", input=f"{PASSPHRASE}\nnuova passphrase lunga\nnuova passphrase lunga\n")
-    assert changed.exit_code == 0 and "Passphrase cambiata" in changed.output
+    assert changed.exit_code == 0 and "Password cambiata" in changed.output
     keys.unlock_with_passphrase(isolated_data_dir, "nuova passphrase lunga")
 
     typo = RECOVERY_CODE[:-1] + ("A" if RECOVERY_CODE[-1] != "A" else "B")
     recovered = invoke("backup", "recover", input=f"{typo}\n{RECOVERY_CODE}\npassphrase ritrovata\npassphrase ritrovata\n")
     assert recovered.exit_code == 0, recovered.output
-    assert "errore di battitura" in recovered.output and "Nuova passphrase salvata" in recovered.output
+    assert "errore di battitura" in recovered.output and "Nuova password salvata" in recovered.output
     keys.unlock_with_passphrase(isolated_data_dir, "passphrase ritrovata")
 
     other = crypto.recovery_code_from_bytes(bytes(15))

@@ -325,7 +325,7 @@ def unlock_for_recovery(
         return keys.unlock_with_recovery_code(folder, recovery_code)
     secret = _google_secret(destination, remote_key)
     if secret is None or SECRET_NAME not in keys.secret_names(folder):
-        raise CloudError("serve la passphrase dei backup o il codice di recupero")
+        raise CloudError("serve la password principale o il codice di recupero")
     return keys.unlock_with_secret(folder, SECRET_NAME, secret)
 
 

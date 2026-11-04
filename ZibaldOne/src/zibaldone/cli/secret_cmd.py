@@ -29,20 +29,20 @@ def status(ctx: typer.Context) -> None:
         count = sum(1 for entry in store.list_entries() if entry.template in templates and any(spec.key in entry.values for spec in secrets.secret_specs(templates[entry.template])))
     ready = secrets.PROTECTED in keys.secret_public_keys(folder)
     typer.echo(f"Voci con segreti: {count}")
-    typer.echo("Segreti protetti: " + ("si scrivono senza chiedere nulla" if ready else "aprili una volta con la passphrase (zbone segreti apri)"))
+    typer.echo("Segreti protetti: " + ("si scrivono senza chiedere nulla" if ready else "aprili una volta con la password (zbone segreti apri)"))
     typer.echo("PIN: " + ("scelto, apre i segreti protetti" if keys.has_pin(folder) else "non scelto (zbone segreti pin)"))
-    typer.echo("I segreti di livello massimo si aprono solo con la passphrase o il codice di recupero.")
+    typer.echo("I segreti di livello massimo si aprono solo con la password o il codice di recupero.")
 
 
 @secret_app.command("pin")
-def pin(remove: bool = typer.Option(False, "--togli", help="togli il PIN: poi serve la passphrase")) -> None:
+def pin(remove: bool = typer.Option(False, "--togli", help="togli il PIN: poi serve la password")) -> None:
     """Scegli il PIN che apre i segreti protetti (mai quelli di livello massimo)."""
     folder = data_dir()
     try:
         if remove:
             typer.echo("PIN tolto." if keys.remove_pin(folder) else "Non c'era un PIN.")
             return
-        main = keys.unlock_with_passphrase(folder, typer.prompt("Passphrase dei backup", hide_input=True))
+        main = keys.unlock_with_passphrase(folder, typer.prompt("Password principale", hide_input=True))
         first = typer.prompt(f"Nuovo PIN ({keys.PIN_MIN}-{keys.PIN_MAX} cifre)", hide_input=True)
         keys.check_pin(first)
         if typer.prompt("Ripetilo", hide_input=True) != first:
@@ -61,7 +61,7 @@ def unlock(folder: Path, values: List[str]) -> secrets.Vault:
         if only_protected and keys.has_pin(folder):
             vault.unlock([keys.unlock_with_pin(folder, typer.prompt("PIN", hide_input=True))], datetime.now())
         else:
-            vault.unlock(keys.unlock_secrets_with_passphrase(folder, typer.prompt("Passphrase dei backup", hide_input=True)), datetime.now())
+            vault.unlock(keys.unlock_secrets_with_passphrase(folder, typer.prompt("Password principale", hide_input=True)), datetime.now())
     except (keys.KeysError, secrets.SecretsError) as error:
         fail(str(error))
     return vault

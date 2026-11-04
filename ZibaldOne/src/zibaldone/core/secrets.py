@@ -32,7 +32,7 @@ from typing import Any, Callable, Dict, Iterable, List, Mapping, Optional
 SECRET_PREFIX = "zbs1:"
 PROTECTED, MAXIMUM = "protetto", "massimo"
 LEVELS = (PROTECTED, MAXIMUM)
-LEVEL_LABELS = {PROTECTED: "Protetto: si apre con il PIN o la passphrase", MAXIMUM: "Massimo: si apre solo con la passphrase"}
+LEVEL_LABELS = {PROTECTED: "Protetto: si apre con il PIN o la password", MAXIMUM: "Massimo: si apre solo con la password"}
 LOCKED_TEXT = "🔒 cifrato"
 MAX_SECRET_CHARS = 20_000
 EVERYDAY_INFO = b"zibaldone/secrets/everyday/v1"
@@ -188,9 +188,9 @@ class Vault:
     def reveal(self, value: str, now: datetime) -> str:
         """The text of a secret; SecretsError when the vault cannot open it."""
         if not self.is_open(now):
-            raise SecretsError("i segreti sono chiusi: aprili con il PIN o la passphrase")
+            raise SecretsError("i segreti sono chiusi: aprili con il PIN o la password")
         key = self._keys.get(value_recipient(value))
         if key is None:
-            raise SecretsError("questo segreto è di livello massimo: si apre solo con la passphrase")
+            raise SecretsError("questo segreto è di livello massimo: si apre solo con la password")
         self._last = now
         return open_value(value, key)

@@ -157,6 +157,11 @@ def _backup_notice(ctx: AppContext) -> ft.Control:
             bf.MODE_MIXED: "L'app fa i suoi backup nelle sue cartelle, e i tuoi file restano dove sono.",
         }[mode]
         lines = [W.body("I backup stanno nella cartella:"), W.body(target, selectable=True, size=13), W.body(who)]
+        lines.append(
+            W.body("Questa cartella la vedono anche le altre app e un PC collegato: i file sono cifrati per intero con la tua password principale, quindi vedono solo nomi a caso.", dim=True)
+            if services.encryption_on(ctx.folder)
+            else ft.Text("Questa cartella la vedono anche le altre app e un PC collegato, e i backup non sono ancora cifrati: imposta la password principale.", size=14, color=T.ACCENT_2)
+        )
         if mode != bf.MODE_APP:
             lines.append(W.body("Puoi passare alla gestione automatica dell'app in qualsiasi momento."))
         action = W.secondary_button("Gestione dei backup", lambda _: ctx.go("/organon/mnemosyne"), icon="SETTINGS_BACKUP_RESTORE") if mode == bf.MODE_APP else W.primary_button("Passa alla gestione dell'app", lambda _: change_mode(ctx, bf.MODE_APP), icon="AUTO_MODE")
@@ -405,7 +410,7 @@ class MnemosyneScreen:
                 key = keys.format_key_id(keys.key_id(self.ctx.folder))
             except Exception:
                 key = ""
-            text = "Cifratura attiva: le istantanee si aprono solo con la tua passphrase o con il codice di recupero."
+            text = "Cifratura attiva: le istantanee si aprono solo con la tua password o con il codice di recupero."
             return W.panel(
                 ft.Row(
                     [ft.Icon(ft.Icons.LOCK_OUTLINE, color=T.SUCCESS, size=22), ft.Column([W.body(text), W.caption(f"chiave {key}" if key else "")], spacing=2, expand=True)],

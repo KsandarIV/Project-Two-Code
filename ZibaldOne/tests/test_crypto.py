@@ -171,7 +171,7 @@ def test_default_scrypt_cost_is_used_when_not_lowered(folder, monkeypatch) -> No
 
 def test_wrong_passphrase_and_wrong_recovery_code(folder) -> None:
     keys.setup_keys(folder, PASSPHRASE)
-    with pytest.raises(WrongSecretError, match="passphrase sbagliata"):
+    with pytest.raises(WrongSecretError, match="password sbagliata"):
         keys.unlock_with_passphrase(folder, PASSPHRASE + "!")
     other_code = crypto.recovery_code_from_bytes(bytes(15))
     with pytest.raises(WrongSecretError, match="codice di recupero sbagliato"):

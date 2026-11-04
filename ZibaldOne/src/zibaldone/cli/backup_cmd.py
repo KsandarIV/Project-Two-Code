@@ -79,11 +79,11 @@ def print_status(folder: Path, settings: BackupSettings) -> None:
 # * — secrets —
 
 
-def ask_new_passphrase(label: str = "Nuova passphrase") -> str:
+def ask_new_passphrase(label: str = "Nuova password") -> str:
     first = typer.prompt(label, hide_input=True)
     keys.check_passphrase(first)
     if typer.prompt("Ripetila", hide_input=True) != first:
-        fail("le due passphrase non coincidono: non ho cambiato nulla")
+        fail("le due password non coincidono: non ho cambiato nulla")
     return first
 
 
@@ -97,7 +97,7 @@ def unlock_for(folder: Path, snapshots: List[SnapshotInfo]) -> Optional[X25519Pr
     if not encrypted:
         return None
     if keys.is_configured(folder):
-        return keys.unlock_with_passphrase(folder, typer.prompt("Passphrase dei backup", hide_input=True))
+        return keys.unlock_with_passphrase(folder, typer.prompt("Password principale", hide_input=True))
     code = typer.prompt("Manca keys.json: scrivi il codice di recupero", hide_input=True)
     return backups.unlock_snapshot_with_recovery_code(folder, encrypted[0].id, code)
 
@@ -125,7 +125,7 @@ def create_backup(note: str = typer.Option("", "--note", "-n", help="una nota br
 
 @backup_app.command("list")
 def list_backups(
-    details: bool = typer.Option(False, "--details", help="chiede la passphrase e mostra note e contenuto delle istantanee cifrate"),
+    details: bool = typer.Option(False, "--details", help="chiede la password e mostra note e contenuto delle istantanee cifrate"),
 ) -> None:
     """Elenca le istantanee, dalla più recente."""
     ensure_consent()
@@ -186,7 +186,7 @@ def export_backup(
     typer.echo(f"File di backup creato: {path}")
     typer.echo(f"  {describe(snapshot)}")
     if snapshot.encrypted:
-        typer.echo("  Si apre con la passphrase dei backup o con il codice di recupero. Senza, nessuno può aprirlo.")
+        typer.echo("  Si apre con la password principale o con il codice di recupero. Senza, nessuno può aprirlo.")
     else:
         typer.echo("  ATTENZIONE: non è cifrato, chi lo trova legge tutto. Attiva la cifratura con `zbone backup setup`.")
     typer.echo("Per riportare i dati, anche su un'installazione nuova: zbone backup import FILE")
@@ -208,7 +208,7 @@ def import_backup(
         if not info.ok:
             fail("; ".join(info.problems))
         if info.locked:
-            typer.echo(f"File di backup scritto il {local_time(info.modified_at)} · cifrato per intero: data e versione si leggono solo con la passphrase o il codice di recupero")
+            typer.echo(f"File di backup scritto il {local_time(info.modified_at)} · cifrato per intero: data e versione si leggono solo con la password o il codice di recupero")
         else:
             typer.echo(f"Backup del {local_time(info.created_at)} · {'cifrato' if info.encrypted else 'in chiaro'} · creato con ZibaldOne {info.app_version or 'sconosciuta'}")
         if not yes and not ask_yes_no("Riportare modelli e voci a questo backup? Lo stato attuale sarà salvato prima"):
@@ -216,7 +216,7 @@ def import_backup(
             raise typer.Exit()
         passphrase = recovery = None
         if info.encrypted:
-            passphrase = typer.prompt("Passphrase dei backup (invio per usare il codice di recupero)", default="", hide_input=True, show_default=False) or None
+            passphrase = typer.prompt("Password principale (invio per usare il codice di recupero)", default="", hide_input=True, show_default=False) or None
             if not passphrase:
                 recovery = typer.prompt("Codice di recupero", hide_input=True)
         result = bundle.restore_bundle(folder, file, passphrase=passphrase, recovery_code=recovery)
@@ -300,10 +300,10 @@ def setup_encryption() -> None:
     ensure_consent()
     folder = data_dir()
     if keys.is_configured(folder):
-        fail("la cifratura è già attiva. Per cambiare passphrase: zbone backup passphrase")
+        fail("la cifratura è già attiva. Per cambiare password: zbone backup passphrase")
     typer.echo(SETUP_INTRO)
     with backup_errors():
-        passphrase = ask_new_passphrase("Scegli la passphrase dei backup")
+        passphrase = ask_new_passphrase("Scegli la password principale")
         new_keys = keys.create_keys(passphrase)
     typer.echo("\nCODICE DI RECUPERO (te lo mostro solo adesso):\n")
     typer.echo(f"    {new_keys.recovery_code}\n")
@@ -338,10 +338,10 @@ def change_passphrase() -> None:
     folder = data_dir()
     require_encryption(folder)
     with backup_errors():
-        current = typer.prompt("Passphrase attuale", hide_input=True)
+        current = typer.prompt("Password attuale", hide_input=True)
         keys.unlock_with_passphrase(folder, current)
         keys.change_passphrase(folder, current, ask_new_passphrase())
-    typer.echo("Passphrase cambiata. Il codice di recupero resta lo stesso.")
+    typer.echo("Password cambiata. Il codice di recupero resta lo stesso.")
     sync_quietly()  # the copy of keys.json on the destination must know the new passphrase
 
 
@@ -362,5 +362,5 @@ def recover_passphrase() -> None:
         else:
             fail("codice di recupero non valido: non ho cambiato nulla")
         keys.reset_passphrase(folder, code, ask_new_passphrase())
-    typer.echo("Nuova passphrase salvata. Il codice di recupero resta lo stesso: tienilo al sicuro.")
+    typer.echo("Nuova password salvata. Il codice di recupero resta lo stesso: tienilo al sicuro.")
     sync_quietly()

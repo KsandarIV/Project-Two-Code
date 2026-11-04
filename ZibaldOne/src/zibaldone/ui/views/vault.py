@@ -49,7 +49,7 @@ def unlock_secrets(ctx: AppContext, values: List[str], on_open: Callable[[], Any
         return
     keys = _keys()
     pin = _uses_pin(ctx.folder, values) if use_pin is None else bool(use_pin)
-    field = _secret_input("PIN" if pin else "Passphrase dei backup", pin)
+    field = _secret_input("PIN" if pin else "Password principale", pin)
     error = W.error_text()
     go_on = W.primary_button("Apri", None, icon="LOCK_OPEN")
     folder = ctx.folder
@@ -85,11 +85,11 @@ def unlock_secrets(ctx: AppContext, values: List[str], on_open: Callable[[], Any
     intro = (
         "Il PIN apre i segreti protetti di questo dispositivo."
         if pin
-        else "La passphrase dei backup apre tutti i segreti, anche quelli di livello massimo."
+        else "La password principale apre tutti i segreti, anche quelli di livello massimo."
     )
     actions: List[ft.Control] = [W.text_button("Annulla", ctx.close_dialog, color=T.TEXT)]
     if pin:
-        actions.append(W.text_button("Usa la passphrase", other_way, color=T.TEXT))
+        actions.append(W.text_button("Usa la password", other_way, color=T.TEXT))
     actions.append(go_on)
     dialog = ft.AlertDialog(
         modal=True,
@@ -111,7 +111,7 @@ def unlock_secrets(ctx: AppContext, values: List[str], on_open: Callable[[], Any
 def choose_pin(ctx: AppContext, on_done: Callable[[], Any]) -> None:
     """The passphrase, then the new PIN twice; the PIN opens only the protected level."""
     keys = _keys()
-    passphrase = _secret_input("Passphrase dei backup", pin=False)
+    passphrase = _secret_input("Password principale", pin=False)
     first = W.text_input("", label=f"Nuovo PIN ({keys.PIN_MIN}-{keys.PIN_MAX} cifre)", password=True, keyboard_type=ft.KeyboardType.NUMBER, max_length=keys.PIN_MAX)
     second = W.text_input("", label="Ripetilo", password=True, keyboard_type=ft.KeyboardType.NUMBER, max_length=keys.PIN_MAX)
     error = W.error_text()
@@ -186,15 +186,15 @@ def secrets_panel(ctx: AppContext) -> ft.Control:
     lines = [
         W.body("Segreti · Arcana", size=15, weight=ft.FontWeight.W_600),
         W.caption("I blocchi segreti sono cifrati con la tua chiave e restano fuori da ricerca, esportazioni e IA."),
-        W.caption("PIN scelto: apre i segreti protetti." if has_pin else "Nessun PIN: i segreti si aprono con la passphrase."),
+        W.caption("PIN scelto: apre i segreti protetti." if has_pin else "Nessun PIN: i segreti si aprono con la password."),
     ]
     if not ready:
-        lines.append(W.caption("Aprili una volta con la passphrase: poi i segreti protetti si scrivono senza chiedere nulla.", color=T.ACCENT_2))
+        lines.append(W.caption("Aprili una volta con la password: poi i segreti protetti si scrivono senza chiedere nulla.", color=T.ACCENT_2))
 
     def toggle_pin(_: Any) -> None:
         if has_pin:
             keys.remove_pin(folder)
-            ctx.toast("PIN tolto: i segreti si aprono con la passphrase.")
+            ctx.toast("PIN tolto: i segreti si aprono con la password.")
             ctx.refresh()
         else:
             choose_pin(ctx, ctx.refresh)

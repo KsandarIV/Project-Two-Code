@@ -50,6 +50,16 @@ chiave pubblica usa e getta (32) | serratura passphrase (76) | serratura codice 
 - I file dello schema precedente (sottocartelle `backup/…`, nomi con la data) ricevono una copia opaca; i vecchi restano finché l'utente non sceglie «Elimina i vecchi file».
 - Un file opaco si riconosce solo aprendolo: per aggiungerlo alle istantanee serve già la passphrase o il codice di recupero.
 
+### La password principale (KAN-29)
+La «passphrase» non la sceglie più l'utente: la genera l'app (`core/password.py`), come un generatore di password. L'utente sceglie solo le regole: minuscole, maiuscole, numeri, simboli (ognuno si può togliere), lunghezza da 16 a 64 (20 di base), quanti numeri e simboli almeno (2 di base). Le regole che darebbero meno di 90 bit sono rifiutate; i caratteri che si confondono (l, I, O, 0, 1) non ci sono. Per le chiavi resta una passphrase come prima: stessa serratura scrypt, stesso formato.
+
+- **Obbligatoria.** È una pagina del primo avvio (`/benvenuto/password`, dopo consenso, accesso e copie, prima della cartella dei backup). Compare anche dopo l'aggiornamento quando `keys.json` non ha `"secret_kind": "password"`.
+- **Chiavi nuove.** Password proposta → finestra con password e codice di recupero, una volta sola → l'utente ricopia due gruppi del codice scelti a caso. Prima di questa conferma non si salva nulla. «Salva foglio di recupero» offre un file di testo con password e codice (finestra «salva come» del sistema), da stampare e poi cancellare.
+- **Chiavi di prima.** La vecchia passphrase, o il codice di recupero, apre la chiave; poi `keys.renew` rifà la serratura della password, dà un **nuovo codice di recupero** e le serrature dei file opachi. La coppia di chiavi resta la stessa: ogni istantanea già fatta si apre ancora (le istantanee vecchie tengono anche la serratura del vecchio codice).
+- **Persi entrambi.** «Non ricordo né la passphrase né il codice» mette da parte `keys.json` (`keys-ritirate-<data>.json`, mai cancellato) e crea chiavi nuove: i backup cifrati con le vecchie non si aprono con la nuova password.
+- **Recupero con Google.** Non viene più proposto: chi entra nell'account Google aprirebbe i backup. Chi l'aveva attivo lo vede ancora nelle Nuvole, per toglierlo.
+- **Terminale.** `zbone backup setup` e `zbone backup passphrase` chiedono ancora una passphrase scelta a mano: alla prossima apertura l'app chiede di passare alla password.
+
 ## Verifica
 `zbone backup verify` controlla l'ultima istantanea (`--all` tutte, oppure un ID): zip integro, impronta SHA-256, `PRAGMA integrity_check` di SQLite e versione dello schema.
 

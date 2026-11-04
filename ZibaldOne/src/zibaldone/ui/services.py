@@ -108,6 +108,18 @@ def encryption_on(folder: Path) -> bool:
         return False
 
 
+def password_pending(folder: Path) -> bool:
+    """The main password is mandatory (KAN-29): asked at first start, and after the update to keys made with a
+    passphrase chosen by hand. A broken keys.json does not lock the app: the backups say what is wrong."""
+    keys = keys_api()
+    if keys is None or not hasattr(keys, "renew"):
+        return False
+    try:
+        return not keys.is_configured(folder) or not keys.uses_generated_password(folder)
+    except Exception:
+        return False
+
+
 def login_required(folder: Path) -> bool:
     """True only when the account part exists and asks for a sign-in."""
     account = account_api()

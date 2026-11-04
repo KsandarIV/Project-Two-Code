@@ -223,7 +223,7 @@ Le istantanee stanno nella cartella `backups` dentro la cartella dati. Una voce 
 ```powershell
 zbone backup setup
 ```
-Scegli una passphrase (almeno 10 caratteri) e scrivi su carta il **codice di recupero** che ZibaldOne ti mostra una volta sola. Da quel momento ogni istantanea è cifrata, anche quelle che c'erano già. I backup automatici non ti chiedono nulla: la passphrase serve solo per ripristinare o verificare.
+Nell'app la password dei backup la crea ZibaldOne al primo avvio (puoi cambiare le regole e rigenerarla) e ti mostra il **codice di recupero** una volta sola: scrivili su carta, o salva il «foglio di recupero» e stampalo. Dal terminale, invece, scegli una passphrase (almeno 10 caratteri) e scrivi su carta il codice di recupero. Da quel momento ogni istantanea è cifrata, anche quelle che c'erano già. I backup automatici non ti chiedono nulla: la passphrase serve solo per ripristinare o verificare.
 
 - `zbone backup passphrase`: cambia la passphrase.
 - `zbone backup recover`: hai dimenticato la passphrase? Ne scegli una nuova con il codice di recupero.
@@ -269,7 +269,7 @@ Fuori vanno **solo istantanee cifrate**: prima serve `zbone backup setup`. Dopo,
 | `zbone cloud recovery on` | recupero con l'account Google, senza passphrase (vedi sotto) |
 | `zbone cloud forget` | cancella tutte le copie fuori e torna a solo locale |
 
-**Recupero con l'account Google.** Quando scegli Drive, ZibaldOne ti propone di poter riavere i backup su un dispositivo nuovo solo entrando con Google, senza passphrase: comodo come in tutte le app. Il prezzo è che chi riesce a entrare nel tuo account Google può aprirli. Se non lo attivi, per il recupero servono la passphrase o il codice di recupero. Lo togli quando vuoi con `zbone cloud recovery off`.
+**Recupero con l'account Google.** Nell'app non viene più proposto (chi entra nel tuo account Google aprirebbe i backup); se l'avevi attivato puoi toglierlo nelle Nuvole. Dal terminale: quando scegli Drive, ZibaldOne ti propone di poter riavere i backup su un dispositivo nuovo solo entrando con Google, senza passphrase: comodo come in tutte le app. Il prezzo è che chi riesce a entrare nel tuo account Google può aprirli. Se non lo attivi, per il recupero servono la passphrase o il codice di recupero. Lo togli quando vuoi con `zbone cloud recovery off`.
 
 Backup, export e privacy funzionano sempre, anche senza account: riavere i tuoi dati non dipende mai da Google.
 

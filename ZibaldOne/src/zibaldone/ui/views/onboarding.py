@@ -19,7 +19,7 @@ from zibaldone.ui.navigation import Route
 from zibaldone.ui.views import app_icon, backup_file
 
 
-def _brand() -> ft.Control:
+def brand() -> ft.Control:
     zibby = mascot_for("app")
     return ft.Row(
         [
@@ -74,7 +74,7 @@ def consent(ctx: AppContext, route: Route) -> ft.Control:
     )
     return W.screen(
         [
-            _brand(),
+            brand(),
             W.title_with_nickname(title, privacy.name, size=22),
             W.body(intro, dim=True),
             W.panel(W.body(app_hint(notice_text(ctx.folder)), selectable=True)),
@@ -89,7 +89,7 @@ def _restored(ctx: AppContext) -> None:
     """The data came back from a backup: no account is asked for now, nor the base packs (they came with the data)."""
     services.skip_login(ctx.folder)
     services.save_ui_settings(ctx.folder, diario_suggested=True)
-    ctx.go("/oggi")
+    ctx.go("/benvenuto/password" if services.password_pending(ctx.folder) else "/oggi")  # keys from before KAN-29 move to the password
 
 
 def _found_backup(ctx: AppContext) -> List[ft.Control]:
@@ -129,7 +129,7 @@ def sign_in(ctx: AppContext, route: Route) -> ft.Control:
     )
     return W.screen(
         [
-            _brand(),
+            brand(),
             *_found_backup(ctx),
             W.title_with_nickname("Entra con Google, se vuoi", cloud.name, size=22),
             W.panel(
@@ -194,7 +194,7 @@ def copies(ctx: AppContext, route: Route) -> ft.Control:
 
     return W.screen(
         [
-            _brand(),
+            brand(),
             W.title_with_nickname("Dove vuoi tenere i backup?", cloud.name, size=22),
             W.body(f"Sei entrato come {email}. Le istantanee di Mnemosyne stanno sempre su questo dispositivo; puoi tenerne anche una copia fuori." if email else "Le istantanee di Mnemosyne stanno sempre su questo dispositivo; puoi tenerne anche una copia fuori.", dim=True),
             option("PHONE_ANDROID", "Solo su questo dispositivo", "Puoi cambiare idea quando vuoi, nelle Nuvole.", local, T.ACCENT),
@@ -251,7 +251,7 @@ def files_folder(ctx: AppContext, route: Route) -> ft.Control:
 
     return W.screen(
         [
-            _brand(),
+            brand(),
             W.title_with_nickname("Dove salvo i tuoi backup?", "Mnemosyne", size=22),
             W.panel(
                 ft.Column(
@@ -302,7 +302,7 @@ def diario(ctx: AppContext, route: Route) -> ft.Control:
 
     return W.screen(
         [
-            _brand(),
+            brand(),
             *_found_backup(ctx),
             W.title_with_nickname("Da dove partiamo?", "Stoa", size=22),
             W.panel(
@@ -331,7 +331,7 @@ def app_icon_step(ctx: AppContext, route: Route) -> ft.Control:
 
     return W.screen(
         [
-            _brand(),
+            brand(),
             W.title_with_nickname("Che icona preferisci?", "Kosmesis", size=22),
             W.panel(ft.Column([W.body("Scegli l'icona di ZibaldOne. Puoi cambiarla quando vuoi, da Impostazioni → Personalizza."), app_icon.picker(ctx, lambda letter: app_icon.choose(ctx, letter))], spacing=12)),
             ft.Row([W.primary_button("Continua", go_on, icon="CHECK")], alignment=ft.MainAxisAlignment.END),

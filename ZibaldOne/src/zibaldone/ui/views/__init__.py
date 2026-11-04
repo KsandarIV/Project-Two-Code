@@ -10,7 +10,7 @@ import flet as ft
 
 from zibaldone.ui.context import AppContext
 from zibaldone.ui.navigation import Route
-from zibaldone.ui.views import areas, collections, entries, entry_form, finance, graph, habits, novita_view, onboarding, people, saved_views, settings, stats, template_editor, templates, today
+from zibaldone.ui.views import areas, collections, encryption, entries, entry_form, finance, graph, habits, novita_view, onboarding, people, saved_views, settings, stats, template_editor, templates, today
 
 Builder = Callable[[AppContext, Route], ft.Control]
 
@@ -42,10 +42,11 @@ SCREENS: Dict[str, Builder] = {
     "consenso": onboarding.consent,
     "accesso": onboarding.sign_in,
     "copie": onboarding.copies,
+    "password": encryption.password_step,
     "cartella": onboarding.files_folder,
     "diario": onboarding.diario,
     "icona": onboarding.app_icon_step,
 }
 
 # Shown full screen, without the navigation.
-ONBOARDING_SCREENS = frozenset({"consenso", "accesso", "copie", "cartella", "diario", "icona"})
+ONBOARDING_SCREENS = frozenset({"consenso", "accesso", "copie", "password", "cartella", "diario", "icona"})

@@ -70,8 +70,8 @@ def restore_first_backup(folder) -> bool:
     passphrase = recovery = None
     try:
         if candidate.encrypted:
-            typer.echo("Lo riporto qui. Scrivi la passphrase dei backup, o lascia vuoto per usare il codice di recupero (se non vuoi, lascialo vuoto anche lui).")
-            passphrase = typer.prompt("Passphrase", default="", hide_input=True, show_default=False) or None
+            typer.echo("Lo riporto qui. Scrivi la password principale, o lascia vuoto per usare il codice di recupero (se non vuoi, lascialo vuoto anche lui).")
+            passphrase = typer.prompt("Password", default="", hide_input=True, show_default=False) or None
             if not passphrase:
                 recovery = typer.prompt("Codice di recupero", default="", hide_input=True, show_default=False) or None
                 if not recovery:
