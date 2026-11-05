@@ -1,6 +1,6 @@
 # Mappa del codice
 
-Generata da `scripts/code_map.py` il 2026-11-04. Si rigenera a ogni PR di rilascio.
+Generata da `scripts/code_map.py` il 2026-11-05. Si rigenera a ogni PR di rilascio.
 129 moduli in `src/zibaldone/`. Regola: `core` non importa `ui`, `cli`, `storage` (rispettata).
 
 ## Livelli
@@ -25,7 +25,7 @@ Generata da `scripts/code_map.py` il 2026-11-04. Si rigenera a ogni PR di rilasc
 - `zibaldone.core.brand` (20): Brand identity: names, mascots and quotes taken from philosophy.
 - `zibaldone.core.blocks` (20): Block types: the bricks every template is made of.
 - `zibaldone.core.areas` (15): Eudaimonia (0.2.0): the 8 life areas as a concept of the whole app.
-- `zibaldone.storage.paths` (14): Where ZibaldOne keeps the user's data on each platform.
+- `zibaldone.storage.settings` (14): User settings saved as `settings.json` inside the data folder.
 
 ## Moduli più grandi
 - `zibaldone.ui.viewmodels`: 1790 righe
