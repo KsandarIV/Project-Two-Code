@@ -1,0 +1,39 @@
+{
+  "versione": "0.3.3",
+  "data": "2026-11-04",
+  "titolo": "Backup e diario al sicuro",
+  "voci": [
+    {
+      "tipo": "nuovo",
+      "testo": "Al primo avvio l'app genera una password principale: tu scegli solo le regole. Salva il foglio di recupero e tienilo al sicuro."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "I backup sono file chiusi del tutto: senza password o codice di recupero non si legge niente. In Mnemosyne trovi la lista «I tuoi backup»."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Anche il diario sul dispositivo è cifrato. All'avvio puoi sbloccarlo con impronta, volto o blocco schermo."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Scegli dove tenere i backup e chi li gestisce: l'app, tu o tutti e due."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Su Android «Scarica» mette il nuovo APK nella cartella Download e apre l'installazione."
+    },
+    {
+      "tipo": "nuovo",
+      "testo": "Pannychis ti accompagna di notte, con un messaggio e un modello per le notti insonni. In Kosmesis scegli i colori dell'app e l'icona."
+    },
+    {
+      "tipo": "migliorato",
+      "testo": "La home mostra le otto aree a tutta larghezza; in Collezioni «Tutte» sta al centro; lupo, nottola, passero e gatta sono ridisegnati."
+    },
+    {
+      "tipo": "corretto",
+      "testo": "Se la cartella dei backup non è scrivibile, l'app lo spiega e ti dice che il lavoro è salvo."
+    }
+  ]
+}
