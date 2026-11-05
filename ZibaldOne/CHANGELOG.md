@@ -4,6 +4,11 @@ Tutte le modifiche rilevanti di ZibaldOne. Formato ispirato a [Keep a Changelog]
 
 ## [Unreleased]
 
+## [0.3.3.1] — 2026-11-05
+Mini patch: l'APK della 0.3.3 non si era costruito.
+### Corretto
+- La build di Android non falliva più per un conflitto tra `flet-permission-handler` 1.0.4 e Flet 1.0.5: ora usa `flet-permission-handler` 1.0.5. Il contenuto dell'app è quello della 0.3.3.
+
 ## [0.3.3] — 2026-11-04
 Backup cifrati, password principale, database cifrato e sblocco con impronta; più Oikos, Pannychis e le mascotte nuove.
 ### Aggiunto

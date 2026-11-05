@@ -1,0 +1,11 @@
+{
+  "versione": "0.3.3.1",
+  "data": "2026-11-05",
+  "titolo": "APK della 0.3.3",
+  "voci": [
+    {
+      "tipo": "corretto",
+      "testo": "Questa versione porta l'app per Android, che nella 0.3.3 non era stata costruita. Per il resto è identica alla 0.3.3."
+    }
+  ]
+}

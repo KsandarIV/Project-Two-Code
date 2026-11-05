@@ -27,7 +27,7 @@ CHANGELOG_FILE = PROJECT_DIR / "CHANGELOG.md"
 NOTES_DIR = PROJECT_DIR / "docs" / "versioni"
 TAG_PREFIX = "zibaldone-v"
 
-SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
+SEMVER = re.compile(r"^(\d+)\.(\d+)\.(\d+)(?:\.(\d+))?$")  # X.Y.Z, or X.Y.Z.N for a mini patch
 VERSION_LINE = re.compile(r'^__version__ = "([^"]+)"$', re.MULTILINE)
 
 
@@ -35,24 +35,24 @@ class ReleaseError(Exception):
     """A release step failed; nothing after it was done."""
 
 
-def parse_version(text: str) -> Tuple[int, int, int]:
+def parse_version(text: str) -> Tuple[int, int, int, int]:
     match = SEMVER.match(text.strip())
     if not match:
-        raise ReleaseError(f"'{text}' non è una versione X.Y.Z")
-    major, minor, patch = (int(part) for part in match.groups())
-    return major, minor, patch
+        raise ReleaseError(f"'{text}' non è una versione X.Y.Z (o X.Y.Z.N)")
+    major, minor, patch, fix = (int(part or 0) for part in match.groups())
+    return major, minor, patch, fix
 
 
 def next_version(current: str, requested: str) -> str:
     """Return the new version from 'patch' / 'minor' / 'major' or an explicit X.Y.Z."""
-    major, minor, patch = parse_version(current)
+    major, minor, patch, fix = parse_version(current)
     if requested == "patch":
         return f"{major}.{minor}.{patch + 1}"
     if requested == "minor":
         return f"{major}.{minor + 1}.0"
     if requested == "major":
         return f"{major + 1}.0.0"
-    if parse_version(requested) <= (major, minor, patch):
+    if parse_version(requested) <= (major, minor, patch, fix):
         raise ReleaseError(f"la nuova versione {requested} deve essere maggiore di {current}")
     return requested
 
