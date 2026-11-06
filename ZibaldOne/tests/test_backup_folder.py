@@ -138,6 +138,44 @@ def test_another_write_failure_keeps_the_reason_and_says_the_work_is_safe(data, 
         bf.export_snapshots(data, target, bf.MODE_APP)
 
 
+def test_check_writable_leaves_no_trace_and_makes_the_folder(tmp_path) -> None:
+    here = tmp_path / "nuova" / "Data"
+    bf.check_writable(here)
+    assert here.is_dir() and list(here.iterdir()) == []
+
+
+def test_check_writable_on_the_phone_storage_says_which_permission_to_give(monkeypatch) -> None:
+    refused = Path("/storage/emulated/0/ZibaldOne/Data")
+
+    def refuse(self, *args, **kwargs):
+        raise PermissionError(13, "Permission denied", str(self))
+
+    monkeypatch.setattr(Path, "mkdir", refuse)
+    with pytest.raises(bf.FolderWriteError) as caught:
+        bf.check_writable(refused)
+    message = str(caught.value)
+    assert caught.value.needs_files_access
+    assert str(refused) in message and "Accesso a tutti i file" in message and "ZibaldOne" in message and "Errno" not in message
+
+
+def test_a_refused_folder_elsewhere_has_no_android_steps_and_other_errors_do_not_ask_for_the_permission(tmp_path, monkeypatch) -> None:
+    def refuse(self, *args, **kwargs):
+        raise PermissionError(13, "Permission denied", str(self))
+
+    monkeypatch.setattr(Path, "mkdir", refuse)
+    with pytest.raises(bf.FolderWriteError) as caught:
+        bf.check_writable(tmp_path / "x")
+    assert caught.value.needs_files_access and "Android" not in str(caught.value)
+
+    def full(self, *args, **kwargs):
+        raise OSError(28, "No space left on device")
+
+    monkeypatch.setattr(Path, "mkdir", full)
+    with pytest.raises(bf.FolderWriteError) as other:
+        bf.check_writable(tmp_path / "y")
+    assert not other.value.needs_files_access
+
+
 # * — opaque files (KAN-29): a flat folder of random names, what each one is lives in the private index —
 
 PASSPHRASE = "cavallo batteria graffetta"

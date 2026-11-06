@@ -45,18 +45,61 @@ SUGGESTED = "ZibaldOne/Data"
 
 
 class FolderWriteError(OSError):
-    """The visible folder cannot be written. The message is for the user: it says the data is safe and what to do."""
+    """The visible folder cannot be written. The message is for the user: it says the data is safe and what to do.
+
+    `needs_files_access` is True when the system refused for lack of permission (on Android 11+: «all files access»):
+    the UI can then ask for the permission and try again instead of only showing the message.
+    """
+
+    def __init__(self, message: str, needs_files_access: bool = False) -> None:
+        super().__init__(message)
+        self.needs_files_access = needs_files_access
+
+
+ANDROID_SHARED_STORAGE = ("/storage/", "/sdcard", "/mnt/sdcard")
+PROBE = ".zibaldone-prova"
+
+
+def _on_phone_storage(target: Path) -> bool:
+    """The folder is in the shared storage of an Android phone (such folders need «all files access» from Android 11)."""
+    return str(target).replace("\\", "/").startswith(ANDROID_SHARED_STORAGE)
+
+
+def _refused(target: Path) -> FolderWriteError:
+    """The sentence for a folder the system will not let the app write, with the way out."""
+    if _on_phone_storage(target):
+        how = (
+            "Su Android serve il permesso «Accesso a tutti i file»: aprilo da Impostazioni del telefono → App → ZibaldOne → Autorizzazioni → "
+            "File e contenuti multimediali (o Archiviazione) → Consenti la gestione di tutti i file. "
+            "Se non vuoi darlo, scegli una cartella dentro Documenti o Download"
+        )
+    else:
+        how = "Scegli un'altra cartella in Impostazioni → Mnemosyne, o controlla che il tuo utente possa scriverci"
+    return FolderWriteError(f"l'app non ha il permesso di scrivere in {target}. Il tuo lavoro è salvo e la copia interna è fatta. {how}.", needs_files_access=True)
 
 
 @contextmanager
-def _explained() -> Iterator[None]:
+def _explained(target: Optional[Path] = None) -> Iterator[None]:
     """Turn the system's «[Errno 1] Operation not permitted» into a sentence the user can act on (Android refuses some folders)."""
     try:
         yield
     except PermissionError as error:
-        raise FolderWriteError("l'app non ha il permesso di scrivere in questa cartella. Il tuo lavoro è salvo e la copia interna è fatta; scegli un'altra cartella in Impostazioni → Mnemosyne") from error
+        raise _refused(target or Path("questa cartella")) from error
     except OSError as error:
         raise FolderWriteError(f"la cartella non si può scrivere ({error.strerror or error}). Il tuo lavoro è salvo e la copia interna è fatta") from error
+
+
+def check_writable(target: Path) -> None:
+    """Try the folder now: make it if needed, write a small file and remove it. Raises FolderWriteError with the way out.
+
+    Use it when the user picks or creates the folder, and before the first backup after an update: on Android the
+    folder can exist (chosen with an older version) while the app has no right to write in it.
+    """
+    with _explained(target):
+        target.mkdir(parents=True, exist_ok=True)
+        probe = target / PROBE
+        probe.write_bytes(b"zibaldone")
+        probe.unlink()
 
 
 OLD_FORMAT = "vecchio"  # a file of the scheme before the opaque files, already wrapped into an opaque copy
@@ -186,7 +229,7 @@ def export_snapshots(folder: Path, target: Path, mode: str) -> List[Path]:
     Opaque files: the same choice, all flat with random names, recorded in the index.
     """
     snapshots = [info for info in backups.list_snapshots(folder) if not info.problem]
-    with _explained():
+    with _explained(target):
         if bundle.opaque_ready(folder):
             return _export_opaque(folder, target, mode, snapshots)
         if mode == MODE_USER:
@@ -210,7 +253,7 @@ def rotate(target: Path, keep_history: bool = False, folder: Optional[Path] = No
     history stays where it is and only changes kind.
     """
     gone: List[Path] = []
-    with _explained():
+    with _explained(target):
         for reason, limit in KEEP.items():
             directory = tier_dir(target, reason)
             files = sorted(directory.glob(f"zibaldone-*{BUNDLE_SUFFIX}"), reverse=True) if directory.is_dir() else []
@@ -290,7 +333,7 @@ def delete_old_format(folder: Path, target: Path) -> List[Path]:
     """Delete the old-format files that already have their opaque copy (the user asked, from the app); empty
     subfolders of the old scheme go too. Returns what was deleted."""
     deleted: List[Path] = []
-    with _explained():
+    with _explained(target):
         for item in list_files(target, folder):
             if item.kind == OLD_FORMAT:
                 item.path.unlink()
@@ -304,7 +347,7 @@ def delete_old_format(folder: Path, target: Path) -> List[Path]:
 
 def delete_file(folder: Path, target: Path, path: Path) -> None:
     """Delete one backup file of the folder (the user asked, from the app); the index remembers it so it is not written again."""
-    with _explained():
+    with _explained(path.parent):
         path.unlink(missing_ok=True)
     entries = index_of(folder, target)
     if path.name in entries:
