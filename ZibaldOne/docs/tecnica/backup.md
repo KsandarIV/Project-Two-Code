@@ -50,6 +50,9 @@ chiave pubblica usa e getta (32) | serratura passphrase (76) | serratura codice 
 - I file dello schema precedente (sottocartelle `backup/…`, nomi con la data) ricevono una copia opaca; i vecchi restano finché l'utente non sceglie «Elimina i vecchi file».
 - Un file opaco si riconosce solo aprendolo: per aggiungerlo alle istantanee serve già la passphrase o il codice di recupero.
 
+### Cartella non scrivibile su Android (KAN-134)
+Da Android 11 scrivere con un percorso come `/storage/emulated/0/ZibaldOne/Data` richiede «Accesso a tutti i file» (`MANAGE_EXTERNAL_STORAGE`), che non si concede da solo né con l'aggiornamento dell'app: una cartella scelta con una versione vecchia esiste, ma il sistema rifiuta di scriverci. `backup_folder.check_writable(cartella)` la prova (crea la cartella, scrive e toglie un file) e, se il sistema rifiuta, alza `FolderWriteError` con `needs_files_access=True` e un messaggio che dice quale permesso dare e dove, o di scegliere una cartella in Documenti o Download. Lo stesso messaggio esce dal backup quando la scrittura fallisce.
+
 ### La password principale (KAN-29)
 La «passphrase» non la sceglie più l'utente: la genera l'app (`core/password.py`), come un generatore di password. L'utente sceglie solo le regole: minuscole, maiuscole, numeri, simboli (ognuno si può togliere), lunghezza da 16 a 64 (20 di base), quanti numeri e simboli almeno (2 di base). Le regole che darebbero meno di 90 bit sono rifiutate; i caratteri che si confondono (l, I, O, 0, 1) non ci sono. Per le chiavi resta una passphrase come prima: stessa serratura scrypt, stesso formato.
 
