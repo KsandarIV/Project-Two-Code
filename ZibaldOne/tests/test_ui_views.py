@@ -1165,3 +1165,12 @@ def test_a_change_in_kosmesis_keeps_the_page_where_it_was_scrolled(ready: Path, 
     shell.navigate("/modelli")  # a different page opens at the top
     shell.refresh_keep_scroll()
     assert asked == [640.0]
+def test_models_have_no_personalize_gear_and_the_home_title_is_oikos_home(ready: Path) -> None:
+    shell = Shell(FakePage(), ready)
+    shell.start("/modelli")
+    assert not [item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Personalizza"]
+    click(next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and item.tooltip == "Svago"))
+    assert not [item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Personalizza"]
+    shell.navigate("/oggi")
+    found = texts(shell.body.content)
+    assert "Oikos • Home" in found and "Oggi • Hic et nunc" in found

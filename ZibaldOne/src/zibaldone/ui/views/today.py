@@ -80,7 +80,7 @@ def build(ctx: AppContext, route: Route) -> ft.Control:
     if model.streak_label:
         actions.append(W.pill(model.streak_label, T.ACCENT_2, icon="LOCAL_FIRE_DEPARTMENT"))
     controls: List[ft.Control] = [
-        W.screen_header(info.label, info.nickname, f"{model.greeting}, è {model.date_label}.", actions=actions, trailing=_news_button(ctx)),
+        W.screen_header("Oikos • Home", "", f"{model.greeting}, è {model.date_label}.", actions=actions, trailing=_news_button(ctx), lead=f"Oggi • {info.nickname}"),
     ]
     if shortcut_row is not None:
         controls.append(shortcut_row)
