@@ -211,13 +211,19 @@ def files_folder(ctx: AppContext, route: Route) -> ft.Control:
     error = W.error_text()
 
     def chosen(path: str) -> None:
-        try:
-            services.set_backup_folder(ctx.folder, path)
-        except OSError as problem:
-            error.value = f"Non riesco a usare questa cartella: {problem}"
+        def refused(message: str) -> None:
+            error.value = f"Non riesco a usare questa cartella: {message}"
             ctx.update(error)
-            return
-        ctx.advance()
+
+        def use() -> None:
+            try:
+                services.set_backup_folder(ctx.folder, path)
+            except OSError as problem:
+                refused(str(problem))
+                return
+            ctx.advance()
+
+        ctx.ensure_writable(path, use, refused)
 
     def create(_: Any) -> None:
         def answered(granted: bool) -> None:

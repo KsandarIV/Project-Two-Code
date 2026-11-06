@@ -351,6 +351,25 @@ def set_backup_folder(folder: Path, path: str, move_old: bool = False) -> List[P
     return moved
 
 
+def check_folder_writable(path: str) -> None:
+    """Try a backup folder now (blocking); raises `FolderWriteError`, whose `needs_files_access` says whether the missing permission is the cause."""
+    bf.check_writable(Path(path))
+
+
+def folder_access_problem(folder: Path) -> Optional[bf.FolderWriteError]:
+    """On Android: the chosen backup folder tried now, None when it works or there is nothing to try. Blocking: call it in a thread."""
+    target = backup_files_folder(folder)
+    if not target or not running_on_android():
+        return None
+    try:
+        bf.check_writable(Path(target))
+    except bf.FolderWriteError as problem:
+        return problem
+    except OSError as problem:
+        return bf.FolderWriteError(str(problem))
+    return None
+
+
 def set_backup_mode(folder: Path, mode: str) -> List[Path]:
     """Change who manages the backups, without losing any. «Gestisco io» turns the automatic copies off; «Gestisce l'app» sets the user's files aside in «Gestione manuale». Returns what was moved."""
     if mode not in bf.MODES:

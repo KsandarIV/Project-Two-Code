@@ -482,6 +482,9 @@ class MnemosyneScreen:
         current = services.backup_files_folder(self.ctx.folder)
 
         def chosen(path: str) -> None:
+            self.ctx.ensure_writable(path, lambda: use(path), lambda message: self.ctx.notice("Non riesco a usare questa cartella", message))
+
+        def use(path: str) -> None:
             def done(move: bool) -> None:
                 try:
                     moved = services.set_backup_folder(self.ctx.folder, path, move_old=move)
@@ -605,7 +608,7 @@ class MnemosyneScreen:
             self.note.value = ""
             self.ctx.toast("Istantanea creata: Mnemosyne ricorda.")
             if warning:
-                self.ctx.toast(warning, error=True)
+                self.ctx.explain_backup_warning(warning)
             self.reload()
 
         def failed(problem: Exception) -> None:

@@ -1145,3 +1145,95 @@ def test_mnemosyne_lists_the_opaque_backup_files_with_date_and_kind(ready: Path,
     shown = texts(shell.body.content)
     assert "I tuoi backup" in shown and any(text.startswith("fatto a mano · ") for text in shown)
     assert not any(path.name.startswith("zibaldone-") for path in target.iterdir())
+
+
+# * — KAN-135: «all files access» on Android —
+
+
+def _on_android(monkeypatch: pytest.MonkeyPatch, outcomes: List[Any]) -> List[str]:
+    """The phone case: each probe of the folder gives the next outcome (an error to raise, or None for «works»)."""
+    from zibaldone.storage import backup_folder as bf
+    from zibaldone.ui import services
+
+    monkeypatch.setattr(services, "running_on_android", lambda: True)
+    tried: List[str] = []
+
+    def check(target: Any) -> None:
+        tried.append(str(target))
+        outcome = outcomes.pop(0)
+        if outcome is not None:
+            raise outcome
+
+    monkeypatch.setattr(bf, "check_writable", check)
+    return tried
+
+
+def _inline(ctx: Any, monkeypatch: pytest.MonkeyPatch) -> None:
+    """The fake page cannot start a background job from inside another: run them in line."""
+
+    def run(work: Any, on_done: Any, on_error: Any = None) -> None:
+        try:
+            result = work()
+        except Exception as problem:
+            on_error(problem)
+        else:
+            on_done(result)
+
+    monkeypatch.setattr(ctx, "run_blocking", run)
+
+
+def _refusal() -> Any:
+    from zibaldone.storage.backup_folder import FolderWriteError
+
+    return FolderWriteError("l'app non ha il permesso di scrivere in /storage/emulated/0/ZibaldOne/Data. Dai il permesso.", needs_files_access=True)
+
+
+def test_a_chosen_folder_asks_for_all_files_access_and_is_tried_again(ready: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    ctx = Shell(FakePage(), ready).ctx
+    _inline(ctx, monkeypatch)
+    tried = _on_android(monkeypatch, [_refusal(), None])
+    asked: List[int] = []
+    monkeypatch.setattr(ctx, "ask_files_permission", lambda answer: (asked.append(1), answer(True)))
+    result: List[str] = []
+    ctx.ensure_writable("/storage/emulated/0/ZibaldOne/Data", lambda: result.append("ready"), lambda message: result.append(message))
+    assert result == ["ready"] and len(tried) == 2 and asked == [1]
+
+
+def test_a_chosen_folder_is_refused_with_the_message_when_the_permission_does_not_come(ready: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    ctx = Shell(FakePage(), ready).ctx
+    _inline(ctx, monkeypatch)
+    _on_android(monkeypatch, [_refusal()])
+    monkeypatch.setattr(ctx, "ask_files_permission", lambda answer: answer(False))
+    result: List[str] = []
+    ctx.ensure_writable("/storage/emulated/0/ZibaldOne/Data", lambda: result.append("ready"), lambda message: result.append(message))
+    assert len(result) == 1 and "non ha il permesso" in result[0]
+    _on_android(monkeypatch, [_refusal(), _refusal()])  # granted, but the system still refuses: asked only once, then the message
+    result.clear()
+    monkeypatch.setattr(ctx, "ask_files_permission", lambda answer: answer(True))
+    ctx.ensure_writable("/storage/emulated/0/ZibaldOne/Data", lambda: result.append("ready"), lambda message: result.append(message))
+    assert len(result) == 1 and "non ha il permesso" in result[0]
+
+
+def test_off_android_a_chosen_folder_is_used_at_once(ready: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    ctx = Shell(FakePage(), ready).ctx
+    result: List[str] = []
+    ctx.ensure_writable("/anywhere", lambda: result.append("ready"), lambda message: result.append(message))
+    assert result == ["ready"]
+
+
+def test_the_start_on_android_explains_a_folder_without_permission_and_offers_to_ask(ready: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from zibaldone.ui import services
+
+    page = FakePage()
+    shell = Shell(page, ready)
+    services.save_ui_settings(ready, backup_files_folder="/storage/emulated/0/ZibaldOne/Data")
+    _inline(shell.ctx, monkeypatch)
+    _on_android(monkeypatch, [_refusal(), None])
+    asked: List[int] = []
+    monkeypatch.setattr(shell.ctx, "ask_files_permission", lambda answer: (asked.append(1), answer(True)))
+    shell.ctx.check_backup_folder()
+    dialog = page.dialogs[-1]
+    assert "non ha il permesso di scrivere" in " ".join(texts(dialog.content))  # the whole sentence, not cut
+    grant = next(item for item in walk(dialog) if isinstance(item, ft.FilledButton) and "Dai il permesso" in texts(item))
+    click(grant)
+    assert asked == [1] and "Permesso dato" in shell.ctx.toasts[-1]

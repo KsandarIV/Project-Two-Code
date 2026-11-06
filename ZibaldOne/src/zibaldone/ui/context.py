@@ -213,6 +213,83 @@ class AppContext:
 
         self.page.run_task(task)
 
+    def notice(self, title: str, message: str, actions: Optional[List[ft.Control]] = None) -> None:
+        """A dialog with the whole message (a toast is too short for a long explanation); `actions` come before «Chiudi»."""
+        self.show_dialog(
+            ft.AlertDialog(
+                title=title,
+                content=ft.Column([ft.Text(message, color=T.TEXT, size=14, selectable=True)], tight=True, scroll=ft.ScrollMode.AUTO),
+                actions=[*(actions or []), W.text_button("Chiudi", self.close_dialog, color=T.TEXT)],
+                actions_alignment=ft.MainAxisAlignment.END,
+            )
+        )
+
+    def ensure_writable(self, path: str, on_ready: Callable[[], Any], on_refused: Callable[[str], Any]) -> None:
+        """Before keeping backups in `path`: on Android try the folder; without «all files access» ask for it and try once more.
+
+        `on_ready()` when the folder works (always, off Android); `on_refused(message)` with the sentence for the user otherwise.
+        """
+        if self.page is None or not services.running_on_android():
+            on_ready()
+            return
+
+        def attempt(may_ask: bool) -> None:
+            def failed(problem: Exception) -> None:
+                if may_ask and getattr(problem, "needs_files_access", False):
+                    self.ask_files_permission(lambda granted: attempt(False) if granted else on_refused(str(problem)))
+                else:
+                    on_refused(str(problem))
+
+            self.run_blocking(lambda: services.check_folder_writable(path), lambda _: on_ready(), failed)
+
+        attempt(True)
+
+    def explain_backup_folder(self, problem: Exception) -> None:
+        """The backup folder cannot be written: the whole message and, when the permission is missing, a button that asks for it and tries again."""
+        actions: List[ft.Control] = []
+        if getattr(problem, "needs_files_access", False):
+
+            def ask(_: Any) -> None:
+                self.close_dialog()
+
+                def answered(granted: bool) -> None:
+                    if granted:
+                        self.check_backup_folder(thanks=True)
+                    else:
+                        self.explain_backup_folder(problem)
+
+                self.ask_files_permission(answered)
+
+            actions.append(W.primary_button("Dai il permesso", ask))
+        self.notice("Mnemosyne: la cartella dei backup non si può scrivere", str(problem), actions)
+
+    def check_backup_folder(self, thanks: bool = False) -> None:
+        """Android: try the chosen backup folder in the background and explain what to do if it is refused (an update does not keep the permission)."""
+        if self.page is None or not services.running_on_android():
+            return
+
+        def done(problem: Any) -> None:
+            if problem is not None:
+                self.explain_backup_folder(problem)
+            elif thanks:
+                self.toast("Permesso dato: le copie ora si salvano nella cartella dei backup.")
+
+        self.run_blocking(lambda: services.folder_access_problem(self.folder), done, lambda error: logger.info("backup folder check failed: %s", error))
+
+    def explain_backup_warning(self, warning: str) -> None:
+        """A backup file was not written: the whole reason, with the permission button when that is the cause."""
+
+        def done(problem: Any) -> None:
+            if problem is not None:
+                self.explain_backup_folder(problem)
+            else:
+                self.notice("Mnemosyne: copia fuori non riuscita", warning)
+
+        if self.page is None or not services.running_on_android():
+            self.notice("Mnemosyne: copia fuori non riuscita", warning)
+            return
+        self.run_blocking(lambda: services.folder_access_problem(self.folder), done, lambda _: self.notice("Mnemosyne: copia fuori non riuscita", warning))
+
     def open_file(self, path: Path) -> None:
         """Open an attached file with the system app; on a phone, through the share sheet."""
         self.opened.append(path)
