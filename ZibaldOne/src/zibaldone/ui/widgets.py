@@ -169,14 +169,23 @@ def panel(
     )
 
 
+SCROLL = {"pixels": 0.0}  # how far the page on screen is scrolled: a redraw that keeps the place reads it before the page is rebuilt
+
+
+def _track_scroll(event: Any) -> None:
+    SCROLL["pixels"] = float(getattr(event, "pixels", 0.0) or 0.0)
+
+
 def screen(controls: Sequence[ft.Control], wide: bool) -> ft.Control:
     """A scrolling page whose content stays centred and not too wide on desktop."""
+    SCROLL["pixels"] = 0.0  # a new page starts at the top
     inner = ft.Column(list(controls), spacing=14, horizontal_alignment=ft.CrossAxisAlignment.STRETCH)
     side = 28 if wide else 16
     holder = ft.Container(inner, padding=ft.Padding.only(left=side, right=side, top=20 if wide else 12, bottom=40), col=T.CONTENT_COLUMNS)
     return ft.Column(
         [ft.ResponsiveRow([holder], alignment=ft.MainAxisAlignment.CENTER)],
         scroll=ft.ScrollMode.AUTO,
+        on_scroll=_track_scroll,
         expand=True,
         spacing=0,
     )

@@ -1145,3 +1145,23 @@ def test_mnemosyne_lists_the_opaque_backup_files_with_date_and_kind(ready: Path,
     shown = texts(shell.body.content)
     assert "I tuoi backup" in shown and any(text.startswith("fatto a mano · ") for text in shown)
     assert not any(path.name.startswith("zibaldone-") for path in target.iterdir())
+
+
+def test_a_change_in_kosmesis_keeps_the_page_where_it_was_scrolled(ready: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    shell = Shell(FakePage(), ready)
+    shell.start("/organon/personalizza")
+    asked: List[float] = []
+
+    async def scroll_to(self: Any, offset: Any = None, **_: Any) -> None:
+        asked.append(offset)
+
+    monkeypatch.setattr(ft.Column, "scroll_to", scroll_to)
+    page_column = shell.body.content
+    page_column.on_scroll(SimpleNamespace(pixels=640.0))  # the user has scrolled down
+    switch = next(item for item in walk(shell.body.content) if isinstance(item, ft.Switch) and not item.disabled)
+    switch.value = not switch.value
+    switch.on_change(SimpleNamespace(control=switch))  # a tile switched on or off redraws the page
+    assert shell.body.content is not page_column and asked == [640.0]
+    shell.navigate("/modelli")  # a different page opens at the top
+    shell.refresh_keep_scroll()
+    assert asked == [640.0]
