@@ -1237,3 +1237,30 @@ def test_the_start_on_android_explains_a_folder_without_permission_and_offers_to
     grant = next(item for item in walk(dialog) if isinstance(item, ft.FilledButton) and "Dai il permesso" in texts(item))
     click(grant)
     assert asked == [1] and "Permesso dato" in shell.ctx.toasts[-1]
+def test_a_change_in_kosmesis_keeps_the_page_where_it_was_scrolled(ready: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    shell = Shell(FakePage(), ready)
+    shell.start("/organon/personalizza")
+    asked: List[float] = []
+
+    async def scroll_to(self: Any, offset: Any = None, **_: Any) -> None:
+        asked.append(offset)
+
+    monkeypatch.setattr(ft.Column, "scroll_to", scroll_to)
+    page_column = shell.body.content
+    page_column.on_scroll(SimpleNamespace(pixels=640.0))  # the user has scrolled down
+    switch = next(item for item in walk(shell.body.content) if isinstance(item, ft.Switch) and not item.disabled)
+    switch.value = not switch.value
+    switch.on_change(SimpleNamespace(control=switch))  # a tile switched on or off redraws the page
+    assert shell.body.content is not page_column and asked == [640.0]
+    shell.navigate("/modelli")  # a different page opens at the top
+    shell.refresh_keep_scroll()
+    assert asked == [640.0]
+def test_models_have_no_personalize_gear_and_the_home_title_is_oikos_home(ready: Path) -> None:
+    shell = Shell(FakePage(), ready)
+    shell.start("/modelli")
+    assert not [item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Personalizza"]
+    click(next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and item.tooltip == "Svago"))
+    assert not [item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Personalizza"]
+    shell.navigate("/oggi")
+    found = texts(shell.body.content)
+    assert "Oikos • Home" in found and "Oggi • Hic et nunc" in found

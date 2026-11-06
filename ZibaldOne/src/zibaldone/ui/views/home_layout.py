@@ -177,7 +177,7 @@ def build(ctx: AppContext) -> List[ft.Control]:
 
     def save(tiles: List[str]) -> None:
         home_log.save_layout(ctx.folder, tiles)
-        ctx.refresh()
+        ctx.refresh_keep_scroll()
 
     def switch(key: str, visible: bool) -> ft.Switch:
         def changed(event: Any) -> None:
@@ -188,7 +188,7 @@ def build(ctx: AppContext) -> List[ft.Control]:
     def reset() -> None:
         home_log.reset_layout(ctx.folder)
         ctx.toast("La home è tornata com'era all'inizio.")
-        ctx.refresh()
+        ctx.refresh_keep_scroll()
 
     from zibaldone.ui.views import today  # here, not on top: Oggi imports this module
 
@@ -205,7 +205,7 @@ def build(ctx: AppContext) -> List[ft.Control]:
     controls.append(W.section_label("Scorciatoie ai modelli"))
     pinned_rows = [
         ft.Row(
-            [W.body(names[slug].name, expand=True), W.text_button("Togli", lambda _, slug=slug: (services.toggle_shortcut(ctx.folder, slug), ctx.refresh()), icon="PUSH_PIN")]
+            [W.body(names[slug].name, expand=True), W.text_button("Togli", lambda _, slug=slug: (services.toggle_shortcut(ctx.folder, slug), ctx.refresh_keep_scroll()), icon="PUSH_PIN")]
         )
         for slug in pinned
         if names[slug] is not None

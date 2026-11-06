@@ -34,6 +34,7 @@ class AppContext:
         self._navigate: Callable[[str, bool], None] = lambda path, replace: None
         self._back: Callable[[], None] = lambda: None
         self._refresh: Callable[[], None] = lambda: None
+        self._refresh_keep_scroll: Callable[[], None] = lambda: None
         self._retheme: Callable[[], None] = lambda: None
         self._advance: Callable[[], None] = lambda: None
         self._data_changed: Callable[[], None] = lambda: None
@@ -60,6 +61,10 @@ class AppContext:
 
     def refresh(self, *_: Any) -> None:
         self._refresh()
+
+    def refresh_keep_scroll(self, *_: Any) -> None:
+        """Redraw the screen like `refresh`, but the page stays scrolled where it was (for edits made in the middle of a long page)."""
+        self._refresh_keep_scroll()
 
     def retheme(self) -> None:
         """The palette changed: redraw the window with it."""
