@@ -189,8 +189,11 @@ def screen_header(
     on_back: Handler = None,
     actions: Sequence[ft.Control] = (),
     trailing: Optional[ft.Control] = None,
+    lead: str = "",
 ) -> ft.Control:
     texts: List[ft.Control] = [title_with_nickname(title, nickname)]
+    if lead:  # a small line under the title, nudged to the right
+        texts.append(ft.Container(ft.Text(lead, size=14, italic=True, color=T.ACCENT), padding=ft.Padding.only(left=16)))
     if subtitle:
         texts.append(body(subtitle, dim=True))
     head: List[ft.Control] = []

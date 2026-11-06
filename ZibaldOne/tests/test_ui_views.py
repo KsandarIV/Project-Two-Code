@@ -1145,3 +1145,14 @@ def test_mnemosyne_lists_the_opaque_backup_files_with_date_and_kind(ready: Path,
     shown = texts(shell.body.content)
     assert "I tuoi backup" in shown and any(text.startswith("fatto a mano · ") for text in shown)
     assert not any(path.name.startswith("zibaldone-") for path in target.iterdir())
+
+
+def test_models_have_no_personalize_gear_and_the_home_title_is_oikos_home(ready: Path) -> None:
+    shell = Shell(FakePage(), ready)
+    shell.start("/modelli")
+    assert not [item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Personalizza"]
+    click(next(item for item in walk(shell.body.content) if isinstance(item, ft.Container) and item.tooltip == "Svago"))
+    assert not [item for item in walk(shell.body.content) if isinstance(item, ft.IconButton) and item.tooltip == "Personalizza"]
+    shell.navigate("/oggi")
+    found = texts(shell.body.content)
+    assert "Oikos • Home" in found and "Oggi • Hic et nunc" in found

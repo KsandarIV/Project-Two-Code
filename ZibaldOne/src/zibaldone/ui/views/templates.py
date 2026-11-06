@@ -126,7 +126,6 @@ def build_list(ctx: AppContext, route: Route) -> ft.Control:
     ctx.back_hook = carousel.hook_back(ctx, GENERAL, page, lambda: choose(GENERAL))
 
     tools = [
-        W.icon_button("SETTINGS_OUTLINED", lambda _: ctx.go("/organon/personalizza"), "Personalizza"),
         W.icon_button("GRID_VIEW" if compact else "VIEW_AGENDA_OUTLINED", toggle_view, "Mostra la vista completa" if compact else "Mostra solo le icone"),
     ]
     if page == GENERAL:
