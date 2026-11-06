@@ -55,6 +55,7 @@ class Shell:
         self.ctx._data_changed = self.schedule_backup
         self.backup_running = False
         self.migration_checked = False
+        self.folder_checked = False
         self.history: List[str] = []
         self.clock = time.monotonic
         self.exit_asked = float("-inf")
@@ -166,6 +167,9 @@ class Shell:
             target = HOME
         self.start_path = "/oggi"
         self.show(target)
+        if not self.folder_checked:  # once per start: an update from an older version keeps the folder but may have lost the permission
+            self.folder_checked = True
+            self.ctx.check_backup_folder()
 
     # — navigation —
 
