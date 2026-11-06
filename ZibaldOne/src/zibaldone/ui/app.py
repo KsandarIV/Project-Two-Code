@@ -49,6 +49,7 @@ class Shell:
         self.ctx._navigate = self.navigate
         self.ctx._back = self.back
         self.ctx._refresh = self.refresh
+        self.ctx._refresh_keep_scroll = self.refresh_keep_scroll
         self.ctx._retheme = self.retheme
         self.ctx._advance = self.advance
         self.ctx._data_changed = self.schedule_backup
@@ -194,6 +195,23 @@ class Shell:
 
     def refresh(self) -> None:
         self.show(self.current)
+
+    def refresh_keep_scroll(self) -> None:
+        """Redraw the screen and scroll the new one back to where the old one was."""
+        offset = W.SCROLL["pixels"]
+        self.show(self.current)
+        page, control = self.page, self.body.content
+        if offset <= 0 or not hasattr(page, "run_task") or not isinstance(control, ft.Column):
+            return
+
+        async def restore() -> None:
+            await asyncio.sleep(0.05)  # the new page has to be on screen before it can be scrolled
+            try:
+                await control.scroll_to(offset=offset)
+            except Exception:  # the user left the page meanwhile: nothing to restore
+                logger.debug("scroll not restored", exc_info=True)
+
+        page.run_task(restore)
 
     def can_go_back(self) -> bool:
         return bool(self.history) or not self.current.is_top_level or self.ctx.back_hook is not None
