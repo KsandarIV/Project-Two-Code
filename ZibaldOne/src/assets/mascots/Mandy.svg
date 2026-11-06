@@ -2,6 +2,7 @@
   <defs>
     <mask id="mask-mandy">
       <rect width="100" height="100" fill="white" />
+      <g transform="translate(104 0) scale(-1 1)">
       <!-- Sagoma ape (corpo, pungiglione e ali) -->
       <rect x="30" y="45" width="40" height="25" rx="12.5" fill="black" />
       <polygon points="70,53 80,57 70,62" fill="black" />
@@ -11,6 +12,7 @@
       <rect x="40" y="45" width="5" height="25" fill="white" />
       <rect x="52" y="45" width="5" height="25" fill="white" />
       <circle cx="35" cy="52" r="2.5" fill="white" />
+    </g>
     </mask>
   </defs>
   <rect width="100" height="100" rx="20" fill="#FF0000" mask="url(#mask-mandy)" />
